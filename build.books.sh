@@ -2,6 +2,15 @@
 
 set -e
 
+# safer separator for sed
+sep=$'\001'
+
+if [ -v GITHUB_REF_NAME ]; then
+    sed "s${sep}%%FOOTER_VERSION%%${sep}${GITHUB_REF_NAME}${sep}" meta.tmpl.tex > meta.tex
+else
+    sed "s${sep}%%FOOTER_VERSION%%${sep}UNDEFINED VERSION${sep}" meta.tmpl.tex > meta.tex
+fi
+
 docker run --rm -v `pwd`:/data uppalabharath/pandoc-latex-cjk:latest --from=gfm+rebase_relative_paths -o learn-go-with-tests.pdf \
     -H meta.tex --pdf-engine=xelatex --variable urlcolor=blue --toc --toc-depth=1 \
     -B pdf-cover.tex \

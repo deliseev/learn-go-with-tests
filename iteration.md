@@ -97,7 +97,7 @@ Writing [benchmarks](https://golang.org/pkg/testing/#hdr-Benchmarks) in Go is an
 
 ```go
 func BenchmarkRepeat(b *testing.B) {
-	for i := 0; i < b.N; i++ {
+	for b.Loop() {
 		Repeat("a")
 	}
 }
@@ -105,11 +105,11 @@ func BenchmarkRepeat(b *testing.B) {
 
 You'll see the code is very similar to a test.
 
-The `testing.B` gives you access to the cryptically named `b.N`.
+The `testing.B` gives you access to the loop function. `Loop()` returns true as long as the benchmark should continue running. 
 
-When the benchmark code is executed, it runs `b.N` times and measures how long it takes.
+When the benchmark code is executed, it measures how long it takes. After `Loop()` returns false, `b.N` contains the total number of iterations that ran.
 
-The amount of times the code is run shouldn't matter to you, the framework will determine what is a "good" value for that to let you have some decent results.
+The number of times the code is run shouldn't matter to you, the framework will determine what is a "good" value for that to let you have some decent results.
 
 To run the benchmarks do `go test -bench=.` (or if you're in Windows Powershell `go test -bench="."`)
 
@@ -123,7 +123,54 @@ PASS
 
 What `136 ns/op` means is our function takes on average 136 nanoseconds to run \(on my computer\). Which is pretty ok! To test this it ran it 10000000 times.
 
-_NOTE_ by default Benchmarks are run sequentially.
+**Note:** By default benchmarks are run sequentially.
+
+Only the body of the loop is timed; it automatically excludes setup and cleanup code from benchmark timing. A typical benchmark is structured like:
+
+```go
+func Benchmark(b *testing.B) {
+	//... setup ...
+	for b.Loop() {
+		//... code to measure ...
+	}
+	//... cleanup ...
+}
+```
+
+Strings in Go are immutable, meaning every concatenation, such as in our `Repeat` function, involves copying memory to accommodate the new string. This impacts performance, particularly during heavy string concatenation.
+
+The standard library provides the `strings.Builder`[stringsBuilder] type which minimizes memory copying.
+It implements a `WriteString` method which we can use to concatenate strings:
+
+```go
+const repeatCount = 5
+
+func Repeat(character string) string {
+	var repeated strings.Builder
+	for i := 0; i < repeatCount; i++ {
+		repeated.WriteString(character)
+	}
+	return repeated.String()
+}
+```
+
+**Note**: We have to call the `String` method to retrieve the final result.
+
+We can use `BenchmarkRepeat` to confirm that `strings.Builder` significantly improves performance.
+Run `go test -bench=. -benchmem`:
+
+```text
+goos: darwin
+goarch: amd64
+pkg: github.com/quii/learn-go-with-tests/for/v4
+10000000           25.70 ns/op           8 B/op           1 allocs/op
+PASS
+```
+
+The `-benchmem` flag reports information about memory allocations:
+
+* `B/op`: the number of bytes allocated per iteration
+* `allocs/op`: the number of memory allocations per iteration
 
 ## Practice exercises
 
@@ -136,3 +183,5 @@ _NOTE_ by default Benchmarks are run sequentially.
 * More TDD practice
 * Learned `for`
 * Learned how to write benchmarks
+
+[stringsBuilder]: https://pkg.go.dev/strings#Builder

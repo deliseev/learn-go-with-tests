@@ -71,7 +71,7 @@ type Store interface {
 }
 ```
 
-We will need to adjust our spy so it takes some time to return `data` and a way of knowing it has been told to cancel. We'll also rename it to `SpyStore` as we are now observing the way it is called. It'll have to add `Cancel` as a method to implement the `Store` interface.
+We will need to adjust our spy so it takes some time to return `data` and a way of knowing it has been told to cancel. It'll have to add `Cancel` as a method to implement the `Store` interface.
 
 ```go
 type SpyStore struct {
@@ -144,7 +144,7 @@ func Server(store Store) http.HandlerFunc {
 }
 ```
 
-This makes this test pass but it doesn't feel good does it! We surely shouldn't be cancelling `Store` before we fetch on _every request_.
+This makes this test pass but it doesn't feel good does it! We surely shouldn't be cancelling `Cancel()` before we fetch on _every request_.
 
 By being disciplined it highlighted a flaw in our tests, this is a good thing!
 
@@ -279,7 +279,7 @@ One of the main points of `context` is that it is a consistent way of offering c
 
 From the [Go Blog: Context](https://blog.golang.org/context) again:
 
-> At Google, we require that Go programmers pass a Context parameter as the first argument to every function on the call path between incoming and outgoing requests. This allows Go code developed by many different teams to interoperate well. It provides simple control over timeouts and cancelation and ensures that critical values like security credentials transit Go programs properly.
+> At Google, we require that Go programmers pass a Context parameter as the first argument to every function on the call path between incoming and outgoing requests. This allows Go code developed by many different teams to interoperate well. It provides simple control over timeouts and cancellation and ensures that critical values like security credentials transit Go programs properly.
 
 (Pause for a moment and think of the ramifications of every function having to send in a context, and the ergonomics of that.)
 

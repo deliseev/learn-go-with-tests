@@ -89,7 +89,7 @@ We could just give the functions more specific names like `RectangleArea`. A nea
 
 We can create a simple type using a **struct**. [A struct](https://golang.org/ref/spec#Struct_types) is just a named collection of fields where you can store data.
 
-Declare a struct like this
+Declare a struct in your `shapes.go` file like this
 
 ```go
 type Rectangle struct {
@@ -589,7 +589,7 @@ func TestArea(t *testing.T) {
 This was more TDD practice, iterating over our solutions to basic mathematic problems and learning new language features motivated by our tests.
 
 * Declaring structs to create your own data types which lets you bundle related data together and make the intent of your code clearer
-* Declaring interfaces so you can define functions that can be used by different types \([parametric polymorphism](https://en.wikipedia.org/wiki/Parametric_polymorphism)\)
+* Declaring interfaces so you can define functions that can be used by different types \([ad hoc polymorphism](https://en.wikipedia.org/wiki/Ad_hoc_polymorphism)\)
 * Adding methods so you can add functionality to your data types and so you can implement interfaces
 * Table driven tests to make your assertions clearer and your test suites easier to extend & maintain
 

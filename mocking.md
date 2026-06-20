@@ -373,7 +373,6 @@ func Countdown(out io.Writer, sleeper Sleeper) {
 		fmt.Fprintln(out, i)
 	}
 
-	sleeper.Sleep()
 	fmt.Fprint(out, finalWord)
 }
 ```
@@ -494,7 +493,7 @@ type SpyTime struct {
 	durationSlept time.Duration
 }
 
-func (s *SpyTime) Sleep(duration time.Duration) {
+func (s *SpyTime) SetDurationSlept(duration time.Duration) {
 	s.durationSlept = duration
 }
 ```
@@ -506,7 +505,7 @@ func TestConfigurableSleeper(t *testing.T) {
 	sleepTime := 5 * time.Second
 
 	spyTime := &SpyTime{}
-	sleeper := ConfigurableSleeper{sleepTime, spyTime.Sleep}
+	sleeper := ConfigurableSleeper{sleepTime, spyTime.SetDurationSlept}
 	sleeper.Sleep()
 
 	if spyTime.durationSlept != sleepTime {
@@ -637,3 +636,45 @@ In this post about mocking we have only covered **Spies**, which are a kind of m
 > [Test Double is a generic term for any case where you replace a production object for testing purposes.](https://martinfowler.com/bliki/TestDouble.html)
 
 Under test doubles, there are various types like stubs, spies and indeed mocks! Check out [Martin Fowler's post](https://martinfowler.com/bliki/TestDouble.html) for more detail.
+
+## Bonus - Example of iterators from go 1.23
+
+In Go 1.23 [iterators were introduced](https://tip.golang.org/doc/go1.23). We can use iterators in various ways, in this instance we can make a `countdownFrom` iterator, which will return the numbers to countdown in reverse order.
+
+Before we get into how we write custom iterators, let's see how we use them. Rather than writing a fairly imperative looking loop to count down from a number, we can make this code look more expressive by `range`-ing over our custom `countdownFrom` iterator.
+
+```go
+func Countdown(out io.Writer, sleeper Sleeper) {
+	for i := range countDownFrom(3) {
+		fmt.Fprintln(out, i)
+		sleeper.Sleep()
+	}
+
+	fmt.Fprint(out, finalWord)
+}
+```
+
+To write an iterator like `countDownFrom`, you need to write a function in a particular way. From the docs:
+
+    The “range” clause in a “for-range” loop now accepts iterator functions of the following types
+        func(func() bool)
+        func(func(K) bool)
+        func(func(K, V) bool)
+
+(The `K` and `V` stand for key and value types, respectively.)
+
+In our case, we don't have keys, just values. Go also provides a convenience type `iter.Seq[T]` which is a type alias for `func(func(T) bool)`.
+
+```go
+func countDownFrom(from int) iter.Seq[int] {
+	return func(yield func(int) bool) {
+		for i := from; i > 0; i-- {
+			if !yield(i) {
+				return
+			}
+		}
+	}
+}
+```
+
+This is a simple iterator, which will yield numbers in reverse order, starting from, `from` - perfect for our usecase. 

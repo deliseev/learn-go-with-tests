@@ -92,8 +92,8 @@ func BenchmarkCheckWebsites(b *testing.B) {
 	for i := 0; i < len(urls); i++ {
 		urls[i] = "a url"
 	}
-	b.ResetTimer()
-	for i := 0; i < b.N; i++ {
+
+	for b.Loop() {
 		CheckWebsites(slowStubWebsiteChecker, urls)
 	}
 }
@@ -102,8 +102,7 @@ func BenchmarkCheckWebsites(b *testing.B) {
 The benchmark tests `CheckWebsites` using a slice of one hundred urls and uses
 a new fake implementation of `WebsiteChecker`. `slowStubWebsiteChecker` is
 deliberately slow. It uses `time.Sleep` to wait exactly twenty milliseconds and
-then it returns true. We use `b.ResetTimer()` in this test to reset the time of our
-test before it actually runs
+then it returns true.
 
 
 When we run the benchmark using `go test -bench=.` (or if you're in Windows Powershell `go test -bench="."`):
@@ -213,7 +212,7 @@ We are caught by the original test `CheckWebsites`, it's now returning an
 empty map. What went wrong?
 
 None of the goroutines that our `for` loop started had enough time to add
-their result to the `results` map; the `WebsiteChecker` function is too fast for
+their result to the `results` map; the `CheckWebsites` function is too fast for
 them, and it returns the still empty map.
 
 To fix this we can just wait while all the goroutines do their work, and then
@@ -240,56 +239,6 @@ func CheckWebsites(wc WebsiteChecker, urls []string) map[string]bool {
 	return results
 }
 ```
-
-Now when we run the tests you get (or don't get - see above):
-
-```sh
---- FAIL: TestCheckWebsites (0.00s)
-        CheckWebsites_test.go:31: Wanted map[http://google.com:true http://blog.gypsydave5.com:true waat://furhurterwe.geds:false], got map[waat://furhurterwe.geds:false]
-FAIL
-exit status 1
-FAIL    github.com/gypsydave5/learn-go-with-tests/concurrency/v1        0.010s
-```
-
-This isn't great - why only one result? We might try and fix this by increasing
-the time we wait - try it if you like. It won't work. The problem here is that
-the variable `url` is reused for each iteration of the `for` loop - it takes
-a new value from `urls` each time. But each of our goroutines have a reference
-to the `url` variable - they don't have their own independent copy. So they're
-_all_ writing the value that `url` has at the end of the iteration - the last
-url. Which is why the one result we have is the last url.
-
-To fix this:
-
-```go
-package concurrency
-
-import (
-	"time"
-)
-
-type WebsiteChecker func(string) bool
-
-func CheckWebsites(wc WebsiteChecker, urls []string) map[string]bool {
-	results := make(map[string]bool)
-
-	for _, url := range urls {
-		go func(u string) {
-			results[u] = wc(u)
-		}(url)
-	}
-
-	time.Sleep(2 * time.Second)
-
-	return results
-}
-```
-
-By giving each anonymous function a parameter for the url - `u` - and then
-calling the anonymous function with the `url` as the argument, we make sure that
-the value of `u` is fixed as the value of `url` for the iteration of the loop
-that we're launching the goroutine in. `u` is a copy of the value of `url`, and
-so can't be changed.
 
 Now if you're lucky you'll get:
 
@@ -324,10 +273,7 @@ tests, two of the goroutines write to the results map at exactly the same time.
 Maps in Go don't like it when more than one thing tries to write to them at
 once, and so `fatal error`.
 
-This is a _race condition_, a bug that occurs when the output of our software is
-dependent on the timing and sequence of events that we have no control over.
-Because we cannot control exactly when each goroutine writes to the results map,
-we are vulnerable to two goroutines writing to it at the same time.
+This is a _data race_, a bug that occurs when two or more goroutines access the same memory location concurrently, and at least one of those accesses is a write. Because we cannot control exactly when each goroutine executes, we are vulnerable to multiple goroutines trying to write to the `results` map at the exact same time. Go maps are not safe for concurrent writes, so the runtime throws a fatal error to prevent memory corruption.
 
 Go can help us to spot race conditions with its built in [_race detector_][godoc_race_detector].
 To enable this feature, run the tests with the `race` flag: `go test -race`.
@@ -381,7 +327,7 @@ On top of that, we can see the line of code where the write is happening:
 
 `/Users/gypsydave5/go/src/github.com/gypsydave5/learn-go-with-tests/concurrency/v3/websiteChecker.go:12`
 
-and the line of code where goroutines 7 an 8 are started:
+and the line of code where goroutines 7 and 8 are started:
 
 `/Users/gypsydave5/go/src/github.com/gypsydave5/learn-go-with-tests/concurrency/v3/websiteChecker.go:11`
 
@@ -413,9 +359,9 @@ func CheckWebsites(wc WebsiteChecker, urls []string) map[string]bool {
 	resultChannel := make(chan result)
 
 	for _, url := range urls {
-		go func(u string) {
-			resultChannel <- result{u, wc(u)}
-		}(url)
+		go func() {
+			resultChannel <- result{url, wc(url)}
+		}()
 	}
 
 	for i := 0; i < len(urls); i++ {
@@ -432,7 +378,7 @@ the same way. `chan result` is the type of the channel - a channel of `result`.
 The new type, `result` has been made to associate the return value of the
 `WebsiteChecker` with the url being checked - it's a struct of `string` and
 `bool`. As we don't need either value to be named, each of them is anonymous
-within the struct; this can be useful in when it's hard to know what to name
+within the struct; this can be useful when it's hard to know what to name
 a value.
 
 Now when we iterate over the urls, instead of writing to the `map` directly
@@ -442,7 +388,7 @@ left and a value on the right:
 
 ```go
 // Send statement
-resultChannel <- result{u, wc(u)}
+resultChannel <- result{url, wc(url)}
 ```
 
 The next `for` loop iterates once for each of the urls. Inside we're using

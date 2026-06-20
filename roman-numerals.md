@@ -208,7 +208,8 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-You may not have used [`strings.Builder`](https://golang.org/pkg/strings/#Builder) before
+You might remember [`strings.Builder`](https://golang.org/pkg/strings/#Builder) from our discussion
+about [benchmarking](iteration.md#benchmarking)
 
 > A Builder is used to efficiently build a string using Write methods. It minimizes memory copying.
 
@@ -685,6 +686,16 @@ What if we could take these rules that we know about our domain and somehow exer
 Property based tests help you do this by throwing random data at your code and verifying the rules you describe always hold true. A lot of people think property based tests are mainly about random data but they would be mistaken. The real challenge about property based tests is having a _good_ understanding of your domain so you can write these properties.
 
 Enough words, let's see some code
+
+> **⚠️ Linux Users:** Please **DO NOT** run the test below immediately. It will likely freeze your system (requiring a hard reboot).
+>
+> <details>
+> <summary>Click here to see why (Technical Explanation)</summary>
+>
+> The `testing/quick` package generates random integers up to `int64` max. Our current naive implementation attempts to build a string of that length in memory (quadrillions of characters).
+>
+> While macOS and Windows often handle this gracefully (UI remains responsive), Linux kernels usually encounter "swap thrashing," causing the entire system to freeze before the process can be killed.
+> </details>
 
 ```go
 func TestPropertiesOfConversion(t *testing.T) {
