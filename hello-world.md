@@ -1,11 +1,11 @@
 # Hello, World
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/hello-world)**
+**[Весь код для этой главы можно найти здесь](https://github.com/quii/learn-go-with-tests/tree/main/hello-world)**
 
-It is traditional for your first program in a new language to be [Hello, World](https://en.m.wikipedia.org/wiki/%22Hello,_World!%22_program).
+Традиционно вашей первой программой на новом языке является [Hello, World](https://en.m.wikipedia.org/wiki/%22Hello,_World!%22_program).
 
-- Create a folder wherever you like
-- Put a new file in it called `hello.go` and put the following code inside it
+- Создайте папку в любом удобном для вас месте
+- Поместите в нее новый файл с именем `hello.go` и вставьте в него следующий код
 
 ```go
 package main
@@ -17,21 +17,21 @@ func main() {
 }
 ```
 
-To run it, type `go run hello.go`.
+Чтобы запустить ее, наберите `go run hello.go`.
 
-## How it works
+## Как это работает
 
-When you write a program in Go, you will have a `main` package defined with a `main` func inside it. Packages are ways of grouping up related Go code together.
+Когда вы пишете программу на Go, у вас будет определен пакет `main` с функцией `main` внутри него. Пакеты — это способы группировки связанного Go-кода.
 
-The `func` keyword defines a function with a name and a body.
+Ключевое слово `func` определяет функцию с именем и телом.
 
-With `import "fmt"` we are importing a package which contains the `Println` function that we use to print.
+С помощью `import "fmt"` мы импортируем пакет, который содержит функцию `Println`, используемую для вывода.
 
-## How to test
+## Как тестировать
 
-How do you test this? It is good to separate your "domain" code from the outside world \(side-effects\). The `fmt.Println` is a side effect \(printing to stdout\), and the string we send in is our domain.
+Как это протестировать? Хорошо отделять ваш "доменный" код от внешнего мира (побочных эффектов). `fmt.Println` является побочным эффектом (печать в stdout), а строка, которую мы передаем, является нашим доменом.
 
-So let's separate these concerns so it's easier to test
+Итак, давайте разделим эти concerns, чтобы было легче тестировать
 
 ```go
 package main
@@ -47,9 +47,9 @@ func main() {
 }
 ```
 
-We have created a new function with `func`, but this time, we've added another keyword, `string,` to the definition. This means this function returns a `string`.
+Мы создали новую функцию с помощью `func`, но на этот раз мы добавили еще одно ключевое слово `string` к определению. Это означает, что эта функция возвращает `string`.
 
-Now create a new file called `hello_test.go` where we are going to write a test for our `Hello` function
+Теперь создайте новый файл `hello_test.go`, где мы будем писать тест для нашей функции `Hello`
 
 ```go
 package main
@@ -66,16 +66,16 @@ func TestHello(t *testing.T) {
 }
 ```
 
-## Go modules?
+## Go-модули?
 
-The next step is to run the tests. Enter `go test` in your terminal. If the tests pass, then you are probably using an earlier version of Go. However, if you are using Go 1.16 or later, the tests will likely not run. Instead, you will see an error message like this in the terminal:
+Следующий шаг — запустить тесты. Введите `go test` в вашем терминале. Если тесты проходят, то вы, вероятно, используете более раннюю версию Go. Однако, если вы используете Go 1.16 или новее, тесты, скорее всего, не запустятся. Вместо этого вы увидите сообщение об ошибке, подобное этому, в терминале:
 
 ```shell
 $ go test
 go: cannot find main module; see 'go help modules'
 ```
 
-What's the problem? In a word, [modules](https://blog.golang.org/go116-module-changes). Luckily, the problem is easy to fix. Enter `go mod init example.com/hello` in your terminal. That will create a new file with the following contents:
+В чем проблема? Одним словом, [модули](https://blog.golang.org/go116-module-changes). К счастью, проблему легко исправить. Введите `go mod init example.com/hello` в вашем терминале. Это создаст новый файл со следующим содержимым:
 
 ```
 module example.com/hello
@@ -83,49 +83,49 @@ module example.com/hello
 go 1.16
 ```
 
-This file tells the `go` tools essential information about your code. If you planned to distribute your application, you would include where the code was available for download as well as information about dependencies.  The name of the module, example\.com\/hello, usually refers to a URL where the module can be found and downloaded. For compatibility with tools we'll start using soon, make sure your module's name has a dot somewhere in it, like the dot in .com of example\.com/hello. For now, your module file is minimal, and you can leave it that way. To read more about modules, [you can check out the reference in the Golang documentation](https://golang.org/doc/modules/gomod-ref). We can get back to testing and learning Go now since the tests should run, even on Go 1.16.
+Этот файл сообщает инструментам `go` важную информацию о вашем коде. Если бы вы планировали распространять свое приложение, вы бы включили информацию о том, где код доступен для загрузки, а также информацию о зависимостях. Имя модуля, example\.com/hello, обычно относится к URL-адресу, где модуль можно найти и загрузить. Для совместимости с инструментами, которые мы скоро начнем использовать, убедитесь, что имя вашего модуля содержит точку, как, например, точка в .com в example\.com/hello. Пока ваш файл модуля минимален, и вы можете оставить его таким. Чтобы узнать больше о модулях, [вы можете ознакомиться с документацией в Golang](https://golang.org/doc/modules/gomod-ref). Теперь мы можем вернуться к тестированию и изучению Go, поскольку тесты должны работать, даже на Go 1.16.
 
-In future chapters, you will need to run `go mod init SOMENAME` in each new folder before running commands like `go test` or `go build`.
+В будущих главах вам нужно будет запускать `go mod init SOMENAME` в каждой новой папке перед выполнением таких команд, как `go test` или `go build`.
 
-## Back to Testing
+## Возвращаемся к тестированию
 
-Run `go test` in your terminal. It should've passed! Just to check, try deliberately breaking the test by changing the `want` string.
+Запустите `go test` в вашем терминале. Тесты должны были пройти! Просто для проверки, попробуйте специально сломать тест, изменив строку `want`.
 
-Notice how you have not had to pick between multiple testing frameworks and then figure out how to install them. Everything you need is built into the language, and the syntax is the same as the rest of the code you will write.
+Обратите внимание, что вам не пришлось выбирать между несколькими фреймворками для тестирования, а затем выяснять, как их установить. Все, что вам нужно, встроено в язык, а синтаксис такой же, как и у остального кода, который вы будете писать.
 
-### Writing tests
+### Написание тестов
 
-Writing a test is just like writing a function, with a few rules
+Написание теста похоже на написание функции, с несколькими правилами:
 
-* It needs to be in a file with a name like `xxx_test.go`
-* The test function must start with the word `Test`
-* The test function takes one argument only `t *testing.T`
-* To use the `*testing.T` type, you need to `import "testing"`, like we did with `fmt` in the other file
+* Он должен находиться в файле с именем вроде `xxx_test.go`.
+* Тестовая функция должна начинаться со слова `Test`.
+* Тестовая функция принимает только один аргумент: `t *testing.T`.
+* Чтобы использовать тип `*testing.T`, вам нужно `import "testing"`, как мы это делали с `fmt` в другом файле.
 
-For now, it's enough to know that your `t` of type `*testing.T` is your "hook" into the testing framework so you can do things like `t.Fail()` when you want to fail.
+На данный момент достаточно знать, что ваш `t` типа `*testing.T` — это ваш "крючок" к фреймворку тестирования, чтобы вы могли делать такие вещи, как `t.Fail()`, когда хотите вызвать ошибку.
 
-We've covered some new topics:
+Мы рассмотрели несколько новых тем:
 
 #### `if`
-If statements in Go are very much like other programming languages.
+Операторы `if` в Go очень похожи на операторы в других языках программирования.
 
-#### Declaring variables
+#### Объявление переменных
 
-We're declaring some variables with the syntax `varName := value`, which lets us reuse some values in our test for readability.
+Мы объявляем некоторые переменные с синтаксисом `varName := value`, что позволяет нам повторно использовать некоторые значения в нашем тесте для читаемости.
 
 #### `t.Errorf`
 
-We are calling the `Errorf` _method_ on our `t`, which will print out a message and fail the test. The `f` stands for format, which allows us to build a string with values inserted into the placeholder values `%q`. When you make the test fail, it should be clear how it works.
+Мы вызываем _метод_ `Errorf` у нашего `t`, который выведет сообщение и завершит тест с ошибкой. `f` означает "format" (формат), что позволяет нам создавать строку с значениями, вставленными в плейсхолдеры `%q`. Когда вы намеренно вызываете ошибку теста, должно быть ясно, как это работает.
 
-You can read more about the placeholder strings in the [fmt documentation](https://pkg.go.dev/fmt#hdr-Printing). For tests, `%q` is very useful as it wraps your values in double quotes.
+Вы можете прочитать больше о строках-плейсхолдерах в [документации fmt](https://pkg.go.dev/fmt#hdr-Printing). Для тестов `%q` очень полезен, так как он заключает ваши значения в двойные кавычки.
 
-We will later explore the difference between methods and functions.
+Позже мы рассмотрим разницу между методами и функциями.
 
-### Go's documentation
+### Документация Go
 
-Another quality-of-life feature of Go is the documentation.  We just saw the documentation for the fmt package at the official package viewing website, and Go also provides ways for quickly getting at the documentation offline.
+Еще одна функция Go, повышающая удобство работы, — это документация. Мы только что видели документацию для пакета `fmt` на официальном сайте просмотра пакетов, и Go также предоставляет способы быстрого получения документации в офлайн-режиме.
 
-Go has a built-in tool, doc, which lets you examine any package installed on your system, or the module you're currently working on. To view that same documentation for the Printing verbs:
+В Go есть встроенный инструмент `doc`, который позволяет изучать любой пакет, установленный в вашей системе, или модуль, над которым вы в данный момент работаете. Чтобы просмотреть ту же документацию для глаголов форматирования (Printing verbs):
 
 ```
 $ go doc fmt
@@ -148,20 +148,19 @@ General:
 ...
 ```
 
-Go's second tool for viewing documentation is the pkgsite command, which powers Go's official package viewing website.  You can install pkgsite with `go install golang.org/x/pkgsite/cmd/pkgsite@latest`, then run it with `pkgsite -open .`.  Go's install command will download the source files from that repository and build them into an executable binary.  For a default installation of Go, that executable will be in `$HOME/go/bin` for Linux and macOS, and `%USERPROFILE%\go\bin` for Windows.  If you have not already added those paths to your $PATH var, you might want to do so to make running go-installed commands easier.
+Второй инструмент Go для просмотра документации — это команда `pkgsite`, которая лежит в основе официального веб-сайта Go для просмотра пакетов. Вы можете установить `pkgsite` с помощью `go install golang.org/x/pkgsite/cmd/pkgsite@latest`, а затем запустить его с помощью `pkgsite -open .`. Команда установки Go загрузит исходные файлы из этого репозитория и соберет их в исполняемый бинарный файл. Для стандартной установки Go этот исполняемый файл будет находиться в `$HOME/go/bin` для Linux и macOS и `%USERPROFILE%\go/bin` для Windows. Если вы еще не добавили эти пути в свою переменную $PATH, возможно, вы захотите это сделать, чтобы упростить запуск команд, установленных Go.
 
-The vast majority of the standard library has excellent documentation with examples. Navigating to [http://localhost:8080/testing](http://localhost:8080/testing) would be worthwhile to see what's available to you.
-
+Подавляющее большинство стандартной библиотеки имеет отличную документацию с примерами. Стоит перейти по ссылке [http://localhost:8080/testing](http://localhost:8080/testing), чтобы увидеть, что вам доступно.
 
 ### Hello, YOU
 
-Now that we have a test, we can iterate on our software safely.
+Теперь, когда у нас есть тест, мы можем безопасно итерировать наше программное обеспечение.
 
-In the last example, we wrote the test _after_ the code had been written so that you could get an example of how to write a test and declare a function. From this point on, we will be _writing tests first_.
+В последнем примере мы написали тест _после_ того, как код был написан, чтобы вы могли получить пример того, как писать тест и объявлять функцию. С этого момента мы будем _сначала писать тесты_.
 
-Our next requirement is to let us specify the recipient of the greeting.
+Наше следующее требование — позволить нам указывать получателя приветствия.
 
-Let's start by capturing these requirements in a test. This is basic test-driven development and allows us to make sure our test is _actually_ testing what we want. When you retrospectively write tests, there is the risk that your test may continue to pass even if the code doesn't work as intended.
+Давайте начнем с фиксации этих требований в тесте. Это базовый подход к разработке через тестирование (TDD), который позволяет нам убедиться, что наш тест _действительно_ проверяет то, что мы хотим. При ретроспективном написании тестов существует риск того, что ваш тест может продолжать проходить, даже если код работает не так, как задумано.
 
 ```go
 package main
@@ -178,7 +177,7 @@ func TestHello(t *testing.T) {
 }
 ```
 
-Now run `go test`, you should have a compilation error
+Теперь запустите `go test`, у вас должна быть ошибка компиляции
 
 ```text
 ./hello_test.go:6:18: too many arguments in call to Hello
@@ -186,11 +185,11 @@ Now run `go test`, you should have a compilation error
     want ()
 ```
 
-When using a statically typed language like Go it is important to _listen to the compiler_. The compiler understands how your code should snap together and work so you don't have to.
+При использовании статически типизированного языка, такого как Go, важно _прислушиваться к компилятору_. Компилятор понимает, как ваш код должен соединяться и работать, так что вам не придется это делать.
 
-In this case the compiler is telling you what you need to do to continue. We have to change our function `Hello` to accept an argument.
+В этом случае компилятор говорит вам, что нужно сделать, чтобы продолжить. Мы должны изменить нашу функцию `Hello`, чтобы она принимала аргумент.
 
-Edit the `Hello` function to accept an argument of type string
+Отредактируйте функцию `Hello`, чтобы она принимала аргумент типа `string`
 
 ```go
 func Hello(name string) string {
@@ -198,7 +197,7 @@ func Hello(name string) string {
 }
 ```
 
-If you try and run your tests again your `hello.go` will fail to compile because you're not passing an argument. Send in "world" to make it compile.
+Если вы снова попытаетесь запустить свои тесты, ваш `hello.go` не скомпилируется, потому что вы не передаете аргумент. Передайте "world", чтобы он скомпилировался.
 
 ```go
 func main() {
@@ -206,15 +205,15 @@ func main() {
 }
 ```
 
-Now when you run your tests, you should see something like
+Теперь, когда вы запустите свои тесты, вы должны увидеть что-то вроде
 
 ```text
 hello_test.go:10: got 'Hello, world' want 'Hello, Chris''
 ```
 
-We finally have a compiling program but it is not meeting our requirements according to the test.
+Наконец-то у нас есть компилирующаяся программа, но она не соответствует нашим требованиям согласно тесту.
 
-Let's make the test pass by using the name argument and concatenate it with `Hello,`
+Давайте заставим тест пройти, используя аргумент `name` и объединив его с `Hello,`
 
 ```go
 func Hello(name string) string {
@@ -222,27 +221,27 @@ func Hello(name string) string {
 }
 ```
 
-When you run the tests, they should now pass. Normally, as part of the TDD cycle, we should now _refactor_.
+Когда вы запустите тесты, они теперь должны пройти. Обычно, в рамках цикла TDD, мы должны теперь _рефакторить_.
 
-### A note on source control
+### Примечание о системе контроля версий
 
-At this point, if you are using source control \(which you should!\) I would
-`commit` the code as it is. We have working software backed by a test.
+На этом этапе, если вы используете систему контроля версий (а вы должны!), я бы
+`commit`-нул код как есть. У нас есть работающее программное обеспечение, подкрепленное тестом.
 
-I _wouldn't_ push to main though, because I plan to refactor next. It is nice
-to commit at this point in case you somehow get into a mess with refactoring - you can always go back to the working version.
+Я бы _не_ стал пушить в `main`, потому что планирую рефакторинг следующим. Приятно
+сделать коммит на этом этапе на случай, если вы как-то запутаетесь с рефакторингом — вы всегда сможете вернуться к рабочей версии.
 
-There's not a lot to refactor here, but we can introduce another language feature, _constants_.
+Здесь не так много для рефакторинга, но мы можем ввести еще одну языковую особенность — _константы_.
 
-### Constants
+### Константы
 
-Constants are defined like so
+Константы определяются так:
 
 ```go
 const englishHelloPrefix = "Hello, "
 ```
 
-We can now refactor our code
+Теперь мы можем рефакторить наш код
 
 ```go
 const englishHelloPrefix = "Hello, "
@@ -252,15 +251,15 @@ func Hello(name string) string {
 }
 ```
 
-After refactoring, re-run your tests to make sure you haven't broken anything.
+После рефакторинга, повторно запустите тесты, чтобы убедиться, что вы ничего не сломали.
 
-It's worth thinking about creating constants to capture the meaning of values and sometimes to aid performance.
+Стоит подумать о создании констант для фиксации значения и иногда для повышения производительности.
 
-## Hello, world... again
+## Hello, world... снова
 
-The next requirement is when our function is called with an empty string it defaults to printing "Hello, World", rather than "Hello, ".
+Следующее требование заключается в том, что если наша функция вызывается с пустой строкой, она по умолчанию должна выводить "Hello, World", а не "Hello, ".
 
-Start by writing a new failing test
+Начните с написания нового ошибочного теста
 
 ```go
 func TestHello(t *testing.T) {
@@ -283,11 +282,11 @@ func TestHello(t *testing.T) {
 }
 ```
 
-Here, we are introducing another tool in our testing arsenal: subtests. Sometimes, it is useful to group tests around a "thing" and then have subtests describing different scenarios.
+Здесь мы вводим еще один инструмент в наш арсенал тестирования: подтесты. Иногда полезно группировать тесты вокруг "вещи", а затем иметь подтесты, описывающие различные сценарии.
 
-A benefit of this approach is you can set up shared code that can be used in the other tests.
+Преимущество такого подхода заключается в том, что вы можете настроить общий код, который можно использовать в других тестах.
 
-While we have a failing test, let's fix the code, using an `if`.
+Пока у нас есть ошибочный тест, давайте исправим код, используя `if`.
 
 ```go
 const englishHelloPrefix = "Hello, "
@@ -300,13 +299,13 @@ func Hello(name string) string {
 }
 ```
 
-If we run our tests we should see it satisfies the new requirement and we haven't accidentally broken the other functionality.
+Если мы запустим наши тесты, мы должны увидеть, что они удовлетворяют новому требованию, и мы не сломали случайно другую функциональность.
 
-It is important that your tests _are clear specifications_ of what the code needs to do. But there is repeated code when we check if the message is what we expect.
+Важно, чтобы ваши тесты _были четкими спецификациями_ того, что должен делать код. Но есть повторяющийся код, когда мы проверяем, соответствует ли сообщение нашим ожиданиям.
 
-Refactoring is not _just_ for the production code!
+Рефакторинг предназначен не _только_ для production-кода!
 
-Now that the tests are passing, we can and should refactor our tests.
+Теперь, когда тесты проходят, мы можем и должны рефакторить наши тесты.
 
 ```go
 func TestHello(t *testing.T) {
@@ -332,47 +331,47 @@ func assertCorrectMessage(t testing.TB, got, want string) {
 }
 ```
 
-What have we done here?
+Что мы здесь сделали?
 
-We've refactored our assertion into a new function. This reduces duplication and improves the readability of our tests. We need to pass in `t *testing.T` so that we can tell the test code to fail when we need to.
+Мы рефакторили наше утверждение (assertion) в новую функцию. Это уменьшает дублирование и улучшает читаемость наших тестов. Нам нужно передать `t *testing.T`, чтобы мы могли указать тестовому коду завершиться ошибкой, когда нам это нужно.
 
-For helper functions, it's a good idea to accept a `testing.TB` which is an interface that `*testing.T` and `*testing.B` both satisfy, so you can call helper functions from a test, or a benchmark (don't worry if words like "interface" mean nothing to you right now, it will be covered later).
+Для вспомогательных функций рекомендуется принимать `testing.TB`, который является интерфейсом, удовлетворяющим как `*testing.T`, так и `*testing.B`, поэтому вы можете вызывать вспомогательные функции из теста или бенчмарка (не беспокойтесь, если слова вроде "интерфейс" пока ничего для вас не значат, это будет рассмотрено позже).
 
-`t.Helper()` is needed to tell the test suite that this method is a helper. By doing this, when it fails, the line number reported will be in our _function call_ rather than inside our test helper. This will help other developers track down problems more easily. If you still don't understand, comment it out, make a test fail and observe the test output. Comments in Go are a great way to add additional information to your code, or in this case, a quick way to tell the compiler to ignore a line. You can comment out the `t.Helper()` code by adding two forward slashes `//` at the beginning of the line. You should see that line turn grey or change to another color than the rest of your code to indicate it's now commented out.
+`t.Helper()` необходим для того, чтобы сообщить тестовому набору, что этот метод является вспомогательным. Делая это, при возникновении ошибки номер строки, указанный в отчете, будет находиться в нашем _вызове функции_, а не внутри нашей вспомогательной функции теста. Это поможет другим разработчикам легче отслеживать проблемы. Если вы все еще не понимаете, закомментируйте его, заставьте тест завершиться ошибкой и понаблюдайте за выводом теста. Комментарии в Go — отличный способ добавить дополнительную информацию к вашему коду, или, в данном случае, быстрый способ сказать компилятору игнорировать строку. Вы можете закомментировать код `t.Helper()`, добавив два косых слэша `//` в начале строки. Вы должны увидеть, как эта строка станет серой или изменит цвет по сравнению с остальным кодом, чтобы указать, что она теперь закомментирована.
 
-When you have more than one argument of the same type \(in our case two strings\) rather than having `(got string, want string)` you can shorten it to `(got, want string)`.
+Когда у вас есть более одного аргумента одного и того же типа (в нашем случае две строки), вместо `(got string, want string)` вы можете сократить это до `(got, want string)`.
 
-### Back to source control
+### Возвращаемся к системе контроля версий
 
-Now that we are happy with the code, I would amend the previous commit so that we only check in the lovely version of our code with its test.
+Теперь, когда мы довольны кодом, я бы дополнил предыдущий коммит, чтобы мы сохранили только прекрасную версию нашего кода с тестом.
 
-### Discipline
+### Дисциплина
 
-Let's go over the cycle again
+Давайте еще раз рассмотрим цикл:
 
-* Write a test
-* Make the compiler pass
-* Run the test, see that it fails and check the error message is meaningful
-* Write enough code to make the test pass
-* Refactor
+* Напишите тест
+* Убедитесь, что компилятор проходит
+* Запустите тест, убедитесь, что он завершается ошибкой, и проверьте, что сообщение об ошибке является осмысленным
+* Напишите достаточно кода, чтобы тест прошел
+* Рефакторинг
 
-On the face of it this may seem tedious but sticking to the feedback loop is important.
+На первый взгляд это может показаться утомительным, но придерживаться цикла обратной связи важно.
 
-Not only does it ensure that you have _relevant tests_, it helps ensure _you design good software_ by refactoring with the safety of tests.
+Это не только гарантирует, что у вас есть _релевантные тесты_, но и помогает _проектировать хорошее программное обеспечение_ путем рефакторинга с безопасностью тестов.
 
-Seeing the test fail is an important check because it also lets you see what the error message looks like. As a developer it can be very hard to work with a codebase when failing tests do not give a clear idea as to what the problem is.
+Видеть, как тест завершается ошибкой, — это важная проверка, потому что она также позволяет увидеть, как выглядит сообщение об ошибке. Разработчику может быть очень сложно работать с кодовой базой, когда неудачные тесты не дают четкого представления о том, в чем проблема.
 
-By ensuring your tests are _fast_ and setting up your tools so that running tests is simple you can get in to a state of flow when writing your code.
+Обеспечивая _быстроту_ ваших тестов и настраивая свои инструменты таким образом, чтобы запуск тестов был простым, вы можете войти в состояние потока при написании кода.
 
-By not writing tests, you are committing to manually checking your code by running your software, which breaks your state of flow. You won't be saving yourself any time, especially in the long run.
+Не написав тесты, вы обязуетесь вручную проверять свой код, запуская свое программное обеспечение, что нарушает ваше состояние потока. Вы не сэкономите себе время, особенно в долгосрочной перспективе.
 
-## Keep going! More requirements
+## Продолжаем! Больше требований
 
-Goodness me, we have more requirements. We now need to support a second parameter, specifying the language of the greeting. If a language is passed in that we do not recognise, just default to English.
+Боже мой, у нас еще больше требований. Теперь нам нужно поддерживать второй параметр, указывающий язык приветствия. Если передается язык, который мы не распознаем, по умолчанию используется английский.
 
-We should be confident that we can easily use TDD to flesh out this functionality!
+Мы должны быть уверены, что можем легко использовать TDD для реализации этой функциональности!
 
-Write a test for a user passing in Spanish. Add it to the existing suite.
+Напишите тест для пользователя, передающего испанский язык. Добавьте его в существующий набор тестов.
 
 ```go
 	t.Run("in Spanish", func(t *testing.T) {
@@ -382,7 +381,7 @@ Write a test for a user passing in Spanish. Add it to the existing suite.
 	})
 ```
 
-Remember not to cheat! _Test first_. When you try to run the test, the compiler _should_ complain because you are calling `Hello` with two arguments rather than one.
+Помните, не жульничайте! _Сначала тест_. Когда вы попытаетесь запустить тест, компилятор _должен_ пожаловаться, потому что вы вызываете `Hello` с двумя аргументами, а не с одним.
 
 ```text
 ./hello_test.go:27:19: too many arguments in call to Hello
@@ -390,7 +389,7 @@ Remember not to cheat! _Test first_. When you try to run the test, the compiler 
     want (string)
 ```
 
-Fix the compilation problems by adding another string argument to `Hello`
+Исправьте проблемы компиляции, добавив еще один строковый аргумент в `Hello`
 
 ```go
 func Hello(name string, language string) string {
@@ -401,7 +400,7 @@ func Hello(name string, language string) string {
 }
 ```
 
-When you try and run the test again it will complain about not passing through enough arguments to `Hello` in your other tests and in `hello.go`
+Когда вы снова попытаетесь запустить тест, он пожалуется на то, что в других тестах и в `hello.go` вы не передаете достаточно аргументов в `Hello`.
 
 ```text
 ./hello.go:15:19: not enough arguments in call to Hello
@@ -409,13 +408,13 @@ When you try and run the test again it will complain about not passing through e
     want (string, string)
 ```
 
-Fix them by passing through empty strings. Now all your tests should compile _and_ pass, apart from our new scenario
+Исправьте их, передав пустые строки. Теперь все ваши тесты должны компилироваться _и_ проходить, кроме нашего нового сценария.
 
 ```text
 hello_test.go:29: got 'Hello, Elodie' want 'Hola, Elodie'
 ```
 
-We can use `if` here to check the language is equal to "Spanish" and if so change the message
+Мы можем использовать `if` здесь, чтобы проверить, равен ли язык "Spanish", и если да, изменить сообщение.
 
 ```go
 func Hello(name string, language string) string {
@@ -430,9 +429,9 @@ func Hello(name string, language string) string {
 }
 ```
 
-The tests should now pass.
+Теперь тесты должны пройти.
 
-Now it is time to _refactor_. You should see some problems in the code, "magic" strings, some of which are repeated. Try and refactor it yourself, with every change make sure you re-run the tests to make sure your refactoring isn't breaking anything.
+Пришло время _рефакторинга_. Вы должны заметить некоторые проблемы в коде: "магические" строки, некоторые из которых повторяются. Попробуйте выполнить рефакторинг самостоятельно, и после каждого изменения убедитесь, что вы повторно запускаете тесты, чтобы убедиться, что ваш рефакторинг ничего не сломал.
 
 ```go
 	const spanish = "Spanish"
@@ -451,13 +450,13 @@ Now it is time to _refactor_. You should see some problems in the code, "magic" 
 	}
 ```
 
-### French
+### Французский
 
-* Write a test asserting that if you pass in `"French"` you get `"Bonjour, "`
-* See it fail, check the error message is easy to read
-* Do the smallest reasonable change in the code
+* Напишите тест, утверждающий, что если вы передадите `"French"`, вы получите `"Bonjour, "`
+* Убедитесь, что он завершается ошибкой, проверьте, что сообщение об ошибке легко читается
+* Внесите наименьшее разумное изменение в код
 
-You may have written something that looks roughly like this
+Вы могли написать что-то, что выглядит примерно так:
 
 ```go
 func Hello(name string, language string) string {
@@ -477,7 +476,7 @@ func Hello(name string, language string) string {
 
 ## `switch`
 
-When you have lots of `if` statements checking a particular value it is common to use a `switch` statement instead. We can use `switch` to refactor the code to make it easier to read and more extensible if we wish to add more language support later
+Когда у вас много операторов `if`, проверяющих конкретное значение, вместо них часто используется оператор `switch`. Мы можем использовать `switch` для рефакторинга кода, чтобы сделать его более читаемым и расширяемым, если мы захотим добавить поддержку других языков позже.
 
 ```go
 func Hello(name string, language string) string {
@@ -498,11 +497,11 @@ func Hello(name string, language string) string {
 }
 ```
 
-Write a test to now include a greeting in the language of your choice and you should see how simple it is to extend our _amazing_ function.
+Напишите тест, чтобы теперь включить приветствие на языке по вашему выбору, и вы увидите, как просто расширить нашу _потрясающую_ функцию.
 
-### one...last...refactor?
+### Еще... один... рефакторинг?
 
-You could argue that maybe our function is getting a little big. The simplest refactor for this would be to extract out some functionality into another function.
+Можно утверждать, что наша функция становится немного большой. Самым простым рефакторингом для этого было бы извлечение некоторой функциональности в другую функцию.
 
 ```go
 
@@ -536,36 +535,36 @@ func greetingPrefix(language string) (prefix string) {
 }
 ```
 
-A few new concepts:
+Несколько новых концепций:
 
-* In our function signature we have made a _named return value_ `(prefix string)`.
-* This will create a variable called `prefix` in your function.
-  * It will be assigned the "zero" value. This depends on the type, for example `int`s are 0 and for `string`s it is `""`.
-    * You can return whatever it's set to by just calling `return` rather than `return prefix`.
-  * This will display in the Go Doc for your function so it can make the intent of your code clearer.
-* `default` in the switch case will be branched to if none of the other `case` statements match.
-* The function name starts with a lowercase letter. In Go, public functions start with a capital letter, and private ones start with a lowercase letter. We don't want the internals of our algorithm exposed to the world, so we made this function private.
-* Also, we can group constants in a block instead of declaring them on their own line. For readability, it's a good idea to use a line between sets of related constants.
+* В сигнатуре нашей функции мы сделали _именованный возвращаемый параметр_ `(prefix string)`.
+* Это создаст переменную с именем `prefix` в вашей функции.
+  * Ей будет присвоено "нулевое" значение. Оно зависит от типа, например, для `int` это 0, а для `string` это `""`.
+    * Вы можете вернуть все, что в ней установлено, просто вызвав `return`, а не `return prefix`.
+  * Это будет отображаться в Go Doc для вашей функции, что может сделать намерение вашего кода более ясным.
+* `default` в операторе `switch` будет выбран, если ни один из других операторов `case` не совпадает.
+* Имя функции начинается со строчной буквы. В Go публичные функции начинаются с заглавной буквы, а приватные — со строчной. Мы не хотим, чтобы внутренности нашего алгоритма были видны всему миру, поэтому мы сделали эту функцию приватной.
+* Также мы можем группировать константы в блоке вместо объявления их на отдельной строке. Для читаемости рекомендуется использовать пустую строку между наборами связанных констант.
 
-## Wrapping up
+## Подводим итоги
 
-Who knew you could get so much out of `Hello, world`?
+Кто бы мог подумать, что из `Hello, world` можно извлечь так много?
 
-By now you should have some understanding of:
+К этому моменту вы должны иметь некоторое понимание:
 
-### Some of Go's syntax around
+### Некоторых синтаксических особенностей Go, касающихся
 
-* Writing tests
-* Declaring functions, with arguments and return types
-* `if`, `const` and `switch`
-* Declaring variables and constants
+* Написания тестов
+* Объявления функций, с аргументами и типами возвращаемых значений
+* `if`, `const` и `switch`
+* Объявления переменных и констант
 
-### The TDD process and _why_ the steps are important
+### Процесса TDD и _почему_ эти шаги важны
 
-* _Write a failing test and see it fail_ so we know we have written a _relevant_ test for our requirements and seen that it produces an _easy to understand description of the failure_
-* Writing the smallest amount of code to make it pass so we know we have working software
-* _Then_ refactor, backed with the safety of our tests to ensure we have well-crafted code that is easy to work with
+* _Напишите падающий тест и увидьте, как он падает_, чтобы мы знали, что написали _релевантный_ тест для наших требований и убедились, что он выдает _легко понятное описание ошибки_.
+* Напишите минимальное количество кода, чтобы тест прошел, чтобы мы знали, что у нас есть работающее программное обеспечение.
+* _Затем_ выполните рефакторинг, опираясь на безопасность наших тестов, чтобы убедиться, что у нас хорошо спроектированный код, с которым легко работать.
 
-In our case, we've gone from `Hello()` to `Hello("name")` and then to `Hello("name", "French")` in small, easy-to-understand steps.
+В нашем случае мы перешли от `Hello()` к `Hello("name")`, а затем к `Hello("name", "French")` небольшими, легко понятными шагами.
 
-Of course, this is trivial compared to "real-world" software, but the principles still stand. TDD is a skill that needs practice to develop, but by breaking problems down into smaller components that you can test, you will have a much easier time writing software.
+Конечно, это тривиально по сравнению с программным обеспечением "реального мира", но принципы остаются в силе. TDD — это навык, требующий практики для развития, но разбивая проблемы на более мелкие компоненты, которые можно протестировать, вы значительно упростите себе написание программного обеспечения.

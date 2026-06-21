@@ -1,16 +1,17 @@
+---
 # Sync
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/sync)**
+**[Весь код для этой главы вы можете найти здесь](https://github.com/quii/learn-go-with-tests/tree/main/sync)**
 
-We want to make a counter which is safe to use concurrently.
+Мы хотим создать счетчик, который безопасно использовать в конкурентной среде.
 
-We'll start with an unsafe counter and verify its behaviour works in a single-threaded environment.
+Мы начнем с небезопасного счетчика и убедимся, что его поведение работает в однопоточной среде.
 
-Then we'll exercise its unsafeness, with multiple goroutines trying to use the counter via a test, and fix it.
+Затем мы продемонстрируем его небезопасность, используя несколько горутин, пытающихся использовать счетчик через тест, и исправим это.
 
-## Write the test first
+## Сначала напишите тест
 
-We want our API to give us a method to increment the counter and then retrieve its value.
+Мы хотим, чтобы наш API предоставлял нам метод для инкрементирования счетчика, а затем получения его значения.
 
 ```go
 func TestCounter(t *testing.T) {
@@ -27,29 +28,29 @@ func TestCounter(t *testing.T) {
 }
 ```
 
-## Try to run the test
+## Попробуйте запустить тест
 
 ```
 ./sync_test.go:9:14: undefined: Counter
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод неудачного теста
 
-Let's define `Counter`.
+Давайте определим `Counter`.
 
 ```go
 type Counter struct {
 }
 ```
 
-Try again and it fails with the following
+Попробуйте снова, и он завершится ошибкой:
 
 ```
 ./sync_test.go:14:10: counter.Inc undefined (type Counter has no field or method Inc)
 ./sync_test.go:18:13: counter.Value undefined (type Counter has no field or method Value)
 ```
 
-So to finally make the test run we can define those methods
+Итак, чтобы наконец запустить тест, мы можем определить эти методы:
 
 ```go
 func (c *Counter) Inc() {
@@ -61,7 +62,7 @@ func (c *Counter) Value() int {
 }
 ```
 
-It should now run and fail
+Теперь он должен запуститься и завершиться ошибкой:
 
 ```
 === RUN   TestCounter
@@ -71,9 +72,9 @@ It should now run and fail
     	sync_test.go:27: got 0, want 3
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы он прошел
 
-This should be trivial for Go experts like us. We need to keep some state for the counter in our datatype and then increment it on every `Inc` call
+Это должно быть тривиально для таких экспертов Go, как мы. Нам нужно хранить некоторое состояние для счетчика в нашем типе данных, а затем инкрементировать его при каждом вызове `Inc`.
 
 ```go
 type Counter struct {
@@ -89,9 +90,9 @@ func (c *Counter) Value() int {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-There's not a lot to refactor but given we're going to write more tests around `Counter` we'll write a small assertion function `assertCount` so the test reads a bit clearer.
+Особого рефакторинга здесь нет, но, учитывая, что мы собираемся написать больше тестов для `Counter`, мы напишем небольшую функцию утверждения `assertCount`, чтобы тест читался немного яснее.
 
 ```go
 t.Run("incrementing the counter 3 times leaves it at 3", func(t *testing.T) {
@@ -112,11 +113,11 @@ func assertCounter(t testing.TB, got Counter, want int) {
 }
 ```
 
-## Next steps
+## Следующие шаги
 
-That was easy enough but now we have a requirement that it must be safe to use in a concurrent environment. We will need to write a failing test to exercise this.
+Это было достаточно легко, но теперь у нас есть требование, что его использование должно быть безопасным в конкурентной среде. Нам нужно будет написать тест, который завершится ошибкой, чтобы проверить это.
 
-## Write the test first
+## Сначала напишите тест
 
 ```go
 t.Run("it runs safely concurrently", func(t *testing.T) {
@@ -138,15 +139,15 @@ t.Run("it runs safely concurrently", func(t *testing.T) {
 })
 ```
 
-This will loop through our `wantedCount` and fire a goroutine to call `counter.Inc()`.
+Это будет перебирать наш `wantedCount` и запускать горутину для вызова `counter.Inc()`.
 
-We are using [`sync.WaitGroup`](https://golang.org/pkg/sync/#WaitGroup) which is a convenient way of synchronising concurrent processes.
+Мы используем [`sync.WaitGroup`](https://golang.org/pkg/sync/#WaitGroup), что является удобным способом синхронизации конкурентных процессов.
 
-> A WaitGroup waits for a collection of goroutines to finish. The main goroutine calls Add to set the number of goroutines to wait for. Then each of the goroutines runs and calls Done when finished. At the same time, Wait can be used to block until all goroutines have finished.
+> WaitGroup ожидает завершения выполнения набора горутин. Основная горутина вызывает Add, чтобы установить количество горутин для ожидания. Затем каждая из горутин запускается и вызывает Done по завершении. В то же время Wait может использоваться для блокировки до тех пор, пока все горутины не завершатся.
 
-By waiting for `wg.Wait()` to finish before making our assertions we can be sure all of our goroutines have attempted to `Inc` the `Counter`.
+Ожидая завершения `wg.Wait()` перед выполнением наших утверждений, мы можем быть уверены, что все наши горутины попытались `Inc` `Counter`.
 
-## Try to run the test
+## Попробуйте запустить тест
 
 ```
 === RUN   TestCounter/it_runs_safely_in_a_concurrent_envionment
@@ -156,13 +157,13 @@ By waiting for `wg.Wait()` to finish before making our assertions we can be sure
 FAIL
 ```
 
-The test will _probably_ fail with a different number, but nonetheless it demonstrates it does not work when multiple goroutines are trying to mutate the value of the counter at the same time.
+Тест _вероятно_ завершится с другим числом, но, тем не менее, он демонстрирует, что это не работает, когда несколько горутин пытаются одновременно изменить значение счетчика.
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы он прошел
 
-A simple solution is to add a lock to our `Counter`, ensuring only one goroutine can increment the counter at a time. Go's [`Mutex`](https://golang.org/pkg/sync/#Mutex) provides such a lock:
+Простое решение — добавить блокировку в наш `Counter`, гарантируя, что только одна горутина может инкрементировать счетчик за раз. [`Mutex`](https://golang.org/pkg/sync/#Mutex) Go предоставляет такую блокировку:
 
->A Mutex is a mutual exclusion lock. The zero value for a Mutex is an unlocked mutex.
+> Mutex — это блокировка взаимного исключения. Нулевое значение для Mutex — это разблокированный мьютекс.
 
 ```go
 type Counter struct {
@@ -177,13 +178,13 @@ func (c *Counter) Inc() {
 }
 ```
 
-What this means is any goroutine calling `Inc` will acquire the lock on `Counter` if they are first. All the other goroutines will have to wait for it to be `Unlock`ed before getting access.
+Это означает, что любая горутина, вызывающая `Inc`, получит блокировку `Counter`, если она будет первой. Всем остальным горутинам придется ждать ее `Unlock`а, прежде чем получить доступ.
 
-If you now re-run the test it should now pass because each goroutine has to wait its turn before making a change.
+Если вы теперь перезапустите тест, он должен пройти, потому что каждая горутина должна дождаться своей очереди, прежде чем вносить изменения.
 
-## I've seen other examples where the `sync.Mutex` is embedded into the struct.
+## Я видел другие примеры, где `sync.Mutex` встраивается в структуру.
 
-You may see examples like this
+Вы можете увидеть такие примеры:
 
 ```go
 type Counter struct {
@@ -192,7 +193,7 @@ type Counter struct {
 }
 ```
 
-It can be argued that it can make the code a bit more elegant.
+Можно утверждать, что это может сделать код немного более элегантным.
 
 ```go
 func (c *Counter) Inc() {
@@ -202,40 +203,40 @@ func (c *Counter) Inc() {
 }
 ```
 
-This _looks_ nice but while programming is a hugely subjective discipline, this is **bad and wrong**.
+Это _выглядит_ красиво, но, хотя программирование — это очень субъективная дисциплина, это **плохо и неправильно**.
 
-Sometimes people forget that embedding types means the methods of that type become _part of the public interface_; and you often will not want that. Remember that we should be very careful with our public APIs, the moment we make something public is the moment other code can couple themselves to it. We always want to avoid unnecessary coupling.
+Иногда люди забывают, что встраивание типов означает, что методы этого типа становятся _частью публичного интерфейса_; и вы часто не захотите этого. Помните, что мы должны быть очень осторожны с нашими публичными API, момент, когда мы делаем что-то публичным, это момент, когда другой код может привязаться к этому. Мы всегда хотим избежать ненужной связанности.
 
-Exposing `Lock` and `Unlock` is at best confusing but at worst potentially very harmful to your software if callers of your type start calling these methods.
+Предоставление `Lock` и `Unlock` в лучшем случае сбивает с толку, а в худшем случае может быть очень вредным для вашего программного обеспечения, если вызывающие стороны вашего типа начнут вызывать эти методы.
 
-![Showing how a user of this API can wrongly change the state of the lock](https://i.imgur.com/SWYNpwm.png)
+![Показано, как пользователь этого API может ошибочно изменить состояние блокировки](https://i.imgur.com/SWYNpwm.png)
 
-_This seems like a really bad idea_
+_Это кажется очень плохой идеей_
 
-## Copying mutexes
+## Копирование мьютексов
 
-Our test passes but our code is still a bit dangerous
+Наш тест проходит, но наш код все еще немного опасен.
 
-If you run `go vet` on your code you should get an error like the following
+Если вы запустите `go vet` на своем коде, вы должны получить ошибку, подобную следующей:
 
 ```
 sync/v2/sync_test.go:16: call of assertCounter copies lock value: v1.Counter contains sync.Mutex
 sync/v2/sync_test.go:39: assertCounter passes lock by value: v1.Counter contains sync.Mutex
 ```
 
-A look at the documentation of [`sync.Mutex`](https://golang.org/pkg/sync/#Mutex) tells us why
+Взглянув на документацию [`sync.Mutex`](https://golang.org/pkg/sync/#Mutex), мы узнаем почему:
 
-> A Mutex must not be copied after first use.
+> Mutex не должен быть скопирован после первого использования.
 
-When we pass our `Counter` (by value) to `assertCounter` it will try and create a copy of the mutex.
+Когда мы передаем наш `Counter` (по значению) в `assertCounter`, он попытается создать копию мьютекса.
 
-To solve this we should pass in a pointer to our `Counter` instead, so change the signature of `assertCounter`
+Чтобы решить эту проблему, мы должны вместо этого передать указатель на наш `Counter`, поэтому измените сигнатуру `assertCounter`:
 
 ```go
 func assertCounter(t testing.TB, got *Counter, want int)
 ```
 
-Our tests will no longer compile because we are trying to pass in a `Counter` rather than a `*Counter`. To solve this I prefer to create a constructor which shows readers of your API that it would be better to not initialise the type yourself.
+Наши тесты больше не будут компилироваться, потому что мы пытаемся передать `Counter`, а не `*Counter`. Чтобы решить это, я предпочитаю создать конструктор, который показывает читателям вашего API, что лучше не инициализировать тип самостоятельно.
 
 ```go
 func NewCounter() *Counter {
@@ -243,33 +244,34 @@ func NewCounter() *Counter {
 }
 ```
 
-Use this function in your tests when initialising `Counter`.
+Используйте эту функцию в своих тестах при инициализации `Counter`.
 
-## Wrapping up
+## Подведение итогов
 
-We've covered a few things from the [sync package](https://golang.org/pkg/sync/)
+Мы рассмотрели несколько аспектов из [пакета sync](https://golang.org/pkg/sync/):
 
-- `Mutex` allows us to add locks to our data
-- `WaitGroup` is a means of waiting for goroutines to finish jobs
+-   `Mutex` позволяет нам добавлять блокировки к нашим данным.
+-   `WaitGroup` — это способ ожидания завершения задач горутин.
 
-### When to use locks over channels and goroutines?
+### Когда использовать блокировки вместо каналов и горутин?
 
-[We've previously covered goroutines in the first concurrency chapter](concurrency.md) which let us write safe concurrent code so why would you use locks?
-[The go wiki has a page dedicated to this topic; Mutex Or Channel](https://go.dev/wiki/MutexOrChannel)
+[Ранее мы рассмотрели горутины в первой главе о конкурентности](concurrency.md), которые позволяют нам писать безопасный конкурентный код, так почему же вы должны использовать блокировки?
+[На вики Go есть страница, посвященная этой теме; Mutex или Канал](https://go.dev/wiki/MutexOrChannel).
 
-> A common Go newbie mistake is to over-use channels and goroutines just because it's possible, and/or because it's fun. Don't be afraid to use a sync.Mutex if that fits your problem best. Go is pragmatic in letting you use the tools that solve your problem best and not forcing you into one style of code.
+> Распространенная ошибка новичков в Go — чрезмерное использование каналов и горутин просто потому, что это возможно, и/или потому, что это весело. Не бойтесь использовать sync.Mutex, если он лучше всего подходит для вашей проблемы. Go прагматичен, позволяя вам использовать инструменты, которые лучше всего решают вашу проблему, и не навязывая один стиль кода.
 
-Paraphrasing:
+Перефразируя:
 
-- **Use channels when passing ownership of data**
-- **Use mutexes for managing state**
+-   **Используйте каналы при передаче владения данными.**
+-   **Используйте мьютексы для управления состоянием.**
 
 ### go vet
 
-Remember to use go vet in your build scripts as it can alert you to some subtle bugs in your code before they hit your poor users.
+Не забывайте использовать go vet в своих скриптах сборки, так как он может предупредить вас о некоторых тонких ошибках в вашем коде до того, как они достигнут ваших несчастных пользователей.
 
-### Don't use embedding because it's convenient
+### Не используйте встраивание из-за удобства
 
-- Think about the effect embedding has on your public API.
-- Do you _really_ want to expose these methods and have people coupling their own code to them?
-- With respect to mutexes, this could be potentially disastrous in very unpredictable and weird ways, imagine some nefarious code unlocking a mutex when it shouldn't be; this would cause some very strange bugs that will be hard to track down.
+-   Подумайте о влиянии встраивания на ваш публичный API.
+-   Вы _действительно_ хотите раскрывать эти методы и позволять людям связывать с ними свой код?
+-   Что касается мьютексов, это может быть потенциально катастрофическим очень непредсказуемым и странным образом. Представьте себе недобросовестный код, разблокирующий мьютекс, когда он не должен этого делать; это вызовет очень странные ошибки, которые будет трудно отследить.
+---

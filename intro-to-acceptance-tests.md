@@ -10,7 +10,7 @@
 
 Мы запускаем наше программное обеспечение на [Kubernetes](https://kubernetes.io/) (K8s). K8s завершает «стручки» (на практике - наше программное обеспечение) по разным причинам, и одна из них - когда мы выкладываем новый код, который хотим развернуть.
 
-Мы устанавливаем для себя высокие стандарты в отношении показателей  [DORA](https://cloud.google.com/blog/products/devops-sre/using-the-four-keys-to-measure-your-devops-performance), поэтому работаем так, чтобы внедрять небольшие, инкрементные улучшения и функции в производство по несколько раз в день.
+Мы устанавливаем для себя высокие стандарты в отношении показателей [DORA](https://cloud.google.com/blog/products/devops-sre/using-the-four-keys-to-measure-your-devops-performance), поэтому работаем так, чтобы внедрять небольшие, инкрементные улучшения и функции в производство по несколько раз в день.
 
 Когда k8s хочет завершить работу пода, он инициирует «[жизненный цикл завершения](https://cloud.google.com/blog/products/containers-kubernetes/kubernetes-best-practices-terminating-with-grace)», частью которого является отправка сигнала SIGTERM нашему программному обеспечению. Так k8s сообщает нашему коду:
 
@@ -18,111 +18,37 @@
 
 При нажатии SIGKILL любая работа, которую выполняла ваша программа, будет немедленно остановлена.
 
-## If you do not have grace
+## Если у вас нет грациозного завершения
 
-Depending on the nature of your software, if you ignore `SIGTERM`, you can run into problems.
+В зависимости от природы вашего программного обеспечения, если вы игнорируете `SIGTERM`, вы можете столкнуться с проблемами.
 
-Our specific problem was with in-flight HTTP requests. When an automated test was exercising our API, if k8s decided to stop the pod, the server would die, the test would not get a response from the server, and the test will fail.
+Наша конкретная проблема заключалась в HTTP-запросах, находящихся в процессе выполнения. Когда автоматизированный тест обращался к нашему API, если k8s решал остановить под, сервер погибал, тест не получал ответа от сервера, и тест завершался с ошибкой.
 
-This would trigger an alert in our incidents channel which requires a dev to stop what they're doing and address the problem. These intermittent failures are an annoying distraction for our team.
+Это вызывало бы оповещение в нашем канале инцидентов, что требовало от разработчика прервать свою работу и заняться проблемой. Эти прерывистые сбои являются досадным отвлечением для нашей команды.
 
-These problems are not unique to our tests. If a user sends a request to your system and the process gets terminated mid-flight, they'll likely be greeted with a 5xx HTTP error, not the kind of user experience you want to deliver.
+Эти проблемы не уникальны для наших тестов. Если пользователь отправляет запрос в вашу систему, и процесс завершается в процессе выполнения, он, скорее всего, столкнется с HTTP-ошибкой 5xx, что не является тем пользовательским опытом, который вы хотите предоставить.
 
-## When you have grace
+## Когда у вас есть грациозное завершение
 
-What we want to do is listen for `SIGTERM`, and rather than instantly killing the server, we want to:
+Что мы хотим сделать, так это слушать `SIGTERM`, и вместо немедленного завершения работы сервера, мы хотим:
 
-* Stop listening to any more requests
-* Allow any in-flight requests to finish
-* _Then_ terminate the process
+*   Прекратить прослушивание новых запросов
+*   Позволить всем выполняющимся запросам завершиться
+*   _Затем_ завершить процесс
 
-## How to have grace
+## Как обеспечить грациозное завершение
 
-Thankfully, Go already has a mechanism for gracefully shutting down a server with [net/http/Server.Shutdown](https://pkg.go.dev/net/http#Server.Shutdown).
+К счастью, Go уже имеет механизм для плавного завершения работы сервера с помощью [net/http/Server.Shutdown](https://pkg.go.dev/net/http#Server.Shutdown).
 
-> Shutdown gracefully shuts down the server without interrupting any active connections. Shutdown works by first closing all open listeners, then closing all idle connections, and then waiting indefinitely for connections to return to idle and then shut down. If the provided context expires before the shutdown is complete, Shutdown returns the context's error, otherwise it returns any error returned from closing the Server's underlying Listener(s).
+> `Shutdown` плавно завершает работу сервера, не прерывая активных соединений. `Shutdown` работает следующим образом: сначала закрывает все открытые слушатели, затем закрывает все неактивные соединения и затем неограниченно ждет, пока соединения вернутся в неактивное состояние, после чего завершает работу. Если предоставленный контекст истекает до завершения работы `Shutdown`, `Shutdown` возвращает ошибку контекста; в противном случае он возвращает любую ошибку, полученную при закрытии базового слушателя(ей) сервера.
 
-To handle `SIGTERM` we can use [os/signal.Notify](https://pkg.go.dev/os/signal#Notify), which will send any incoming signals to a channel we provide.
+Для обработки `SIGTERM` мы можем использовать [os/signal.Notify](https://pkg.go.dev/os/signal#Notify), который будет отправлять любые входящие сигналы в предоставленный нами канал.
 
-By using these two features from the standard library, you can listen for `SIGTERM` and shutdown gracefully.
+Используя эти две возможности из стандартной библиотеки, вы можете прослушивать `SIGTERM` и выполнять плавное завершение работы.
 
-## Graceful shutdown package
+## Пакет для плавного завершения работы
 
-To that end, I wrote [https://pkg.go.dev/github.com/quii/go-graceful-shutdown](https://pkg.go.dev/github.com/quii/go-graceful-shutdown). It provides a decorator function for a `*http.Server` to call its `Shutdown` method when a `SIGTERM` signal is detected
-
-```go
-func main() {
-	var (
-		ctx        = context.Background()
-		httpServer = &http.Server{Addr: ":8080", Handler: http.HandlerFunc(acceptancetests.SlowHandler)}
-		server     = gracefulshutdown.NewServer(httpServer)
-	)
-
-	if err := server.ListenAndServe(ctx); err != nil {
-		// this will typically happen if our responses aren't written before the ctx deadline, not much can be done
-		log.Fatalf("uh oh, didn't shutdown gracefully, some responses may have been lost %v", err)
-	}
-
-	// hopefully, you'll always see this instead
-	log.Println("shutdown gracefully! all responses were sent")
-}
-```
-
-The specifics around the code are not too important for this read, but it is worth having a quick look over the code before carrying on.
-
-## Tests and feedback loops
-
-When we wrote the `gracefulshutdown` package, we had unit tests to prove it behaves correctly which gave us the confidence to aggressively refactor. However, we still didn't feel "confident" that it **really** worked.
-
-We added a `cmd` package and made a real program to use the package we were writing. We'd manually fire it up, fire off an HTTP request to it, and then send a `SIGTERM` to see what would happen.
-
-**The engineer in you should be feeling uncomfortable with manual testing**. It's boring, it doesn't scale, it's inaccurate, and it's wasteful. If you're writing a package you intend to share, but also want to keep it simple and cheap to change, manual testing is not going to cut it.
-
-## Acceptance tests
-
-If you’ve read the rest of this book, you will have mostly written "unit tests". Unit tests are a fantastic tool for enabling fearless refactoring, driving good modular design, preventing regressions, and facilitating fast feedback.
-
-By their nature, they only test small parts of your system. Usually, unit tests alone are _not enough_ for an effective testing strategy. Remember, we want our systems to **always be shippable**. We can't rely on manual testing, so we need another kind of testing: **acceptance tests**.
-
-### What are they?
-
-Acceptance tests are a kind of "black-box test". They are sometimes referred to as "functional tests". They should exercise the system as a user of the system would.
-
-The term "black-box" refers to the idea that the test code has no access to the internals of the system, it can only use its public interface and make assertions on the behaviours it observes. This means they can only test the system as a whole.
-
-This is an advantageous trait because it means the tests exercise the system the same as a user would, it can't use any special workarounds that could make a test pass, but not actually prove what you need to prove. This is similar to the principle of preferring your unit test files to live inside a separate test package, for example, `package mypkg_test` rather than `package mypkg`.
-
-### Benefits of acceptance tests
-
-* When they pass, you know your entire system behaves how you want it to.
-* They are more accurate, quicker, and require less effort than manual testing.
-* When written well, they act as accurate, verified documentation of your system. It doesn't fall into the trap of documentation that diverges from the real behaviour of the system.
-* No mocking! It's all real.
-
-### Potential drawbacks vs unit tests
-
-* They are expensive to write.
-* They take longer to run.
-* They are dependent on the design of the system.
-* When they fail, they typically don't give you a root cause, and can be difficult to debug.
-* They don't give you feedback on the internal quality of your system. You could write total garbage and still make an acceptance test pass.
-* Not all scenarios are practical to exercise due to the black-box nature.
-
-For this reason, it is foolish to only rely on acceptance tests. They do not have many of the qualities unit tests have, and a system with a large number of acceptance tests will tend to suffer in terms of maintenance costs and poor lead time.
-
-#### Lead time?
-
-Lead time refers to how long it takes from a commit being merged into your main branch to it being deployed in production. This number can vary from weeks and even months for some teams to a matter of minutes. Again, at `$WORK`, we value DORA's findings and want to keep our lead time to under 10 minutes.
-
-A balanced testing approach is required for a reliable system with excellent lead time, and this is usually described in terms of the [Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html).
-
-## How to write basic acceptance tests
-
-How does this relate to the original problem? We've just written a package here, and it is entirely unit-testable.
-
-As I mentioned, the unit tests weren't quite giving us the confidence we needed. We want to be _really_ sure the package works when integrated with a real, running program. We should be able to automate the manual checks we were making.
-
-Let's take a look at the test program:
+Для этого я написал [https://pkg.go.dev/github.com/quii/go-graceful-shutdown](https://pkg.go.dev/github.com/quii/go-graceful-shutdown). Он предоставляет функцию-декоратор для `*http.Server`, которая вызывает его метод `Shutdown` при обнаружении сигнала `SIGTERM`.
 
 ```go
 func main() {
@@ -142,21 +68,95 @@ func main() {
 }
 ```
 
-You may have guessed that `SlowHandler` has a `time.Sleep` to delay responding, so I had time to `SIGTERM` and see what happens. The rest is fairly boilerplate:
+Детали кода не слишком важны для этой статьи, но стоит быстро просмотреть код, прежде чем продолжить.
 
-* Make a `net/http/Server`;
-* Wrap it in the library (see: [Decorator pattern](https://en.wikipedia.org/wiki/Decorator\_pattern));
-* Use the wrapped version to `ListenAndServe`.
+## Тесты и циклы обратной связи
 
-### High-level steps for the acceptance test
+Когда мы писали пакет `gracefulshutdown`, у нас были юнит-тесты, чтобы доказать, что он ведет себя корректно, что дало нам уверенность в агрессивном рефакторинге. Однако мы все еще не чувствовали себя «уверенными» в том, что он **действительно** работает.
 
-* Build the program
-* Run it (and wait for it listen on `8080`)
-* Send an HTTP request to the server
-* Before the server has a chance to send an HTTP response, send `SIGTERM`
-* See if we still get a response
+Мы добавили пакет `cmd` и создали реальную программу для использования пакета, который мы писали. Мы запускали ее вручную, отправляли ей HTTP-запрос, а затем отправляли `SIGTERM`, чтобы посмотреть, что произойдет.
 
-### Building and running the program
+**Инженер в вас должен чувствовать себя некомфортно при ручном тестировании**. Это скучно, не масштабируется, неточно и расточительно. Если вы пишете пакет, которым собираетесь делиться, но при этом хотите сохранить его простым и дешевым в изменении, ручное тестирование не подойдет.
+
+## Приёмочные тесты
+
+Если вы читали остальную часть этой книги, вы, скорее всего, писали «юнит-тесты». Юнит-тесты — это фантастический инструмент для обеспечения безбоязненного рефакторинга, создания хорошего модульного дизайна, предотвращения регрессий и ускорения обратной связи.
+
+По своей природе они тестируют только небольшие части вашей системы. Обычно одних юнит-тестов _недостаточно_ для эффективной стратегии тестирования. Помните, мы хотим, чтобы наши системы **всегда были готовы к отправке** (shippable). Мы не можем полагаться на ручное тестирование, поэтому нам нужен другой вид тестирования: **приёмочные тесты**.
+
+### Что это такое?
+
+Приёмочные тесты — это разновидность «тестов черного ящика». Иногда их называют «функциональными тестами». Они должны проверять систему так, как это делал бы пользователь системы.
+
+Термин «черный ящик» относится к идее, что тестовый код не имеет доступа к внутренним механизмам системы, он может использовать только ее публичный интерфейс и делать утверждения о поведении, которое он наблюдает. Это означает, что они могут тестировать систему только как единое целое.
+
+Это выгодное свойство, потому что оно означает, что тесты проверяют систему так же, как и пользователь, они не могут использовать какие-либо специальные обходные пути, которые могли бы заставить тест пройти, но на самом деле не доказать то, что вам нужно доказать. Это похоже на принцип предпочтения того, чтобы файлы ваших юнит-тестов находились в отдельном тестовом пакете, например, `package mypkg_test`, а не `package mypkg`.
+
+### Преимущества приёмочных тестов
+
+*   Когда они проходят, вы знаете, что вся ваша система ведет себя так, как вы хотите.
+*   Они точнее, быстрее и требуют меньше усилий, чем ручное тестирование.
+*   При хорошем написании они служат точной, проверенной документацией вашей системы. Она не попадает в ловушку документации, которая расходится с реальным поведением системы.
+*   Никакого мокирования! Все по-настоящему.
+
+### Потенциальные недостатки по сравнению с юнит-тестами
+
+*   Их дорого писать.
+*   Они занимают больше времени на выполнение.
+*   Они зависят от дизайна системы.
+*   Когда они завершаются с ошибкой, они обычно не дают вам первопричины, и их может быть трудно отлаживать.
+*   Они не дают вам обратной связи о внутреннем качестве вашей системы. Вы могли бы написать полный мусор и все равно заставить приёмочный тест пройти.
+*   Не все сценарии практично проверять из-за природы «черного ящика».
+
+По этой причине глупо полагаться только на приёмочные тесты. Они не обладают многими качествами юнит-тестов, и система с большим количеством приёмочных тестов, как правило, будет страдать с точки зрения затрат на обслуживание и плохого времени выполнения (lead time).
+
+#### Время выполнения (Lead time)?
+
+Время выполнения (Lead time) относится к тому, сколько времени проходит от слияния коммита в вашу основную ветку до его развертывания в продакшене. Это число может варьироваться от недель и даже месяцев для некоторых команд до считанных минут. Опять же, в `$WORK` мы ценим выводы DORA и хотим удерживать наше время выполнения менее 10 минут.
+
+Для надежной системы с отличным временем выполнения требуется сбалансированный подход к тестированию, и это обычно описывается в терминах [Пирамиды тестирования](https://martinfowler.com/articles/practical-test-pyramid.html).
+
+## Как писать базовые приёмочные тесты
+
+Как это связано с исходной проблемой? Мы только что написали пакет, и его можно полностью протестировать юнит-тестами.
+
+Как я уже упоминал, юнит-тесты не давали нам той уверенности, которая нам была нужна. Мы хотим быть _действительно_ уверены, что пакет работает при интеграции с реальной, запущенной программой. Мы должны иметь возможность автоматизировать ручные проверки, которые мы проводили.
+
+Давайте посмотрим на тестовую программу:
+
+```go
+func main() {
+	var (
+		ctx        = context.Background()
+		httpServer = &http.Server{Addr: ":8080", Handler: http.HandlerFunc(acceptancetests.SlowHandler)}
+		server     = gracefulshutdown.NewServer(httpServer)
+	)
+
+	if err := server.ListenAndServe(ctx); err != nil {
+		// this will typically happen if our responses aren't written before the ctx deadline, not much can be done
+		log.Fatalf("uh oh, didn't shutdown gracefully, some responses may have been lost %v", err)
+	}
+
+	// hopefully, you'll always see this instead
+	log.Println("shutdown gracefully! all responses were sent")
+}
+```
+
+Вы могли догадаться, что `SlowHandler` содержит `time.Sleep` для задержки ответа, чтобы у меня было время отправить `SIGTERM` и посмотреть, что произойдет. Остальное — довольно стандартный код:
+
+*   Создать `net/http/Server`;
+*   Обернуть его в библиотеку (см.: [Шаблон «Декоратор»](https://en.wikipedia.org/wiki/Decorator\_pattern));
+*   Использовать обернутую версию для `ListenAndServe`.
+
+### Высокоуровневые шаги для приёмочного теста
+
+*   Собрать программу
+*   Запустить ее (и дождаться, пока она начнет прослушивать порт `8080`)
+*   Отправить HTTP-запрос на сервер
+*   Прежде чем сервер успеет отправить HTTP-ответ, отправить `SIGTERM`
+*   Проверить, получили ли мы все еще ответ
+
+### Сборка и запуск программы
 
 ```go
 package acceptancetests
@@ -260,23 +260,23 @@ func randomString(n int) string {
 }
 ```
 
-`LaunchTestProgram` is responsible for:
+`LaunchTestProgram` отвечает за:
 
-* building the program
-* launching the program
-* waiting for it to listen on port `8080`
-* providing a `cleanup` function to kill the program and delete it to ensure that when our tests finish, we're left in a clean state
-* providing an `interrupt` function to send the program a `SIGTERM` to let us test the behaviour
+*   сборку программы
+*   запуск программы
+*   ожидание, пока она начнет прослушивать порт `8080`
+*   предоставление функции `cleanup` для остановки программы и ее удаления, чтобы гарантировать, что после завершения наших тестов мы остаемся в чистом состоянии
+*   предоставление функции `interrupt` для отправки программе `SIGTERM`, чтобы мы могли протестировать поведение
 
-Admittedly, this is not the nicest code in the world, but just focus on the exported function `LaunchTestProgram`, the un-exported functions it calls are uninteresting boilerplate.
+Признаюсь, это не самый красивый код в мире, но просто сосредоточьтесь на экспортируемой функции `LaunchTestProgram`; неэкспортируемые функции, которые она вызывает, являются неинтересным шаблонным кодом.
 
-As discussed, acceptance testing tends to be trickier to set up. This code does make the _testing_ code substantially simpler to read, and often with acceptance tests once you've written the ceremonious code, it's done, and you can forget about it.
+Как уже обсуждалось, приёмочное тестирование, как правило, сложнее настроить. Этот код делает код _тестирования_ значительно более простым для чтения, и часто с приёмочными тестами, как только вы написали церемониальный код, все готово, и вы можете забыть о нем.
 
-### The acceptance test(s)
+### Приёмочный тест(ы)
 
-We wanted to have two acceptance tests for two programs, one with graceful shutdown and one without, so we, and the readers can see the difference in behaviour. With `LaunchTestProgram` to build and run the programs, it's quite simple to write acceptance tests for both, and we benefit from re-use with some helper functions.
+Мы хотели иметь два приёмочных теста для двух программ, одну с плавным завершением работы и одну без него, чтобы мы и читатели могли увидеть разницу в поведении. С `LaunchTestProgram` для сборки и запуска программ довольно просто писать приёмочные тесты для обеих, и мы получаем выгоду от повторного использования с некоторыми вспомогательными функциями.
 
-Here is the test for the server _with_ a graceful shutdown, [you can find the test without on GitHub](https://github.com/quii/go-graceful-shutdown/blob/main/acceptancetests/withoutgracefulshutdown/main\_test.go)
+Вот тест для сервера _с_ плавным завершением работы, [тест без него вы можете найти на GitHub](https://github.com/quii/go-graceful-shutdown/blob/main/acceptancetests/withoutgracefulshutdown/main\_test.go)
 
 ```go
 package main
@@ -316,9 +316,9 @@ func TestGracefulShutdown(t *testing.T) {
 }
 ```
 
-With the setup encapsulated away, the tests are comprehensive, describe the behaviour, and are relatively easy to follow.
+Благодаря инкапсуляции настроек, тесты являются исчерпывающими, описывают поведение и относительно легко читаются.
 
-`assert.CanGet/CantGet` are helper functions I made to DRY up this common assertion for this suite.
+`assert.CanGet/CantGet` — это вспомогательные функции, которые я создал, чтобы избежать дублирования (DRY) этого общего утверждения для этого набора тестов.
 
 ```go
 func CanGet(t testing.TB, url string) {
@@ -343,15 +343,15 @@ func CanGet(t testing.TB, url string) {
 }
 ```
 
-This will fire off a `GET` to `URL` on a goroutine, and if it responds without error before 3 seconds, then it will not fail. `CantGet` is omitted for brevity, [but you can view it on GitHub here](https://github.com/quii/go-graceful-shutdown/blob/main/assert/assert.go#L61).
+Это отправит `GET`-запрос по `URL` в горутине, и если он ответит без ошибки в течение 3 секунд, то не завершится сбоем. `CantGet` опущен для краткости, [но вы можете посмотреть его на GitHub здесь](https://github.com/quii/go-graceful-shutdown/blob/main/assert/assert.go#L61).
 
-It's important to note again, Go has all the tools you need to write acceptance tests out of the box. You don't _need_ a special framework to build acceptance tests.
+Важно отметить еще раз: Go имеет все необходимые инструменты для написания приёмочных тестов «из коробки». Вам не _нужен_ специальный фреймворк для создания приёмочных тестов.
 
-### Small investment with a big pay-off
+### Небольшие инвестиции с большой отдачей
 
-With these tests, readers can look at the example programs and be confident that the example _actually_ works, so they can be confident in the package's claims.
+С помощью этих тестов читатели могут ознакомиться с примерами программ и быть уверенными, что пример _действительно_ работает, и, следовательно, быть уверенными в заявлениях пакета.
 
-Importantly, as the author, we get **fast feedback** and **massive confidence** that the package works in a real-world setting.
+Важно, что как автор, мы получаем **быструю обратную связь** и **огромную уверенность** в том, что пакет работает в реальных условиях.
 
 ```shell
 go test -count=1 ./...
@@ -362,30 +362,30 @@ ok  	github.com/quii/go-graceful-shutdown/acceptancetests/withoutgracefulshutdow
 ?   	github.com/quii/go-graceful-shutdown/assert	[no test files]
 ```
 
-## Wrapping up
+## Подведение итогов
 
-In this blog post, we introduced acceptance tests into your testing tool belt. They are invaluable when you start to build real systems and are an important complement to your unit tests.
+В этой статье мы добавили приёмочные тесты в ваш инструментарий тестирования. Они бесценны, когда вы начинаете создавать реальные системы, и являются важным дополнением к вашим юнит-тестам.
 
-The nature of _how_ to write acceptance tests depends on the system you're building, but the principles stay the same. Treat your system like a "black box". If you're making a website, your tests should act like a user, so you'll want to use a headless web browser like [Selenium](https://www.selenium.dev/), to click on links, fill in forms, etc. For a RESTful API, you'll send HTTP requests using a client.
+Природа того, _как_ писать приёмочные тесты, зависит от системы, которую вы создаете, но принципы остаются прежними. Относитесь к вашей системе как к «черному ящику». Если вы делаете веб-сайт, ваши тесты должны вести себя как пользователь, поэтому вам захочется использовать безголовый веб-браузер, такой как [Selenium](https://www.selenium.dev/), чтобы нажимать на ссылки, заполнять формы и т. д. Для RESTful API вы будете отправлять HTTP-запросы с помощью клиента.
 
-### Taking it further for more complicated systems
+### Дальнейшие шаги для более сложных систем
 
-Non-trivial systems don't tend to be single-process applications like the one we've discussed. Typically, you'll depend on other systems such as a database. For these scenarios, you'll need to automate a local environment to test with. Tools like [docker-compose](https://docs.docker.com/compose/) are useful for spinning up containers of the environment you need to run your system locally.
+Нетривиальные системы, как правило, не являются однопроцессными приложениями, подобными тому, что мы обсуждали. Обычно вы будете зависеть от других систем, таких как база данных. Для этих сценариев вам потребуется автоматизировать локальную среду для тестирования. Такие инструменты, как [docker-compose](https://docs.docker.com/compose/), полезны для запуска контейнеров среды, необходимой для локального запуска вашей системы.
 
-### The next chapter
+### Следующая глава
 
-In this post the acceptance test was written retrospectively. However, in [Growing Object-Oriented Software](http://www.growing-object-oriented-software.com) the authors show that we can use acceptance tests in a test-driven approach to act as a "north-star" to guide our efforts.
+В этой статье приёмочный тест был написан ретроспективно. Однако в книге [Growing Object-Oriented Software](http://www.growing-object-oriented-software.com) авторы показывают, что мы можем использовать приёмочные тесты в тестово-ориентированном подходе, чтобы они служили «полярной звездой», направляющей наши усилия.
 
-As systems get more complex, the costs of writing and maintaining acceptance tests can quickly spiral out of control. There are countless stories of development teams being hamstrung by expensive acceptance test suites.
+По мере усложнения систем затраты на написание и поддержку приёмочных тестов могут быстро выйти из-под контроля. Существуют бесчисленные истории о том, как команды разработчиков были связаны по рукам и ногам дорогими наборами приёмочных тестов.
 
-The next chapter will introduce using acceptance test to guide our design along with principles and techniques for managing the costs of acceptance tests.
+В следующей главе будет рассказано об использовании приёмочных тестов для руководства нашим дизайном, а также о принципах и методах управления затратами на приёмочные тесты.
 
-### Improving the quality of open-source
+### Повышение качества открытого исходного кода
 
-If you're writing packages you intend to share, I'd encourage you to create simple example programs demonstrating what your package does and invest time in having simple-to-follow acceptance tests to give yourself, and potential users of your work, confidence.
+Если вы пишете пакеты, которыми собираетесь делиться, я бы посоветовал вам создавать простые примеры программ, демонстрирующие возможности вашего пакета, и вложить время в написание простых для понимания приёмочных тестов, чтобы дать уверенность себе и потенциальным пользователям вашей работы.
 
-Like [Testable Examples](https://go.dev/blog/examples), seeing this little extra effort in developer experience goes a long way toward building trust in your work, and will reduce your own maintenance costs.
+Как и в случае с [Testable Examples](https://go.dev/blog/examples), это небольшое дополнительное усилие в улучшении опыта разработчика значительно способствует укреплению доверия к вашей работе и сократит ваши собственные затраты на обслуживание.
 
-## Recruitment plug for `$WORK`
+## Объявление о найме в `$WORK`
 
-If you fancy working in an environment with other engineers solving interesting problems, live near or around London or Porto, and enjoy the contents of this chapter and book - please [reach out to me on Twitter](https://twitter.com/quii), and maybe we can work together soon!
+Если вам нравится работать в среде с другими инженерами, решающими интересные проблемы, вы живете рядом или в районе Лондона или Порту, и вам нравится содержание этой главы и книги — пожалуйста, [свяжитесь со мной в Twitter](https://twitter.com/quii), и, возможно, мы скоро сможем работать вместе!

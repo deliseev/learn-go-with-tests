@@ -1,12 +1,12 @@
-# Structs, methods & interfaces
+# Структуры, методы и интерфейсы
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/structs)**
+**[Весь код для этой главы вы можете найти здесь](https://github.com/quii/learn-go-with-tests/tree/main/structs)**
 
-Suppose that we need some geometry code to calculate the perimeter of a rectangle given a height and width. We can write a `Perimeter(width float64, height float64)` function, where `float64` is for floating-point numbers like `123.45`.
+Предположим, нам нужен геометрический код для вычисления периметра прямоугольника по заданной высоте и ширине. Мы можем написать функцию `Perimeter(width float64, height float64)`, где `float64` предназначен для чисел с плавающей запятой, таких как `123.45`.
 
-The TDD cycle should be pretty familiar to you by now.
+Цикл TDD должен быть вам уже достаточно знаком.
 
-## Write the test first
+## Сначала напишите тест
 
 ```go
 func TestPerimeter(t *testing.T) {
@@ -19,13 +19,13 @@ func TestPerimeter(t *testing.T) {
 }
 ```
 
-Notice the new format string? The `f` is for our `float64` and the `.2` means print 2 decimal places.
+Заметили новый формат вывода? `f` предназначен для нашего `float64`, а `.2` означает печать двух знаков после запятой.
 
-## Try to run the test
+## Попробуйте запустить тест
 
 `./shapes_test.go:6:9: undefined: Perimeter`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод упавшего теста
 
 ```go
 func Perimeter(width float64, height float64) float64 {
@@ -33,9 +33,9 @@ func Perimeter(width float64, height float64) float64 {
 }
 ```
 
-Results in `shapes_test.go:10: got 0.00 want 40.00`.
+В результате получаем `shapes_test.go:10: got 0.00 want 40.00`.
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
 ```go
 func Perimeter(width float64, height float64) float64 {
@@ -43,11 +43,11 @@ func Perimeter(width float64, height float64) float64 {
 }
 ```
 
-So far, so easy. Now let's create a function called `Area(width, height float64)` which returns the area of a rectangle.
+Пока всё легко. Теперь давайте создадим функцию `Area(width, height float64)`, которая возвращает площадь прямоугольника.
 
-Try to do it yourself, following the TDD cycle.
+Попробуйте сделать это самостоятельно, следуя циклу TDD.
 
-You should end up with tests like this
+В итоге у вас должны получиться тесты, похожие на эти:
 
 ```go
 func TestPerimeter(t *testing.T) {
@@ -69,7 +69,7 @@ func TestArea(t *testing.T) {
 }
 ```
 
-And code like this
+И код, похожий на этот:
 
 ```go
 func Perimeter(width float64, height float64) float64 {
@@ -81,15 +81,15 @@ func Area(width float64, height float64) float64 {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-Our code does the job, but it doesn't contain anything explicit about rectangles. An unwary developer might try to supply the width and height of a triangle to these functions without realising they will return the wrong answer.
+Наш код выполняет свою задачу, но он не содержит ничего явного о прямоугольниках. Невнимательный разработчик может попытаться передать этим функциям ширину и высоту треугольника, не понимая, что они вернут неверный результат.
 
-We could just give the functions more specific names like `RectangleArea`. A neater solution is to define our own _type_ called `Rectangle` which encapsulates this concept for us.
+Мы могли бы просто дать функциям более конкретные имена, например `RectangleArea`. Более элегантное решение — определить свой собственный _тип_ под названием `Rectangle`, который инкапсулирует это понятие для нас.
 
-We can create a simple type using a **struct**. [A struct](https://golang.org/ref/spec#Struct_types) is just a named collection of fields where you can store data.
+Мы можем создать простой тип, используя **структуру**. [Структура](https://golang.org/ref/spec#Struct_types) — это просто именованная коллекция полей, где вы можете хранить данные.
 
-Declare a struct in your `shapes.go` file like this
+Объявите структуру в вашем файле `shapes.go` следующим образом:
 
 ```go
 type Rectangle struct {
@@ -98,7 +98,7 @@ type Rectangle struct {
 }
 ```
 
-Now let's refactor the tests to use `Rectangle` instead of plain `float64`s.
+Теперь давайте реорганизуем тесты, чтобы использовать `Rectangle` вместо обычных `float64`.
 
 ```go
 func TestPerimeter(t *testing.T) {
@@ -122,7 +122,7 @@ func TestArea(t *testing.T) {
 }
 ```
 
-Remember to run your tests before attempting to fix. The tests should show a helpful error like
+Не забудьте запустить тесты, прежде чем пытаться исправить ошибки. Тесты должны показать полезную ошибку, например:
 
 ```text
 ./shapes_test.go:7:18: not enough arguments in call to Perimeter
@@ -130,9 +130,9 @@ Remember to run your tests before attempting to fix. The tests should show a hel
     want (float64, float64)
 ```
 
-You can access the fields of a struct with the syntax of `myStruct.field`.
+Вы можете получить доступ к полям структуры с помощью синтаксиса `myStruct.field`.
 
-Change the two functions to fix the test.
+Измените две функции, чтобы исправить тест.
 
 ```go
 func Perimeter(rectangle Rectangle) float64 {
@@ -144,11 +144,11 @@ func Area(rectangle Rectangle) float64 {
 }
 ```
 
-I hope you'll agree that passing a `Rectangle` to a function conveys our intent more clearly, but there are more benefits of using structs that we will cover later.
+Надеюсь, вы согласитесь, что передача `Rectangle` в функцию более ясно передаёт наше намерение, но использование структур даёт и другие преимущества, которые мы рассмотрим позже.
 
-Our next requirement is to write an `Area` function for circles.
+Наше следующее требование — написать функцию `Area` для кругов.
 
-## Write the test first
+## Сначала напишите тест
 
 ```go
 func TestArea(t *testing.T) {
@@ -176,17 +176,17 @@ func TestArea(t *testing.T) {
 }
 ```
 
-As you can see, the `f` has been replaced by `g`, with good reason.
-Use of `g` will print a more precise decimal number in the error message \([fmt options](https://golang.org/pkg/fmt/)\).
-For example, using a radius of 1.5 in a circle area calculation, `f` would show `7.068583` whereas `g` would show `7.0685834705770345`.
+Как видите, `f` был заменен на `g`, и это имеет вескую причину.
+Использование `g` выведет более точное десятичное число в сообщении об ошибке ([опции форматирования fmt](https://golang.org/pkg/fmt/)).
+Например, при использовании радиуса 1.5 в расчете площади круга `f` покажет `7.068583`, тогда как `g` покажет `7.0685834705770345`.
 
-## Try to run the test
+## Попробуйте запустить тест
 
 `./shapes_test.go:28:13: undefined: Circle`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод упавшего теста
 
-We need to define our `Circle` type.
+Нам нужно определить наш тип `Circle`.
 
 ```go
 type Circle struct {
@@ -194,36 +194,36 @@ type Circle struct {
 }
 ```
 
-Now try to run the tests again
+Теперь попробуйте снова запустить тесты:
 
 `./shapes_test.go:29:14: cannot use circle (type Circle) as type Rectangle in argument to Area`
 
-Some programming languages allow you to do something like this:
+Некоторые языки программирования позволяют делать что-то подобное:
 
 ```go
 func Area(circle Circle) float64       {}
 func Area(rectangle Rectangle) float64 {}
 ```
 
-But you cannot in Go
+Но в Go так нельзя:
 
 `./shapes.go:20:32: Area redeclared in this block`
 
-We have two choices:
+У нас есть два варианта:
 
-* You can have functions with the same name declared in different _packages_. So we could create our `Area(Circle)` in a new package, but that feels overkill here.
-* We can define [_methods_](https://golang.org/ref/spec#Method_declarations) on our newly defined types instead.
+*   Вы можете объявлять функции с одинаковым именем в разных _пакетах_. Таким образом, мы могли бы создать нашу `Area(Circle)` в новом пакете, но здесь это кажется излишним.
+*   Вместо этого мы можем определить [_методы_](https://golang.org/ref/spec#Method_declarations) для наших недавно определённых типов.
 
-### What are methods?
+### Что такое методы?
 
-So far we have only been writing _functions_ but we have been using some methods. When we call `t.Errorf` we are calling the method `Errorf` on the instance of our `t` \(`testing.T`\).
+До сих пор мы писали только _функции_, но использовали некоторые методы. Когда мы вызываем `t.Errorf`, мы вызываем метод `Errorf` на экземпляре нашего `t` (`testing.T`).
 
-A method is a function with a receiver.
-A method declaration binds an identifier, the method name, to a method, and associates the method with the receiver's base type.
+Метод — это функция с получателем (receiver).
+Объявление метода связывает идентификатор, имя метода, с методом и ассоциирует метод с базовым типом получателя.
 
-Methods are very similar to functions but they are called by invoking them on an instance of a particular type. Where you can just call functions wherever you like, such as `Area(rectangle)` you can only call methods on "things".
+Методы очень похожи на функции, но они вызываются путём их обращения к экземпляру определённого типа. Если вы можете вызывать функции где угодно, например `Area(rectangle)`, то методы можно вызывать только на "объектах".
 
-An example will help so let's change our tests first to call methods instead and then fix the code.
+Пример поможет, поэтому давайте сначала изменим наши тесты, чтобы они вызывали методы, а затем исправим код.
 
 ```go
 func TestArea(t *testing.T) {
@@ -251,7 +251,7 @@ func TestArea(t *testing.T) {
 }
 ```
 
-If we try to run the tests, we get
+Если мы попробуем запустить тесты, то получим:
 
 ```text
 ./shapes_test.go:19:19: rectangle.Area undefined (type Rectangle has no field or method Area)
@@ -260,11 +260,11 @@ If we try to run the tests, we get
 
 > type Circle has no field or method Area
 
-I would like to reiterate how great the compiler is here. It is so important to take the time to slowly read the error messages you get, it will help you in the long run.
+Я хотел бы ещё раз подчеркнуть, насколько прекрасен здесь компилятор. Очень важно уделять время медленному чтению сообщений об ошибках, это поможет вам в долгосрочной перспективе.
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод упавшего теста
 
-Let's add some methods to our types
+Давайте добавим несколько методов к нашим типам:
 
 ```go
 type Rectangle struct {
@@ -285,21 +285,21 @@ func (c Circle) Area() float64 {
 }
 ```
 
-The syntax for declaring methods is almost the same as functions and that's because they're so similar. The only difference is the syntax of the method receiver `func (receiverName ReceiverType) MethodName(args)`.
+Синтаксис объявления методов почти такой же, как и функций, потому что они очень похожи. Единственное отличие — это синтаксис получателя метода `func (receiverName ReceiverType) MethodName(args)`.
 
-When your method is called on a variable of that type, you get your reference to its data via the `receiverName` variable. In many other programming languages this is done implicitly and you access the receiver via `this`.
+Когда ваш метод вызывается на переменной этого типа, вы получаете ссылку на её данные через переменную `receiverName`. Во многих других языках программирования это делается неявно, и вы обращаетесь к получателю через `this`.
 
-It is a convention in Go to have the receiver variable be the first letter of the type.
+В Go принято, чтобы переменная-получатель была первой буквой типа.
 
 ```
 r Rectangle
 ```
 
-If you try to re-run the tests they should now compile and give you some failing output.
+Если вы попробуете перезапустить тесты, они должны скомпилироваться и выдать несколько ошибок.
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
-Now let's make our rectangle tests pass by fixing our new method
+Теперь давайте добьёмся прохождения тестов для прямоугольника, исправив наш новый метод:
 
 ```go
 func (r Rectangle) Area() float64 {
@@ -307,9 +307,9 @@ func (r Rectangle) Area() float64 {
 }
 ```
 
-If you re-run the tests the rectangle tests should be passing but circle should still be failing.
+Если вы перезапустите тесты, то тесты для прямоугольника должны пройти, но для круга всё ещё будут сбоить.
 
-To make circle's `Area` function pass we will borrow the `Pi` constant from the `math` package \(remember to import it\).
+Чтобы функция `Area` для круга прошла тест, мы воспользуемся константой `Pi` из пакета `math` (не забудьте импортировать его).
 
 ```go
 func (c Circle) Area() float64 {
@@ -317,19 +317,19 @@ func (c Circle) Area() float64 {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-There is some duplication in our tests.
+В наших тестах есть некоторое дублирование.
 
-All we want to do is take a collection of _shapes_, call the `Area()` method on them and then check the result.
+Всё, что мы хотим сделать, это взять коллекцию _фигур_, вызвать на них метод `Area()` и затем проверить результат.
 
-We want to be able to write some kind of `checkArea` function that we can pass both `Rectangle`s and `Circle`s to, but fail to compile if we try to pass in something that isn't a shape.
+Мы хотим иметь возможность написать некую функцию `checkArea`, которой мы можем передавать как `Rectangle`, так и `Circle`, но которая не будет компилироваться, если мы попытаемся передать что-то, что не является фигурой.
 
-With Go, we can codify this intent with **interfaces**.
+В Go мы можем выразить это намерение с помощью **интерфейсов**.
 
-[Interfaces](https://golang.org/ref/spec#Interface_types) are a very powerful concept in statically typed languages like Go because they allow you to make functions that can be used with different types and create highly-decoupled code whilst still maintaining type-safety.
+[Интерфейсы](https://golang.org/ref/spec#Interface_types) — это очень мощная концепция в статически типизированных языках, таких как Go, потому что они позволяют создавать функции, которые могут использоваться с различными типами, и писать сильно декомпозированный код, сохраняя при этом типобезопасность.
 
-Let's introduce this by refactoring our tests.
+Давайте внедрим это, рефакторизируя наши тесты.
 
 ```go
 func TestArea(t *testing.T) {
@@ -355,9 +355,9 @@ func TestArea(t *testing.T) {
 }
 ```
 
-We are creating a helper function like we have in other exercises but this time we are asking for a `Shape` to be passed in. If we try to call this with something that isn't a shape, then it will not compile.
+Мы создаём вспомогательную функцию, как и в других упражнениях, но на этот раз мы просим передать `Shape`. Если мы попытаемся вызвать её с чем-то, что не является фигурой, то она не скомпилируется.
 
-How does something become a shape? We just tell Go what a `Shape` is using an interface declaration
+Как что-то становится фигурой? Мы просто сообщаем Go, что такое `Shape`, используя объявление интерфейса:
 
 ```go
 type Shape interface {
@@ -365,34 +365,34 @@ type Shape interface {
 }
 ```
 
-We're creating a new `type` just like we did with `Rectangle` and `Circle` but this time it is an `interface` rather than a `struct`.
+Мы создаём новый `type` так же, как мы делали с `Rectangle` и `Circle`, но на этот раз это `interface`, а не `struct`.
 
-Once you add this to the code, the tests will pass.
+Как только вы добавите это в код, тесты пройдут.
 
-### Wait, what?
+### Погодите, что?
 
-This is quite different to interfaces in most other programming languages. Normally you have to write code to say `My type Foo implements interface Bar`.
+Это довольно сильно отличается от интерфейсов в большинстве других языков программирования. Обычно вы должны писать код, чтобы сказать `My type Foo implements interface Bar`.
 
-But in our case
+Но в нашем случае:
 
-* `Rectangle` has a method called `Area` that returns a `float64` so it satisfies the `Shape` interface
-* `Circle` has a method called `Area` that returns a `float64` so it satisfies the `Shape` interface
-* `string` does not have such a method, so it doesn't satisfy the interface
-* etc.
+*   `Rectangle` имеет метод `Area`, который возвращает `float64`, поэтому он удовлетворяет интерфейсу `Shape`.
+*   `Circle` имеет метод `Area`, который возвращает `float64`, поэтому он удовлетворяет интерфейсу `Shape`.
+*   `string` не имеет такого метода, поэтому он не удовлетворяет интерфейсу.
+*   и т.д.
 
-In Go **interface resolution is implicit**. If the type you pass in matches what the interface is asking for, it will compile.
+В Go **разрешение интерфейсов неявно**. Если переданный вами тип соответствует тому, что запрашивает интерфейс, он скомпилируется.
 
-### Decoupling
+### Разделение (связанности)
 
-Notice how our helper does not need to concern itself with whether the shape is a `Rectangle` or a `Circle` or a `Triangle`. By declaring an interface, the helper is _decoupled_ from the concrete types and only has the method it needs to do its job.
+Обратите внимание, что нашему помощнику не нужно беспокоиться о том, является ли фигура `Rectangle`, `Circle` или `Triangle`. Объявляя интерфейс, помощник _разделена_ с конкретными типами и имеет только тот метод, который ему нужен для выполнения своей работы.
 
-This kind of approach of using interfaces to declare **only what you need** is very important in software design and will be covered in more detail in later sections.
+Такой подход использования интерфейсов для объявления **только того, что вам нужно** очень важен при проектировании программного обеспечения и будет рассмотрен более подробно в следующих разделах.
 
-## Further refactoring
+## Дальнейший рефакторинг
 
-Now that you have some understanding of structs we can introduce "table driven tests".
+Теперь, когда у вас есть некоторое понимание структур, мы можем представить "табличные тесты".
 
-[Table driven tests](https://go.dev/wiki/TableDrivenTests) are useful when you want to build a list of test cases that can be tested in the same manner.
+[Табличные тесты](https://go.dev/wiki/TableDrivenTests) полезны, когда вы хотите создать список тестовых случаев, которые можно проверять одним и тем же способом.
 
 ```go
 func TestArea(t *testing.T) {
@@ -415,20 +415,20 @@ func TestArea(t *testing.T) {
 }
 ```
 
-The only new syntax here is creating an "anonymous struct", `areaTests`. We are declaring a slice of structs by using `[]struct` with two fields, the `shape` and the `want`. Then we fill the slice with cases.
+Единственный новый синтаксис здесь — это создание "анонимной структуры" `areaTests`. Мы объявляем срез структур, используя `[]struct` с двумя полями: `shape` и `want`. Затем мы заполняем срез тестовыми случаями.
 
-We then iterate over them just like we do any other slice, using the struct fields to run our tests.
+Затем мы перебираем их, как и любой другой срез, используя поля структуры для запуска наших тестов.
 
-You can see how it would be very easy for a developer to introduce a new shape, implement `Area` and then add it to the test cases. In addition, if a bug is found with `Area` it is very easy to add a new test case to exercise it before fixing it.
+Вы можете видеть, как разработчику было бы очень легко представить новую фигуру, реализовать `Area` и затем добавить её в тестовые случаи. Кроме того, если обнаружена ошибка с `Area`, очень легко добавить новый тестовый случай для её проверки перед исправлением.
 
-Table driven tests can be a great item in your toolbox, but be sure that you have a need for the extra noise in the tests.
-They are a great fit when you wish to test various implementations of an interface, or if the data being passed in to a function has lots of different requirements that need testing.
+Табличные тесты могут быть отличным инструментом в вашем арсенале, но убедитесь, что у вас есть необходимость в дополнительном "шуме" в тестах.
+Они отлично подходят, когда вы хотите протестировать различные реализации интерфейса или когда данные, передаваемые в функцию, имеют множество различных требований, которые необходимо проверить.
 
-Let's demonstrate all this by adding another shape and testing it; a triangle.
+Давайте продемонстрируем всё это, добавив ещё одну фигуру и протестировав её; треугольник.
 
-## Write the test first
+## Сначала напишите тест
 
-Adding a new test for our new shape is very easy. Just add `{Triangle{12, 6}, 36.0},` to our list.
+Добавить новый тест для нашей новой фигуры очень просто. Просто добавьте `{Triangle{12, 6}, 36.0},` в наш список.
 
 ```go
 func TestArea(t *testing.T) {
@@ -452,15 +452,15 @@ func TestArea(t *testing.T) {
 }
 ```
 
-## Try to run the test
+## Попробуйте запустить тест
 
-Remember, keep trying to run the test and let the compiler guide you toward a solution.
+Помните, продолжайте пытаться запускать тест и позвольте компилятору направлять вас к решению.
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод упавшего теста
 
 `./shapes_test.go:25:4: undefined: Triangle`
 
-We have not defined `Triangle` yet
+Мы ещё не определили `Triangle`:
 
 ```go
 type Triangle struct {
@@ -469,14 +469,14 @@ type Triangle struct {
 }
 ```
 
-Try again
+Попробуйте снова:
 
 ```text
 ./shapes_test.go:25:8: cannot use Triangle literal (type Triangle) as type Shape in field value:
     Triangle does not implement Shape (missing Area method)
 ```
 
-It's telling us we cannot use a `Triangle` as a shape because it does not have an `Area()` method, so add an empty implementation to get the test working
+Он говорит нам, что мы не можем использовать `Triangle` как фигуру, потому что у неё нет метода `Area()`, поэтому добавьте пустую реализацию, чтобы тест заработал:
 
 ```go
 func (t Triangle) Area() float64 {
@@ -484,11 +484,11 @@ func (t Triangle) Area() float64 {
 }
 ```
 
-Finally the code compiles and we get our error
+Наконец, код компилируется, и мы получаем нашу ошибку:
 
 `shapes_test.go:31: got 0.00 want 36.00`
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
 ```go
 func (t Triangle) Area() float64 {
@@ -496,13 +496,13 @@ func (t Triangle) Area() float64 {
 }
 ```
 
-And our tests pass!
+И наши тесты проходят!
 
-## Refactor
+## Рефакторинг
 
-Again, the implementation is fine but our tests could do with some improvement.
+Опять же, реализация хороша, но наши тесты можно улучшить.
 
-When you scan this
+Когда вы просматриваете это:
 
 ```
 {Rectangle{12, 6}, 72.0},
@@ -510,11 +510,11 @@ When you scan this
 {Triangle{12, 6}, 36.0},
 ```
 
-It's not immediately clear what all the numbers represent and you should be aiming for your tests to be easily understood.
+Не сразу ясно, что означают все эти числа, и вы должны стремиться к тому, чтобы ваши тесты были легко понятны.
 
-So far you've only been shown syntax for creating instances of structs `MyStruct{val1, val2}` but you can optionally name the fields.
+До сих пор вам показывали только синтаксис создания экземпляров структур `MyStruct{val1, val2}`, но вы можете по желанию называть поля.
 
-Let's see what it looks like
+Давайте посмотрим, как это выглядит:
 
 ```
         {shape: Rectangle{Width: 12, Height: 6}, want: 72.0},
@@ -522,30 +522,30 @@ Let's see what it looks like
         {shape: Triangle{Base: 12, Height: 6}, want: 36.0},
 ```
 
-In [Test-Driven Development by Example](https://g.co/kgs/yCzDLF) Kent Beck refactors some tests to a point and asserts:
+В [Test-Driven Development by Example](https://g.co/kgs/yCzDLF) Кент Бек рефакторизирует некоторые тесты до определённого момента и утверждает:
 
-> The test speaks to us more clearly, as if it were an assertion of truth, **not a sequence of operations**
+> Тест говорит нам яснее, как будто это утверждение истины, **а не последовательность операций**
 
-\(emphasis in the quote is mine\)
+(акцент в цитате мой)
 
-Now our tests - rather, the list of test cases - make assertions of truth about shapes and their areas.
+Теперь наши тесты — точнее, список тестовых случаев — делают утверждения об истинности фигур и их площадей.
 
-## Make sure your test output is helpful
+## Убедитесь, что вывод ваших тестов информативен
 
-Remember earlier when we were implementing `Triangle` and we had the failing test? It printed `shapes_test.go:31: got 0.00 want 36.00`.
+Помните, ранее, когда мы реализовывали `Triangle` и у нас был падающий тест? Он выводил `shapes_test.go:31: got 0.00 want 36.00`.
 
-We knew this was in relation to `Triangle` because we were just working with it.
-But what if a bug slipped in to the system in one of 20 cases in the table?
-How would a developer know which case failed?
-This is not a great experience for the developer, they will have to manually look through the cases to find out which case actually failed.
+Мы знали, что это связано с `Triangle`, потому что мы только что работали с ним.
+Но что, если ошибка прокралась в систему в одном из 20 случаев в таблице?
+Как разработчик узнает, какой случай не прошёл?
+Это не очень удобно для разработчика, ему придётся вручную просматривать случаи, чтобы выяснить, какой из них на самом деле не прошёл.
 
-We can change our error message into `%#v got %g want %g`. The `%#v` format string will print out our struct with the values in its field, so the developer can see at a glance the properties that are being tested.
+Мы можем изменить наше сообщение об ошибке на `%#v got %g want %g`. Формат вывода `%#v` напечатает нашу структуру со значениями её полей, так что разработчик сможет сразу увидеть свойства, которые тестируются.
 
-To increase the readability of our test cases further, we can rename the `want` field into something more descriptive like `hasArea`.
+Чтобы ещё больше повысить читабельность наших тестовых случаев, мы можем переименовать поле `want` во что-то более описательное, например `hasArea`.
 
-One final tip with table driven tests is to use `t.Run` and to name the test cases.
+Ещё один последний совет по табличным тестам — использовать `t.Run` и давать имена тестовым случаям.
 
-By wrapping each case in a `t.Run` you will have clearer test output on failures as it will print the name of the case
+Оборачивая каждый случай в `t.Run`, вы получите более чёткий вывод тестов при сбоях, так как он будет печатать имя случая:
 
 ```text
 --- FAIL: TestArea (0.00s)
@@ -553,9 +553,9 @@ By wrapping each case in a `t.Run` you will have clearer test output on failures
         shapes_test.go:33: main.Rectangle{Width:12, Height:6} got 72.00 want 72.10
 ```
 
-And you can run specific tests within your table with `go test -run TestArea/Rectangle`.
+И вы можете запускать конкретные тесты в вашей таблице с помощью `go test -run TestArea/Rectangle`.
 
-Here is our final test code which captures this
+Вот наш окончательный код теста, который это реализует:
 
 ```go
 func TestArea(t *testing.T) {
@@ -584,17 +584,17 @@ func TestArea(t *testing.T) {
 }
 ```
 
-## Wrapping up
+## Подведение итогов
 
-This was more TDD practice, iterating over our solutions to basic mathematic problems and learning new language features motivated by our tests.
+Это была ещё одна практика TDD, итеративное решение наших базовых математических задач и изучение новых возможностей языка, мотивированное нашими тестами.
 
-* Declaring structs to create your own data types which lets you bundle related data together and make the intent of your code clearer
-* Declaring interfaces so you can define functions that can be used by different types \([ad hoc polymorphism](https://en.wikipedia.org/wiki/Ad_hoc_polymorphism)\)
-* Adding methods so you can add functionality to your data types and so you can implement interfaces
-* Table driven tests to make your assertions clearer and your test suites easier to extend & maintain
+*   Объявление структур для создания собственных типов данных, что позволяет связывать связанные данные вместе и делать намерение вашего кода более ясным.
+*   Объявление интерфейсов, чтобы вы могли определять функции, которые могут использоваться различными типами ([ad hoc полиморфизм](https://en.wikipedia.org/wiki/Ad_hoc_polymorphism)).
+*   Добавление методов, чтобы вы могли добавлять функциональность к своим типам данных и реализовывать интерфейсы.
+*   Табличные тесты, чтобы сделать ваши утверждения более ясными, а ваши наборы тестов более простыми для расширения и поддержки.
 
-This was an important chapter because we are now starting to define our own types. In statically typed languages like Go, being able to design your own types is essential for building software that is easy to understand, to piece together and to test.
+Это была важная глава, потому что теперь мы начинаем определять свои собственные типы. В статически типизированных языках, таких как Go, умение проектировать свои собственные типы имеет важное значение для создания программного обеспечения, которое легко понять, собрать и протестировать.
 
-Interfaces are a great tool for hiding complexity away from other parts of the system. In our case our test helper _code_ did not need to know the exact shape it was asserting on, only how to "ask" for its area.
+Интерфейсы — отличный инструмент для скрытия сложности от других частей системы. В нашем случае наш вспомогательный _код_ не нуждался в знании точной формы, которую он проверял, только в том, как "спросить" её площадь.
 
-As you become more familiar with Go you will start to see the real strength of interfaces and the standard library. You'll learn about interfaces defined in the standard library that are used _everywhere_ and by implementing them against your own types, you can very quickly re-use a lot of great functionality.
+По мере того, как вы будете лучше знакомиться с Go, вы начнёте видеть истинную силу интерфейсов и стандартной библиотеки. Вы узнаете об интерфейсах, определённых в стандартной библиотеке, которые используются _повсеместно_, и, реализуя их для своих собственных типов, вы сможете очень быстро повторно использовать множество замечательных функций.

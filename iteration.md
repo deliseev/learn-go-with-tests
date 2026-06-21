@@ -1,14 +1,15 @@
-# Iteration
+---
+# Итерации
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/for)**
+**[Весь код для этой главы вы найдете здесь](https://github.com/quii/learn-go-with-tests/tree/main/for)**
 
-To do stuff repeatedly in Go, you'll need `for`. In Go there are no `while`, `do`, `until` keywords, you can only use `for`. Which is a good thing!
+Чтобы выполнять действия многократно в Go, вам понадобится `for`. В Go нет ключевых слов `while`, `do`, `until`, вы можете использовать только `for`. Что очень хорошо!
 
-Let's write a test for a function that repeats a character 5 times.
+Давайте напишем тест для функции, которая повторяет символ 5 раз.
 
-There's nothing new so far, so try and write it yourself for practice.
+Пока ничего нового, так что попробуйте написать его самостоятельно для практики.
 
-## Write the test first
+## Сначала напишите тест
 
 ```go
 package iteration
@@ -25,15 +26,15 @@ func TestRepeat(t *testing.T) {
 }
 ```
 
-## Try and run the test
+## Попробуйте запустить тест
 
 `./repeat_test.go:6:14: undefined: Repeat`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальный объем кода, чтобы тест запустился и проверьте вывод неудачного теста
 
-_Keep the discipline!_ You don't need to know anything new right now to make the test fail properly.
+_Соблюдайте дисциплину!_ Вам не нужно знать ничего нового прямо сейчас, чтобы тест корректно завершился неудачей.
 
-All you need to do right now is enough to make it compile so you can check your test is written well.
+Все, что вам нужно сделать сейчас, это обеспечить компиляцию, чтобы вы могли убедиться, что ваш тест написан хорошо.
 
 ```go
 package iteration
@@ -43,13 +44,13 @@ func Repeat(character string) string {
 }
 ```
 
-Isn't it nice to know you already know enough Go to write tests for some basic problems? This means you can now play with the production code as much as you like and know it's behaving as you'd hope.
+Разве не приятно знать, что вы уже достаточно хорошо знаете Go, чтобы писать тесты для некоторых базовых задач? Это означает, что теперь вы можете работать с продакшн-кодом столько, сколько захотите, и знать, что он ведет себя так, как вы ожидаете.
 
 `repeat_test.go:10: expected 'aaaaa' but got ''`
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошел
 
-The `for` syntax is very unremarkable and follows most C-like languages.
+Синтаксис `for` очень прост и соответствует большинству C-подобных языков.
 
 ```go
 func Repeat(character string) string {
@@ -61,21 +62,21 @@ func Repeat(character string) string {
 }
 ```
 
-Unlike other languages like C, Java, or JavaScript there are no parentheses surrounding the three components of the for statement and the braces `{ }` are always required. You might wonder what is happening in the row
+В отличие от других языков, таких как C, Java или JavaScript, нет круглых скобок, окружающих три компонента оператора `for`, и фигурные скобки `{ }` всегда обязательны. Вы можете задаться вопросом, что происходит в строке
 
 ```go
 	var repeated string
 ```
 
-as we've been using `:=` so far to declare and initializing variables. However, `:=` is simply [short hand for both steps](https://gobyexample.com/variables). Here we are declaring a `string` variable only. Hence, the explicit version. We can also use `var` to declare functions, as we'll see later on.
+поскольку до сих пор мы использовали `:=` для объявления и инициализации переменных. Однако `:=` — это просто [сокращенная запись обоих шагов](https://gobyexample.com/variables). Здесь мы объявляем только переменную типа `string`. Отсюда и явная версия. Мы также можем использовать `var` для объявления функций, как мы увидим позже.
 
-Run the test and it should pass.
+Запустите тест, и он должен пройти.
 
-Additional variants of the for loop are described [here](https://gobyexample.com/for).
+Дополнительные варианты цикла `for` описаны [здесь](https://gobyexample.com/for).
 
-## Refactor
+## Рефакторинг
 
-Now it's time to refactor and introduce another construct `+=` assignment operator.
+Теперь пришло время для рефакторинга и введения другой конструкции: оператора присваивания `+=`.
 
 ```go
 const repeatCount = 5
@@ -89,11 +90,11 @@ func Repeat(character string) string {
 }
 ```
 
-`+=` called _"the Add AND assignment operator"_, adds the right operand to the left operand and assigns the result to left operand. It works with other types like integers.
+`+=` называется _«оператором сложения И присваивания»_ (Add AND assignment operator), он добавляет правый операнд к левому операнду и присваивает результат левому операнду. Он работает и с другими типами, такими как целые числа.
 
-### Benchmarking
+### Бенчмаркинг
 
-Writing [benchmarks](https://golang.org/pkg/testing/#hdr-Benchmarks) in Go is another first-class feature of the language and it is very similar to writing tests.
+Написание [бенчмарков](https://golang.org/pkg/testing/#hdr-Benchmarks) в Go — еще одна первоклассная особенность языка, и это очень похоже на написание тестов.
 
 ```go
 func BenchmarkRepeat(b *testing.B) {
@@ -103,15 +104,15 @@ func BenchmarkRepeat(b *testing.B) {
 }
 ```
 
-You'll see the code is very similar to a test.
+Вы увидите, что код очень похож на тест.
 
-The `testing.B` gives you access to the loop function. `Loop()` returns true as long as the benchmark should continue running. 
+`testing.B` предоставляет вам доступ к функции цикла. `Loop()` возвращает `true` до тех пор, пока бенчмарк должен продолжать выполняться.
 
-When the benchmark code is executed, it measures how long it takes. After `Loop()` returns false, `b.N` contains the total number of iterations that ran.
+Когда код бенчмарка выполняется, он измеряет время его работы. После того как `Loop()` возвращает `false`, `b.N` содержит общее количество выполненных итераций.
 
-The number of times the code is run shouldn't matter to you, the framework will determine what is a "good" value for that to let you have some decent results.
+Количество запусков кода не должно иметь для вас значения, фреймворк сам определит «хорошее» значение, чтобы вы получили достойные результаты.
 
-To run the benchmarks do `go test -bench=.` (or if you're in Windows Powershell `go test -bench="."`)
+Для запуска бенчмарков выполните `go test -bench=.` (или, если вы используете Windows Powershell, `go test -bench="."`)
 
 ```text
 goos: darwin
@@ -121,11 +122,11 @@ pkg: github.com/quii/learn-go-with-tests/for/v4
 PASS
 ```
 
-What `136 ns/op` means is our function takes on average 136 nanoseconds to run \(on my computer\). Which is pretty ok! To test this it ran it 10000000 times.
+Что означает `136 ns/op`: наша функция в среднем выполняется 136 наносекунд (на моем компьютере). Что вполне нормально! Для проверки она была запущена 10 000 000 раз.
 
-**Note:** By default benchmarks are run sequentially.
+**Примечание:** По умолчанию бенчмарки выполняются последовательно.
 
-Only the body of the loop is timed; it automatically excludes setup and cleanup code from benchmark timing. A typical benchmark is structured like:
+Измеряется только тело цикла; код установки и очистки автоматически исключается из замера времени бенчмарка. Типичный бенчмарк имеет следующую структуру:
 
 ```go
 func Benchmark(b *testing.B) {
@@ -137,10 +138,9 @@ func Benchmark(b *testing.B) {
 }
 ```
 
-Strings in Go are immutable, meaning every concatenation, such as in our `Repeat` function, involves copying memory to accommodate the new string. This impacts performance, particularly during heavy string concatenation.
+Строки в Go неизменяемы, что означает, что каждая конкатенация, как в нашей функции `Repeat`, включает копирование памяти для размещения новой строки. Это влияет на производительность, особенно при интенсивной конкатенации строк.
 
-The standard library provides the `strings.Builder`[stringsBuilder] type which minimizes memory copying.
-It implements a `WriteString` method which we can use to concatenate strings:
+Стандартная библиотека предоставляет тип `strings.Builder`[stringsBuilder], который минимизирует копирование памяти. Он реализует метод `WriteString`, который мы можем использовать для конкатенации строк:
 
 ```go
 const repeatCount = 5
@@ -154,10 +154,9 @@ func Repeat(character string) string {
 }
 ```
 
-**Note**: We have to call the `String` method to retrieve the final result.
+**Примечание**: Мы должны вызвать метод `String`, чтобы получить конечный результат.
 
-We can use `BenchmarkRepeat` to confirm that `strings.Builder` significantly improves performance.
-Run `go test -bench=. -benchmem`:
+Мы можем использовать `BenchmarkRepeat`, чтобы подтвердить, что `strings.Builder` значительно повышает производительность. Запустите `go test -bench=. -benchmem`:
 
 ```text
 goos: darwin
@@ -167,21 +166,22 @@ pkg: github.com/quii/learn-go-with-tests/for/v4
 PASS
 ```
 
-The `-benchmem` flag reports information about memory allocations:
+Флаг `-benchmem` выводит информацию о выделении памяти:
 
-* `B/op`: the number of bytes allocated per iteration
-* `allocs/op`: the number of memory allocations per iteration
+* `B/op`: количество выделенных байтов за итерацию
+* `allocs/op`: количество выделений памяти за итерацию
 
-## Practice exercises
+## Практические упражнения
 
-* Change the test so a caller can specify how many times the character is repeated and then fix the code
-* Write `ExampleRepeat` to document your function
-* Have a look through the [strings](https://golang.org/pkg/strings) package. Find functions you think could be useful and experiment with them by writing tests like we have here. Investing time learning the standard library will really pay off over time.
+* Измените тест так, чтобы вызывающая сторона могла указывать, сколько раз повторяется символ, а затем исправьте код.
+* Напишите `ExampleRepeat` для документирования вашей функции.
+* Просмотрите пакет [strings](https://golang.org/pkg/strings). Найдите функции, которые, по вашему мнению, могут быть полезны, и поэкспериментируйте с ними, написав тесты, как мы делали здесь. Инвестирование времени в изучение стандартной библиотеки со временем окупится.
 
-## Wrapping up
+## Итоги
 
-* More TDD practice
-* Learned `for`
-* Learned how to write benchmarks
+* Больше практики TDD
+* Изучили `for`
+* Научились писать бенчмарки
 
 [stringsBuilder]: https://pkg.go.dev/strings#Builder
+---

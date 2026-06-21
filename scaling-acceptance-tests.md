@@ -1,167 +1,167 @@
-# Learn Go with Tests - Scaling Acceptance Tests (and light intro to gRPC)
+```markdown
+# Изучаем Go с тестами — Масштабирование приемочных тестов (и краткое введение в gRPC)
 
-This chapter is a follow-up to [Intro to acceptance tests](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/intro-to-acceptance-tests). You can find [the finished code for this chapter on GitHub](https://github.com/quii/go-specs-greet).
+Эта глава является продолжением [Введения в приемочные тесты](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/intro-to-acceptance-tests). [Готовый код для этой главы можно найти на GitHub](https://github.com/quii/go-specs-greet).
 
-Acceptance tests are essential, and they directly impact your ability to confidently evolve your system over time, with a reasonable cost of change.
+Приемочные тесты (AT) имеют решающее значение, и они напрямую влияют на вашу способность уверенно развивать свою систему с течением времени при разумной стоимости изменений.
 
-They're also a fantastic tool to help you work with legacy code. When faced with a poor codebase without any tests, please resist the temptation to start refactoring. Instead, write some acceptance tests to give you a safety net to freely change the system's internals without affecting its functional external behaviour. ATs need not be concerned with internal quality, so they're a great fit in these situations.
+Они также являются фантастическим инструментом, помогающим работать с устаревшим кодом. Столкнувшись с плохой кодовой базой без каких-либо тестов, пожалуйста, сопротивляйтесь искушению начать рефакторинг. Вместо этого напишите несколько приемочных тестов, чтобы получить страховочную сетку для свободного изменения внутренних компонентов системы без влияния на ее функциональное внешнее поведение. AT не должны касаться внутреннего качества, поэтому они отлично подходят в таких ситуациях.
 
-After reading this, you'll appreciate that acceptance tests are useful for verification and can also be used in the development process by helping us change our system more deliberately and methodically, reducing wasted effort.
+Прочитав это, вы поймете, что приемочные тесты полезны для верификации, а также могут использоваться в процессе разработки, помогая нам изменять нашу систему более целенаправленно и методично, сокращая напрасные усилия.
 
-## Prerequisite material
+## Необходимые материалы
 
-The inspiration for this chapter is borne of many years of frustration with acceptance tests. Two videos I would recommend you watch are:
+Вдохновение для этой главы родилось из многолетнего разочарования в приемочных тестах. Два видео, которые я рекомендую посмотреть:
 
-- Dave Farley - [How to write acceptance tests](https://www.youtube.com/watch?v=JDD5EEJgpHU)
-- Nat Pryce - [E2E functional tests that can run in milliseconds](https://www.youtube.com/watch?v=Fk4rCn4YLLU)
+- Дэйв Фарли (Dave Farley) - [Как писать приемочные тесты](https://www.youtube.com/watch?v=JDD5EEJgpHU)
+- Нэт Прайс (Nat Pryce) - [E2E функциональные тесты, которые могут выполняться за миллисекунды](https://www.youtube.com/watch?v=Fk4rCn4YLLU)
 
-"Growing Object Oriented Software" (GOOS) is such an important book for many software engineers, including myself. The approach it prescribes is the one I coach engineers I work with to follow.
+"Growing Object Oriented Software" (GOOS) — очень важная книга для многих разработчиков программного обеспечения, включая меня. Подход, который она предписывает, я рекомендую своим коллегам-инженерам.
 
-- [GOOS](http://www.growing-object-oriented-software.com) - Nat Pryce & Steve Freeman
+- [GOOS](http://www.growing-object-oriented-software.com) - Нэт Прайс и Стив Фриман (Nat Pryce & Steve Freeman)
 
-Finally, [Riya Dattani](https://twitter.com/dattaniriya) and I spoke about this topic in the context of BDD in our talk, [Acceptance tests, BDD and Go](https://www.youtube.com/watch?v=ZMWJCk_0WrY).
+Наконец, [Рия Даттани (Riya Dattani)](https://twitter.com/dattaniriya) и я обсуждали эту тему в контексте BDD в нашей лекции [Приемочные тесты, BDD и Go](https://www.youtube.com/watch?v=ZMWJCk_0WrY).
 
-## Recap
+## Краткий обзор
 
-We're talking about "black-box" tests that verify your system behaves as expected from the outside, from a "**business perspective**". The tests do not have access to the innards of the system it tests; they're only concerned with **what** your system does rather than **how**.
+Мы говорим о "черных ящиках" тестирования, которые проверяют, что ваша система ведет себя ожидаемым образом извне, с "**бизнес-перспективы**". Тесты не имеют доступа к внутреннему устройству тестируемой системы; они касаются только того, **что** делает ваша система, а не **как**.
 
-## Anatomy of bad acceptance tests
+## Анатомия плохих приемочных тестов
 
-Over many years, I've worked for several companies and teams. Each of them recognised the need for acceptance tests; some way to test a system from a user's point of view and to verify it works how it's intended, but almost without exception, the cost of these tests became a real problem for the team.
+За многие годы я работал в нескольких компаниях и командах. Каждая из них осознавала необходимость приемочных тестов; какой-то способ тестирования системы с точки зрения пользователя и проверки ее работоспособности, но почти без исключений стоимость этих тестов становилась для команды настоящей проблемой.
 
-- Slow to run
-- Brittle
-- Flaky
-- Expensive to maintain, and seem to make changing the software harder than it ought to be
-- Can only run in a particular environment, causing slow and poor feedback loops
+- Медленно выполняются
+- Хрупкие
+- Нестабильные (flaky)
+- Дорогие в поддержке, и, похоже, усложняют изменение программного обеспечения больше, чем следовало бы
+- Могут работать только в определенной среде, что приводит к медленным и некачественным циклам обратной связи
 
-Let's say you intend to write an acceptance test around a website you're building. You decide to use a headless web browser (like [Selenium](https://www.selenium.dev)) to simulate a user clicking buttons on your website to verify it does what it needs to do.
+Допустим, вы собираетесь написать приемочный тест для веб-сайта, который вы создаете. Вы решаете использовать безголовый веб-браузер (например, [Selenium](https://www.selenium.dev)) для имитации нажатия пользователем кнопок на вашем веб-сайте, чтобы проверить, делает ли он то, что должен.
 
-Over time, your website's markup has to change as new features are discovered, and engineers bike-shed over whether something should be an `<article>` or a `<section>` for the billionth time.
+Со временем разметка вашего веб-сайта должна меняться по мере появления новых функций, и инженеры в сотый раз спорят, должно ли что-то быть `<article>` или `<section>`.
 
-Even though your team are only making minor changes to the system, barely noticeable to the actual user, you find yourself wasting lots of time updating your ATs.
+Даже если ваша команда вносит лишь незначительные изменения в систему, едва заметные для реального пользователя, вы обнаруживаете, что тратите много времени на обновление своих AT.
 
-### Tight-coupling
+### Жесткая связанность
 
-Think about what prompts acceptance tests to change:
+Подумайте, что побуждает к изменению приемочных тестов:
 
-- An external behaviour change. If you want to change what the system does, changing the acceptance test suite seems reasonable, if not desirable.
-- An implementation detail change / refactoring. Ideally, this shouldn't prompt a change, or if it does, a minor one.
+- Изменение внешнего поведения. Если вы хотите изменить то, что делает система, изменение набора приемочных тестов кажется разумным, если не желательным.
+- Изменение деталей реализации / рефакторинг. В идеале это не должно вызывать изменений, или, если вызывает, то незначительные.
 
-Too often, though, the latter is the reason acceptance tests have to change. To the point where engineers even become reluctant to change their system because of the perceived effort of updating tests!
+Однако слишком часто последнее является причиной того, что приемочные тесты приходится менять. До такой степени, что инженеры даже неохотно меняют свою систему из-за предполагаемых усилий по обновлению тестов!
 
-![Riya and myself talking about separating concerns in our tests](https://i.imgur.com/bbG6z57.png)
+![Рия и я говорим о разделении ответственности в наших тестах](https://i.imgur.com/bbG6z57.png)
 
-These problems stem from not applying well-established and practised engineering habits written by the authors mentioned above. **You can't write acceptance tests like unit tests**; they require more thought and different practices.
+Эти проблемы проистекают из неприменения хорошо зарекомендовавших себя и отработанных инженерных привычек, описанных вышеупомянутыми авторами. **Вы не можете писать приемочные тесты как модульные тесты**; они требуют большего осмысления и других практик.
 
-## Anatomy of good acceptance tests
+## Анатомия хороших приемочных тестов
 
-If we want acceptance tests that only change when we change behaviour and not implementation detail, it stands to reason that we need to separate those concerns.
+Если мы хотим, чтобы приемочные тесты менялись только тогда, когда мы меняем поведение, а не детали реализации, то разумно разделить эти аспекты.
 
-### On types of complexity
+### О типах сложности
 
-As software engineers, we have to deal with two kinds of complexity.
+Как инженеры-программисты, мы сталкиваемся с двумя видами сложности.
 
-- **Accidental complexity** is the complexity we have to deal with because we're working with computers, stuff like networks, disks, APIs, etc.
+- **Случайная сложность** (Accidental complexity) — это сложность, с которой мы должны иметь дело, потому что мы работаем с компьютерами, например, сети, диски, API и т.д.
 
-- **Essential complexity** is sometimes referred to as "domain logic". It's the particular rules and truths within your domain.
-  - For example, "if an account owner withdraws more money than is available, they are overdrawn". This statement says nothing about computers; this statement was true before computers were even used in banks!
+- **Существенная сложность** (Essential complexity) иногда называется "доменной логикой". Это конкретные правила и истины в вашей предметной области.
+  - Например, "если владелец счета снимает больше денег, чем доступно, у него возникает овердрафт". Это утверждение ничего не говорит о компьютерах; это утверждение было верным еще до того, как компьютеры стали использоваться в банках!
 
-Essential complexity should be expressible to a non-technical person, and it's valuable to have modelled it in our "domain" code, and in our acceptance tests.
+Существенная сложность должна быть выразима для нетехнического человека, и ценно, чтобы она была смоделирована в нашем "доменном" коде и в наших приемочных тестах.
 
-### Separation of concerns
+### Разделение ответственности
 
-What Dave Farley proposed in the video earlier, and what Riya and I also discussed, is we should have the idea of **specifications**. Specifications describe the behaviour of the system we want without being coupled with accidental complexity or implementation detail.
+То, что предложил Дэйв Фарли в видео ранее, и то, что мы с Рией также обсуждали, заключается в том, что у нас должна быть идея **спецификаций**. Спецификации описывают поведение системы, которое мы хотим, без привязки к случайной сложности или деталям реализации.
 
-This idea should feel reasonable to you. In production code, we frequently strive to separate concerns and decouple units of work. Would you not hesitate to introduce an `interface` to allow your `HTTP` handler to decouple it from non-HTTP concerns? Let's take this same line of thinking for our acceptance tests.
+Эта идея должна показаться вам разумной. В продакшн-коде мы часто стремимся разделить ответственность и отвязать единицы работы. Не колеблясь, вы введете `interface`, чтобы ваш `HTTP` обработчик мог быть отвязан от не-HTTP проблем? Давайте применим этот же подход к нашим приемочным тестам.
 
-Dave Farley describes a specific structure.
+Дэйв Фарли описывает конкретную структуру.
 
-![Dave Farley on Acceptance Tests](https://i.imgur.com/nPwpihG.png)
+![Дэйв Фарли о приемочных тестах](https://i.imgur.com/nPwpihG.png)
 
-At GopherconUK, Riya and I put this in Go terms.
+На GopherconUK мы с Рией представили это в терминах Go.
 
-![Separation of concerns](https://i.imgur.com/qdY4RJe.png)
+![Разделение ответственности](https://i.imgur.com/qdY4RJe.png)
 
-### Testing on steroids
+### Тестирование на стероидах
 
-Decoupling how the specification is executed allows us to reuse it in different scenarios. We can:
+Отделение способа выполнения спецификации позволяет нам повторно использовать ее в различных сценариях. Мы можем:
 
-#### Make our drivers configurable
+#### Сделать наши драйверы настраиваемыми
 
-This means you can run your ATs locally, in your staging and (ideally) production environments.
-- Too many teams engineer their systems such that acceptance tests are impossible to run locally. This introduces an intolerably slow feedback loop. Wouldn't you rather be confident your ATs will pass _before_ integrating your code? If the tests start breaking, is it acceptable that you'd be unable to reproduce the failure locally and instead, have to commit changes and cross your fingers that it'll pass 20 minutes later in a different environment?
-- Remember, just because your tests pass in staging doesn't mean your system will work. Dev/Prod parity is, at best, a white lie. [I test in prod](https://increment.com/testing/i-test-in-production/).
-- There are always differences between the environments that can affect the *behaviour* of your system. A CDN could have some cache headers incorrectly set; a downstream service you depend on may behave differently; a configuration value may be incorrect. But wouldn't it be nice if you could run your specifications in prod to catch these problems quickly?
+Это означает, что вы можете запускать свои AT локально, в вашей тестовой (staging) и (в идеале) производственной среде.
+- Слишком многие команды проектируют свои системы таким образом, что приемочные тесты невозможно запустить локально. Это приводит к недопустимо медленному циклу обратной связи. Разве вы не предпочли бы быть уверенными, что ваши AT пройдут _до_ интеграции вашего кода? Если тесты начинают ломаться, приемлемо ли, что вы не сможете воспроизвести ошибку локально, и вместо этого придется коммитить изменения и скрещивать пальцы, что они пройдут через 20 минут в другой среде?
+- Помните, что то, что ваши тесты проходят на стейджинге, не означает, что ваша система будет работать. Совместимость Dev/Prod, в лучшем случае, — белая ложь. [Я тестирую в продакшене](https://increment.com/testing/i-test-in-production/).
+- Всегда существуют различия между средами, которые могут влиять на *поведение* вашей системы. CDN может иметь некорректно настроенные заголовки кэша; зависимая служба, от которой вы зависите, может вести себя по-другому; значение конфигурации может быть неверным. Но разве не было бы здорово, если бы вы могли запускать свои спецификации в продакшене, чтобы быстро ловить эти проблемы?
 
-#### Plug in _different_ drivers to test other parts of your system
+#### Подключать _разные_ драйверы для тестирования других частей вашей системы
 
-This flexibility allows us to test behaviours at different abstraction and architectural layers, which allows us to have more focused tests beyond black-box tests.
-- For instance, you may have a web page with an API behind it. Why not use the same specification to test both? You can use a headless web browser for the web page, and HTTP calls for the API.
-- Taking this idea further, ideally, we want the **code to model essential complexity** (as "domain" code) so we should also be able to use our specifications for unit tests. This will give swift feedback that the essential complexity in our system is modelled and behaves correctly.
+Эта гибкость позволяет нам тестировать поведение на разных уровнях абстракции и архитектуры, что позволяет нам иметь более сфокусированные тесты, выходящие за рамки тестов "черного ящика".
+- Например, у вас может быть веб-страница, за которой стоит API. Почему бы не использовать ту же спецификацию для тестирования обоих? Вы можете использовать безголовый веб-браузер для веб-страницы и HTTP-вызовы для API.
+- Развивая эту идею, в идеале мы хотим, чтобы **код моделировал существенную сложность** (как "доменный" код), поэтому мы также должны иметь возможность использовать наши спецификации для модульных тестов. Это даст быструю обратную связь о том, что существенная сложность в нашей системе смоделирована и ведет себя правильно.
 
+### Приемочные тесты меняются по правильным причинам
 
-### Acceptance tests changing for the right reasons
+При таком подходе единственной причиной изменения ваших спецификаций является изменение поведения системы, что разумно.
 
-With this approach, the only reason for your specifications to change is if the behaviour of the system changes, which is reasonable.
+- Если ваш HTTP API должен измениться, у вас есть одно очевидное место для его обновления — драйвер.
+- Если ваша разметка изменится, опять же, обновите конкретный драйвер.
 
-- If your HTTP API has to change, you have one obvious place to update it, the driver.
-- If your markup changes, again, update the specific driver.
+По мере роста вашей системы вы обнаружите, что повторно используете драйверы для нескольких тестов, что снова означает, что если детали реализации меняются, вам нужно обновить только одно, обычно очевидное место.
 
-As your system grows, you'll find yourself reusing drivers for multiple tests, which again means if implementation detail changes, you only have to update one, usually obvious place.
+При правильном подходе этот метод дает нам гибкость в деталях реализации и стабильность в наших спецификациях. Важно отметить, что он обеспечивает простую и очевидную структуру для управления изменениями, что становится необходимым по мере роста системы и команды.
 
-When done right, this approach gives us flexibility in our implementation detail and stability in our specifications. Importantly, it provides a simple and obvious structure for managing change, which becomes essential as a system and its team grows.
+### Приемочные тесты как метод разработки программного обеспечения
 
-### Acceptance tests as a method for software development
+В нашем докладе мы с Рией обсуждали приемочные тесты и их связь с BDD. Мы говорили о том, как начало работы с попытки _понять проблему, которую вы пытаетесь решить_, и выражения ее в виде спецификации помогает сфокусировать ваше намерение и является отличным способом начать работу.
 
-In our talk, Riya and I discussed acceptance tests and their relation to BDD. We talked about how starting your work by trying to _understand the problem you're trying to solve_ and expressing it as a specification helps focus your intent and is a great way to start your work.
-
-I was first introduced to this way of working in GOOS. A while ago, I summarised the ideas on my blog. Here is an extract from my post [Why TDD](https://quii.dev/The_Why_of_TDD)
+Впервые я познакомился с этим способом работы в GOOS. Некоторое время назад я изложил идеи в своем блоге. Вот выдержка из моего поста [Почему TDD](https://quii.dev/The_Why_of_TDD)
 
 ---
 
-TDD is focused on letting you design for the behaviour you precisely need, iteratively. When starting a new area, you must identify a key, necessary behaviour and aggressively cut scope.
+TDD сосредоточен на том, чтобы позволить вам итеративно проектировать именно то поведение, которое вам нужно. Начиная новую область, вы должны определить ключевое, необходимое поведение и агрессивно сократить объем.
 
-Follow a "top-down" approach, starting with an acceptance test (AT) that exercises the behaviour from the outside. This will act as a north-star for your efforts. All you should be focused on is making that test pass. This test will likely be failing for a while whilst you develop enough code to make it pass.
+Следуйте "нисходящему" подходу, начиная с приемочного теста (AT), который проверяет поведение извне. Это будет служить путеводной звездой для ваших усилий. Все, на чем вы должны сосредоточиться, — это заставить этот тест пройти. Этот тест, скорее всего, будет падать какое-то время, пока вы не разработаете достаточно кода, чтобы он прошел.
 
 ![](https://i.imgur.com/pxTaYu4.png)
 
-Once your AT is set up, you can break into the TDD process to drive out enough units to make the AT pass. The trick is to not worry too much about design at this point; get enough code to make the AT pass because you're still learning and exploring the problem.
+Как только ваш AT настроен, вы можете перейти к процессу TDD, чтобы получить достаточно модулей для прохождения AT. Хитрость заключается в том, чтобы не слишком беспокоиться о дизайне на этом этапе; получите достаточно кода, чтобы AT прошел, потому что вы все еще учитесь и исследуете проблему.
 
-Taking this first step is often more extensive than you think, setting up web servers, routing, configuration, etc., which is why keeping the scope of the work small is essential. We want to make that first positive step on our blank canvas and have it backed by a passing AT so we can continue to iterate quickly and safely.
+Этот первый шаг часто оказывается более масштабным, чем вы думаете, — настройка веб-серверов, маршрутизации, конфигурации и т. д., поэтому крайне важно поддерживать небольшой объем работы. Мы хотим сделать этот первый позитивный шаг на нашем чистом холсте и убедиться, что он подтвержден проходящим AT, чтобы мы могли продолжать быстро и безопасно итерировать.
 
 ![](https://i.imgur.com/t5y5opw.png)
 
-As you develop, listen to your tests, and they should give you signals to help you push your design in a better direction but, again, anchored to the behaviour rather than our imagination.
+По мере разработки прислушивайтесь к своим тестам, и они должны давать вам сигналы, помогающие направить ваш дизайн в лучшую сторону, но, опять же, ориентируясь на поведение, а не на наше воображение.
 
-Typically, your first "unit" that does the hard work to make the AT pass will grow too big to be comfortable, even for this small amount of behaviour. This is when you can start thinking about how to break the problem down and introduce new collaborators.
+Как правило, ваш первый "модуль", который выполняет основную работу для прохождения AT, вырастет слишком большим, чтобы быть комфортным, даже для такого небольшого объема поведения. Именно тогда вы можете начать думать о том, как разбить проблему и ввести новых сотрудников.
 
 ![](https://i.imgur.com/UYqd7Cq.png)
 
-This is where test doubles (e.g. fakes, mocks) are handy because most of the complexity that lives internally within software doesn't usually reside in implementation detail but "between" the units and how they interact.
+Здесь на помощь приходят тестовые дублеры (например, фейки, моки), потому что большая часть сложности, которая находится внутри программного обеспечения, обычно не заключается в деталях реализации, а "между" модулями и тем, как они взаимодействуют.
 
-#### The perils of bottom-up
+#### Опасности подхода "снизу вверх"
 
-This is a "top-down" approach rather than a "bottom-up". Bottom-up has its uses, but it carries an element of risk. By building "services" and code without it being integrated into your application quickly and without verifying a high-level test, **you risk wasting lots of effort on unvalidated ideas**.
+Это "нисходящий" подход, а не "восходящий". Подход "снизу вверх" имеет свои применения, но он несет элемент риска. Создавая "сервисы" и код в изоляции, "снизу вверх", без быстрой интеграции в ваше приложение и без проверки высокоуровневым тестом, **вы рискуете потратить много усилий на невалидированные идеи**.
 
-This is a crucial property of the acceptance-test-driven approach, using tests to get real validation of our code.
+Это ключевое свойство подхода, управляемого приемочными тестами, — использование тестов для получения реальной проверки нашего кода.
 
-Too many times, I've encountered engineers who have made a chunk of code, in isolation, bottom-up, they think is going to solve a job, but it:
+Слишком часто я сталкивался с инженерами, которые создавали фрагмент кода, изолированно, "снизу вверх", который, как они думали, решит задачу, но он:
 
-- Doesn't work how we want to
-- Does stuff we don't need
-- Doesn't integrate easily
-- Requires a ton of re-writing anyway
+- Не работает так, как нам нужно
+- Делает то, что нам не нужно
+- Не интегрируется легко
+- В любом случае требует тонны переписывания
 
-This is waste.
+Это пустая трата ресурсов.
 
-## Enough talk, time to code
+## Достаточно разговоров, время кодить
 
-Unlike other chapters, you'll need [Docker](https://www.docker.com) installed because we'll be running our applications in containers. It's assumed at this point in the book you're comfortable writing Go code, importing from different packages, etc.
+В отличие от других глав, вам понадобится установленный [Docker](https://www.docker.com), потому что мы будем запускать наши приложения в контейнерах. Предполагается, что на данном этапе книги вы свободно пишете Go-код, импортируете из разных пакетов и т. д.
 
-Create a new project with `go mod init github.com/quii/go-specs-greet` (you can put whatever you like here but if you change the path you will need to change all internal imports to match)
+Создайте новый проект с помощью `go mod init github.com/quii/go-specs-greet` (вы можете указать здесь что угодно, но если вы измените путь, вам нужно будет изменить все внутренние импорты, чтобы они соответствовали ему).
 
-Make a folder `specifications` to hold our specifications, and add a file `greet.go`
+Создайте папку `specifications` для хранения наших спецификаций и добавьте файл `greet.go`.
 
 ```go
 package specifications
@@ -183,37 +183,37 @@ func GreetSpecification(t testing.TB, greeter Greeter) {
 }
 ```
 
-My IDE (Goland) takes care of the fuss of adding dependencies for me, but if you need to do it manually, you'd do
+Моя IDE (Goland) берет на себя возню с добавлением зависимостей, но если вам нужно сделать это вручную, вы бы сделали:
 
 `go get github.com/alecthomas/assert/v2`
 
-Given Farley's acceptance test design (Specification->DSL->Driver->System), we now have a decoupled specification from implementation. It doesn't know or care about _how_ we `Greet`; it's just concerned with the essential complexity of our domain. Admittedly this complexity isn't much right now, but we'll expand upon the spec to add more functionality as we further iterate. It's always important to start small!
+Учитывая дизайн приемочных тестов Фарли (Спецификация->DSL->Драйвер->Система), у нас теперь есть спецификация, отделенная от реализации. Она не знает и не заботится о том, _как_ мы `Greet`; она занимается только существенной сложностью нашей предметной области. Признаться, сейчас эта сложность невелика, но мы расширим спецификацию, чтобы добавить больше функциональности по мере дальнейших итераций. Всегда важно начинать с малого!
 
-You could view the interface as our first step of a DSL; as the project grows, you may find the need to abstract differently, but for now, this is fine.
+Вы можете рассматривать интерфейс как наш первый шаг к DSL; по мере роста проекта вы можете обнаружить необходимость в иной абстракции, но пока это нормально.
 
-At this point, this level of ceremony to decouple our specification from implementation might make some people accuse us of "overly abstracting". **I promise you that acceptance tests that are too coupled to implementation become a real burden on engineering teams**. I am confident that most acceptance tests out in the wild are expensive to maintain due to this inappropriate coupling; rather than the reverse of being overly abstract.
+На этом этапе такой уровень церемонии для отделения нашей спецификации от реализации может заставить некоторых людей обвинить нас в "чрезмерной абстракции". **Я обещаю вам, что приемочные тесты, которые слишком сильно связаны с реализацией, становятся настоящим бременем для инженерных команд**. Я уверен, что большинство приемочных тестов, существующих в реальном мире, дороги в поддержке из-за этой неуместной связанности; а не наоборот, из-за чрезмерной абстракции.
 
-We can use this specification to verify any "system" that can `Greet`.
+Мы можем использовать эту спецификацию для проверки любой "системы", которая может `Greet`.
 
-### First system: HTTP API
+### Первая система: HTTP API
 
-We require to provide a "greeter service" over HTTP. So we'll need to create:
+Нам требуется предоставить "сервис приветствия" через HTTP. Поэтому нам нужно создать:
 
-1. A **driver**. In this case, one works with an HTTP system by using an **HTTP client**. This code will know how to work with our API. Drivers translate DSLs into system-specific calls; in our case, the driver will implement the interface specifications define.
-2. An **HTTP server** with a greet API
-3. A **test**, which is responsible for managing the life-cycle of spinning up the server and then plugging the driver into the specification to run it as a test
+1.  **Драйвер**. В данном случае это драйвер, который работает с HTTP-системой, используя **HTTP-клиент**. Этот код будет знать, как работать с нашим API. Драйверы переводят DSL в специфические для системы вызовы; в нашем случае драйвер будет реализовывать интерфейс, определенный спецификациями.
+2.  **HTTP-сервер** с API приветствия
+3.  **Тест**, который отвечает за управление жизненным циклом запуска сервера, а затем подключение драйвера к спецификации для запуска его в качестве теста.
 
-## Write the test first
+## Сначала напишите тест
 
-The initial process for creating a black-box test that compiles and runs your program, executes the test and then cleans everything up can be quite labour intensive. That's why it's preferable to do it at the start of your project with minimal functionality. I typically start all my projects with a "hello world" server implementation, with all of my tests set up and ready for me to build the actual functionality quickly.
+Начальный процесс создания черноящичного теста, который компилирует и запускает вашу программу, выполняет тест, а затем все очищает, может быть довольно трудоемким. Вот почему предпочтительнее делать это в начале проекта с минимальной функциональностью. Я обычно начинаю все свои проекты с реализации сервера "hello world", со всеми настроенными тестами, готовыми для быстрого создания фактической функциональности.
 
-The mental model of "specifications", "drivers", and "acceptance tests" can take a little time to get used to, so follow carefully. It can be helpful to "work backwards" by trying to call the specification first.
+Мысленная модель "спецификаций", "драйверов" и "приемочных тестов" может занять некоторое время, чтобы привыкнуть, поэтому внимательно следите. Может быть полезно "работать в обратном порядке", пытаясь сначала вызвать спецификацию.
 
-Create some structure to house the program we intend to ship.
+Создайте структуру для размещения программы, которую мы собираемся выпустить.
 
 `mkdir -p cmd/httpserver`
 
-Inside the new folder, create a new file `greeter_server_test.go`, and add the following.
+Внутри новой папки создайте новый файл `greeter_server_test.go` и добавьте следующее.
 
 ```go
 package main_test
@@ -229,9 +229,9 @@ func TestGreeterServer(t *testing.T) {
 }
 ```
 
-We wish to run our specification in a Go test. We already have access to a `*testing.T`, so that's the first argument, but what about the second?
+Мы хотим запустить нашу спецификацию в Go-тесте. У нас уже есть доступ к `*testing.T`, так что это первый аргумент, но что насчет второго?
 
-`specifications.Greeter` is an interface, which we will implement with a `Driver` by changing the new TestGreeterServer code to the following:
+`specifications.Greeter` — это интерфейс, который мы реализуем с помощью `Driver`, изменив новый код `TestGreeterServer` на следующий:
 
 ```go
 import (
@@ -244,21 +244,21 @@ func TestGreeterServer(t *testing.T) {
 }
 ```
 
-It would be favourable for our `Driver` to be configurable to run it against different environments, including locally, so we have added a `BaseURL` field.
+Было бы желательно, чтобы наш `Driver` был конфигурируемым для запуска в различных средах, включая локальную, поэтому мы добавили поле `BaseURL`.
 
-## Try to run the test
+## Попробуйте запустить тест
 
 ```
 ./greeter_server_test.go:46:12: undefined: go_specs_greet.Driver
 ```
 
-We're still practising TDD here! It's a big first step we have to make; we need to make a few files and write maybe more code than we're typically used to, but when you're first starting, this is often the case. It's so important we try to remember the red step's rules.
+Мы все еще практикуем TDD! Это большой первый шаг, который нам предстоит сделать; нам нужно создать несколько файлов и, возможно, написать больше кода, чем мы привыкли, но когда вы только начинаете, это часто бывает так. Очень важно помнить правила красного шага.
 
-> Commit as many sins as necessary to get the test passing
+> Совершите столько грехов, сколько необходимо, чтобы тест прошел.
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод неудачного теста
 
-Hold your nose; remember, we can refactor when the test has passed. Here's the code for the driver in `driver.go` which we will place in the project root:
+Задержите дыхание; помните, мы можем провести рефакторинг, когда тест пройдет. Вот код для драйвера в `driver.go`, который мы поместим в корень проекта:
 
 ```go
 package go_specs_greet
@@ -286,29 +286,28 @@ func (d Driver) Greet() (string, error) {
 }
 ```
 
+Примечания:
 
-Notes:
-
-- You could argue that I should be writing tests to drive out the various `if err != nil`, but in my experience, so long as you're not doing anything with the `err`, tests that say "you return the error you get" are relatively low value.
-- **You shouldn't use the default HTTP client**. Later we'll pass in an HTTP client to configure it with timeouts etc., but for now, we're just trying to get ourselves to a passing test.
--  In our `greeter_server_test.go` we called the Driver function from `go_specs_greet` package which we have now created, don't forget to add `github.com/quii/go-specs-greet` to its imports.
-Try and rerun the tests; they should now compile but not pass.
+- Можно утверждать, что я должен писать тесты для проверки различных `if err != nil`, но по моему опыту, пока вы ничего не делаете с `err`, тесты, которые говорят "вы возвращаете ошибку, которую получаете", имеют относительно низкую ценность.
+- **Вам не следует использовать HTTP-клиент по умолчанию**. Позже мы передадим HTTP-клиент для его настройки с таймаутами и т. д., но сейчас мы просто пытаемся добиться прохождения теста.
+- В нашем `greeter_server_test.go` мы вызвали функцию Driver из пакета `go_specs_greet`, который мы только что создали, не забудьте добавить `github.com/quii/go-specs-greet` в его импорты.
+Попробуйте снова запустить тесты; они должны скомпилироваться, но не пройти.
 
 ```
 Get "http://localhost:8080/greet": dial tcp [::1]:8080: connect: connection refused
 ```
 
-We have a `Driver`, but we have not started our application yet, so it cannot do an HTTP request. We need our acceptance test to coordinate building, running and finally killing our system for the test to run.
+У нас есть `Driver`, но мы еще не запустили наше приложение, поэтому оно не может выполнить HTTP-запрос. Наш приемочный тест должен координировать сборку, запуск и, наконец, остановку нашей системы для выполнения теста.
 
-### Running our application
+### Запуск нашего приложения
 
-It's common for teams to build Docker images of their systems to deploy, so for our test we'll do the same
+Обычно команды создают Docker-образы своих систем для развертывания, поэтому для нашего теста мы сделаем то же самое.
 
-To help us use Docker in our tests, we will use [Testcontainers](https://golang.testcontainers.org). Testcontainers gives us a programmatic way to build Docker images and manage container life-cycles.
+Чтобы помочь нам использовать Docker в наших тестах, мы будем использовать [Testcontainers](https://golang.testcontainers.org). Testcontainers предоставляет нам программный способ создания Docker-образов и управления жизненными циклами контейнеров.
 
 `go get github.com/testcontainers/testcontainers-go`
 
-Now you can edit `cmd/httpserver/greeter_server_test.go` to read as follows:
+Теперь вы можете отредактировать `cmd/httpserver/greeter_server_test.go` следующим образом:
 
 ```go
 package main_test
@@ -351,7 +350,7 @@ func TestGreeterServer(t *testing.T) {
 }
 ```
 
-Try and run the test.
+Попробуйте запустить тест.
 
 ```
 === RUN   TestGreeterHandler
@@ -363,7 +362,7 @@ Try and run the test.
 --- FAIL: TestGreeterHandler (0.59s)
 ```
 
-We need to create a Dockerfile for our program. Inside our `httpserver` folder, create a `Dockerfile` and add the following.
+Нам нужно создать Dockerfile для нашей программы. Внутри папки `httpserver` создайте `Dockerfile` и добавьте следующее.
 
 ```dockerfile
 # Make sure to specify the same Go version as the one in the go.mod file.
@@ -384,13 +383,13 @@ EXPOSE 8080
 CMD [ "./svr" ]
 ```
 
-Don't worry too much about the details here; it can be refined and optimised, but for this example, it'll suffice. The advantage of our approach here is we can later improve our Dockerfile and have a test to prove it works as we intend it to. This is a real strength of having black-box tests!
+Не беспокойтесь слишком сильно о деталях; его можно доработать и оптимизировать, но для этого примера он подойдет. Преимущество нашего подхода заключается в том, что позже мы можем улучшить наш Dockerfile и иметь тест, подтверждающий его работу так, как мы задумали. Это реальная сила наличия тестов "черного ящика"!
 
-Try and rerun the test; it should complain about not being able to build the image. Of course, that's because we haven't written a program to build yet!
+Попробуйте снова запустить тест; он должен пожаловаться на невозможность сборки образа. Конечно, это потому, что мы еще не написали программу для сборки!
 
-For the test to fully execute, we'll need to create a program that listens on `8080`, but **that's all**. Stick to the TDD discipline, don't write the production code that would make the test pass until we've verified the test fails as we'd expect.
+Чтобы тест полностью выполнился, нам нужно будет создать программу, которая слушает на `8080`, но **это все**. Придерживайтесь дисциплины TDD, не пишите production-код, который заставил бы тест пройти, пока мы не убедимся, что тест падает, как мы и ожидали.
 
-Create a `main.go` inside our `httpserver` folder with the following
+Создайте `main.go` в нашей папке `httpserver` со следующим содержимым:
 
 ```go
 package main
@@ -409,7 +408,7 @@ func main() {
 }
 ```
 
-Try to run the test again, and it should fail with the following.
+Попробуйте снова запустить тест, и он должен завершиться неудачей со следующим результатом.
 
 ```
     greet.go:16: Expected values to be equal:
@@ -418,9 +417,9 @@ Try to run the test again, and it should fail with the following.
 --- FAIL: TestGreeterHandler (2.09s)
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы он прошел
 
-Update the handler to behave how our specification wants it to
+Обновите обработчик, чтобы он вел себя так, как того требует наша спецификация.
 
 ```go
 import (
@@ -439,9 +438,9 @@ func main() {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-Whilst this technically isn't a refactor, we shouldn't rely on the default HTTP client, so let's change our Driver, so we can supply one, which our test will give.
+Хотя технически это не рефакторинг, мы не должны полагаться на HTTP-клиент по умолчанию, поэтому давайте изменим наш `Driver`, чтобы мы могли передавать его, что и будет делать наш тест.
 
 ```go
 import (
@@ -468,7 +467,7 @@ func (d Driver) Greet() (string, error) {
 }
 ```
 
-In our test in `cmd/httpserver/greeter_server_test.go`, update the creation of the driver to pass in a client.
+В нашем тесте в `cmd/httpserver/greeter_server_test.go` обновите создание драйвера, чтобы передать клиент.
 
 ```go
 client := http.Client{
@@ -479,9 +478,9 @@ driver := go_specs_greet.Driver{BaseURL: "http://localhost:8080", Client: &clien
 specifications.GreetSpecification(t, driver)
 ```
 
-It's good practice to keep `main.go` as simple as possible; it should only be concerned with piecing together the building blocks you make into an application.
+Хорошей практикой является сохранение `main.go` максимально простым; он должен быть озабочен только сборкой строительных блоков, которые вы создаете, в приложение.
 
-Create a file in the project root called `handler.go` and move our code into there.
+Создайте файл в корне проекта с именем `handler.go` и переместите туда наш код.
 
 ```go
 package go_specs_greet
@@ -496,7 +495,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-Update `main.go` to import and use the handler instead.
+Обновите `main.go`, чтобы он импортировал и использовал обработчик вместо этого.
 
 ```go
 package main
@@ -513,17 +512,17 @@ func main() {
 }
 ```
 
-## Reflect
+## Размышления
 
-The first step felt like an effort. We've made several `go` files to create and test an HTTP handler that returns a hard-coded string. This "iteration 0" ceremony and setup will serve us well for further iterations.
+Первый шаг показался трудным. Мы создали несколько файлов `go` для создания и тестирования HTTP-обработчика, который возвращает жестко закодированную строку. Эта "итерация 0" церемонии и настройки послужит нам хорошо для дальнейших итераций.
 
-Changing functionality should be simple and controlled by driving it through the specification and dealing with whatever changes it forces us to make. Now the `DockerFile` and `testcontainers` are set up for our acceptance test; we shouldn't have to change these files unless the way we construct our application changes.
+Изменение функциональности должно быть простым и контролироваться за счет продвижения ее через спецификацию и работы с любыми изменениями, которые она заставляет нас делать. Теперь, когда `DockerFile` и `testcontainers` настроены для нашего приемочного теста; нам не придется изменять эти файлы, если только не изменится способ построения нашего приложения.
 
-We'll see this with our following requirement, greet a particular person.
+Мы увидим это с нашим следующим требованием: приветствовать конкретного человека.
 
-## Write the test first
+## Сначала напишите тест
 
-Edit our specification
+Отредактируйте нашу спецификацию
 
 ```go
 package specifications
@@ -545,9 +544,9 @@ func GreetSpecification(t testing.TB, greeter Greeter) {
 }
 ```
 
-To allow us to greet specific people, we need to change the interface to our system to accept a `name` parameter.
+Чтобы мы могли приветствовать конкретных людей, нам нужно изменить интерфейс нашей системы, чтобы он принимал параметр `name`.
 
-## Try to run the test
+## Попробуйте запустить тест
 
 ```
 ./greeter_server_test.go:48:39: cannot use driver (variable of type go_specs_greet.Driver) as type specifications.Greeter in argument to specifications.GreetSpecification:
@@ -556,11 +555,11 @@ To allow us to greet specific people, we need to change the interface to our sys
 		want Greet(name string) (string, error)
 ```
 
-The change in the specification has meant our driver needs to be updated.
+Изменение в спецификации означает, что наш драйвер нуждается в обновлении.
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод неудачного теста
 
-Update the driver so that it specifies a `name` query value in the request to ask for a particular `name` to be greeted.
+Обновите драйвер так, чтобы он указывал значение запроса `name` в запросе, чтобы запросить приветствие определенного `name`.
 
 ```go
 import "io"
@@ -579,7 +578,7 @@ func (d Driver) Greet(name string) (string, error) {
 }
 ```
 
-The test should now run, and fail.
+Тест теперь должен запуститься и завершиться неудачей.
 
 ```
     greet.go:16: Expected values to be equal:
@@ -590,9 +589,9 @@ The test should now run, and fail.
 --- FAIL: TestGreeterHandler (1.92s)
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы он прошел
 
-Extract the `name` from the request and greet.
+Извлеките `name` из запроса и поприветствуйте.
 
 ```go
 import (
@@ -605,15 +604,15 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-The test should now pass.
+Тест теперь должен пройти.
 
-## Refactor
+## Рефакторинг
 
-In [HTTP Handlers Revisited,](https://github.com/quii/learn-go-with-tests/blob/main/http-handlers-revisited.md) we discussed how important it is for HTTP handlers should only be responsible for handling HTTP concerns; any "domain logic" should live outside of the handler. This allows us to develop domain logic in isolation from HTTP, making it simpler to test and understand.
+В [HTTP Handlers Revisited](https://github.com/quii/learn-go-with-tests/blob/main/http-handlers-revisited.md) мы обсуждали, насколько важно, чтобы HTTP-обработчики отвечали только за обработку HTTP-аспектов; любая "доменная логика" должна находиться за пределами обработчика. Это позволяет нам разрабатывать доменную логику в изоляции от HTTP, что упрощает ее тестирование и понимание.
 
-Let's pull apart these concerns.
+Давайте разделим эти аспекты.
 
-Update our handler in `./handler.go` as follows:
+Обновите наш обработчик в `./handler.go` следующим образом:
 
 ```go
 func Handler(w http.ResponseWriter, r *http.Request) {
@@ -622,7 +621,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-Create new file `./greet.go`:
+Создайте новый файл `./greet.go`:
 ```go
 package go_specs_greet
 
@@ -633,13 +632,13 @@ func Greet(name string) string {
 }
 ```
 
-## A slight diversion in to the "adapter" design pattern
+## Небольшое отступление в шаблон проектирования "адаптер"
 
-Now that we've separated our domain logic of greeting people into a separate function, we are now free to write unit tests for our greet function. This is undoubtedly a lot simpler than testing it through a specification that goes through a driver that hits a web server, to get a string!
+Теперь, когда мы отделили нашу доменную логику приветствия людей в отдельную функцию, мы можем писать модульные тесты для нашей функции `Greet`. Это, несомненно, намного проще, чем тестировать ее через спецификацию, которая проходит через драйвер, обращающийся к веб-серверу, чтобы получить строку!
 
-Wouldn't it be nice if we could reuse our specification here too? After all, the specification's point is decoupled from implementation details. If the specification captures our **essential complexity** and our "domain" code is supposed to model it, we should be able to use them together.
+Разве не было бы замечательно, если бы мы могли повторно использовать нашу спецификацию и здесь? В конце концов, смысл спецификации в том, что она не зависит от деталей реализации. Если спецификация захватывает нашу **существенную сложность**, а наш "доменный" код должен ее моделировать, мы должны иметь возможность использовать их вместе.
 
-Let's give it a go by creating  `./greet_test.go` as follows:
+Давайте попробуем, создав `./greet_test.go` следующим образом:
 
 ```go
 package go_specs_greet_test
@@ -657,22 +656,22 @@ func TestGreet(t *testing.T) {
 
 ```
 
-This would be nice, but it doesn't work
+Это было бы хорошо, но это не работает.
 
 ```
 ./greet_test.go:11:39: cannot use go_specs_greet.Greet (value of type func(name string) string) as type specifications.Greeter in argument to specifications.GreetSpecification:
 	func(name string) string does not implement specifications.Greeter (missing Greet method)
 ```
 
-Our specification wants something that has a method `Greet()` not a function.
+Наша спецификация хочет что-то, что имеет метод `Greet()`, а не функцию.
 
-The compilation error is frustrating; we have a thing that we "know" is a `Greeter`, but it's not quite in the right **shape** for the compiler to let us use it. This is what the **adapter** pattern caters for.
+Ошибка компиляции разочаровывает; у нас есть нечто, что мы "знаем" как `Greeter`, но оно не совсем в нужной **форме**, чтобы компилятор позволил нам его использовать. Именно для этого и предназначен шаблон **адаптер**.
 
-> In [software engineering](https://en.wikipedia.org/wiki/Software_engineering), the **adapter pattern** is a [software design pattern](https://en.wikipedia.org/wiki/Software_design_pattern) (also known as [wrapper](https://en.wikipedia.org/wiki/Wrapper_function), an alternative naming shared with the [decorator pattern](https://en.wikipedia.org/wiki/Decorator_pattern)) that allows the [interface](https://en.wikipedia.org/wiki/Interface_(computer_science)) of an existing [class](https://en.wikipedia.org/wiki/Class_(computer_science)) to be used as another interface.[[1\]](https://en.wikipedia.org/wiki/Adapter_pattern#cite_note-HeadFirst-1) It is often used to make existing classes work with others without modifying their [source code](https://en.wikipedia.org/wiki/Source_code).
+> В [программной инженерии](https://en.wikipedia.org/wiki/Software_engineering) **шаблон адаптер** — это [шаблон проектирования программного обеспечения](https://en.wikipedia.org/wiki/Software_design_pattern) (также известный как [обертка](https://en.wikipedia.org/wiki/Wrapper_function), альтернативное название, используемое также для [шаблона декоратор](https://en.wikipedia.org/wiki/Decorator_pattern)), который позволяет использовать [интерфейс](https://en.wikipedia.org/wiki/Interface_(computer_science)) существующего [класса](https://en.wikipedia.org/wiki/Class_(computer_science)) в качестве другого интерфейса.[[1\]](https://en.wikipedia.org/wiki/Adapter_pattern#cite_note-HeadFirst-1) Он часто используется для обеспечения взаимодействия существующих классов с другими без изменения их [исходного кода](https://en.wikipedia.org/wiki/Source_code).
 
-A lot of fancy words for something relatively simple, which is often the case with design patterns, which is why people tend to roll their eyes at them. The value of design patterns is not specific implementations but a language to describe specific solutions to common problems engineers face. If you have a team that has a shared vocabulary, it reduces the friction in communication.
+Много умных слов для чего-то относительно простого, что часто бывает с шаблонами проектирования, поэтому люди склонны закатывать глаза при их упоминании. Ценность шаблонов проектирования не в конкретных реализациях, а в языке для описания конкретных решений общих проблем, с которыми сталкиваются инженеры. Если у вашей команды есть общий словарь, это уменьшает трения в общении.
 
-Add this code in `./specifications/adapters.go`
+Добавьте этот код в `./specifications/adapters.go`
 
 ```go
 type GreetAdapter func(name string) string
@@ -682,7 +681,7 @@ func (g GreetAdapter) Greet(name string) (string, error) {
 }
 ```
 
-We can now use our adapter in our test to plug our `Greet` function into the specification.
+Теперь мы можем использовать наш адаптер в нашем тесте, чтобы подключить нашу функцию `Greet` к спецификации.
 
 ```go
 package go_specs_greet_test
@@ -702,21 +701,21 @@ func TestGreet(t *testing.T) {
 }
 ```
 
-The adapter pattern is handy when you have a type that exhibits the behaviour that an interface wants, but isn't in the right shape.
+Шаблон адаптера очень полезен, когда у вас есть тип, который демонстрирует поведение, необходимое интерфейсу, но не имеет правильной формы.
 
-## Reflect
+## Размышления
 
-The behaviour change felt simple, right? OK, maybe it was simply due to the nature of the problem, but this method of work gives you discipline and a simple, repeatable way of changing your system from top to bottom:
+Изменение поведения казалось простым, верно? Ладно, возможно, это было просто из-за характера проблемы, но этот метод работы дает вам дисциплину и простой, повторяемый способ изменения вашей системы сверху донизу:
 
-- Analyse your problem and identify a slight improvement to your system that pushes you in the right direction
-- Capture the new essential complexity in a specification
-- Follow the compilation errors until the AT runs
-- Update your implementation to make the system behave according to the specification
-- Refactor
+- Проанализируйте свою проблему и определите небольшое улучшение вашей системы, которое продвинет вас в правильном направлении
+- Зафиксируйте новую существенную сложность в спецификации
+- Следуйте ошибкам компиляции, пока AT не запустится
+- Обновите свою реализацию, чтобы система вела себя в соответствии со спецификацией
+- Проведите рефакторинг
 
-After the pain of the first iteration, we didn't have to edit our acceptance test code because we have the separation of specifications, drivers and implementation. Changing our specification required us to update our driver and finally our implementation, but the boilerplate code around _how_ to spin up the system as a container was unaffected.
+После болезненной первой итерации нам не пришлось редактировать наш код приемочного теста, потому что у нас есть разделение спецификаций, драйверов и реализации. Изменение нашей спецификации потребовало обновления нашего драйвера и, наконец, нашей реализации, но шаблонный код, касающийся _как_ запускать систему как контейнер, остался без изменений.
 
-Even with the overhead of building a docker image for our application and spinning up the container, the feedback loop for testing our **entire** application is very tight:
+Даже с накладными расходами на создание образа Docker для нашего приложения и запуск контейнера, цикл обратной связи для тестирования всего нашего приложения очень быстрый:
 
 ```
 quii@Chriss-MacBook-Pro go-specs-greet % go test ./...
@@ -725,23 +724,23 @@ ok  	github.com/quii/go-specs-greet/cmd/httpserver	2.221s
 ?   	github.com/quii/go-specs-greet/specifications	[no test files]
 ```
 
-Now, imagine your CTO has now decided that gRPC is _the future_. She wants you to expose this same functionality over a gRPC server whilst maintaining the existing HTTP server.
+Теперь представьте, что ваш CTO решил, что gRPC — это _будущее_. Она хочет, чтобы вы предоставили ту же функциональность через gRPC-сервер, сохраняя при этом существующий HTTP-сервер.
 
-This is an example of **accidental complexity**. Remember, accidental complexity is the complexity we have to deal with because we're working with computers, stuff like networks, disks, APIs, etc. **The essential complexity has not changed**, so we shouldn't have to change our specifications.
+Это пример **случайной сложности**. Помните, случайная сложность — это сложность, с которой мы сталкиваемся из-за работы с компьютерами, такими как сети, диски, API и т. д. **Существенная сложность не изменилась**, поэтому нам не нужно менять наши спецификации.
 
-Many repository structures and design patterns are mainly dealing with separating types of complexity. For instance, "ports and adapters" ask that you separate your domain code from anything to do with accidental complexity; that code lives in an "adapters" folder.
+Многие структуры репозиториев и шаблоны проектирования в основном занимаются разделением типов сложности. Например, "порты и адаптеры" требуют, чтобы вы отделяли свой доменный код от всего, что связано со случайной сложностью; этот код живет в папке "адаптеров".
 
-### Making the change easy
+### Облегчение изменения
 
-Sometimes, it makes sense to do some refactoring _before_ making a change.
+Иногда имеет смысл провести некоторый рефакторинг _перед_ внесением изменений.
 
-> First make the change easy, then make the easy change
+> Сначала сделайте изменение легким, затем сделайте легкое изменение.
 
-~Kent Beck
+~Кент Бек
 
-For that reason, let's move our `http` code - `driver.go` and `handler.go` - into a package called `httpserver` within an `adapters` folder and change their package names to `httpserver`.
+По этой причине давайте переместим наш `http`-код — `driver.go` и `handler.go` — в пакет с именем `httpserver` внутри папки `adapters` и изменим их имена пакетов на `httpserver`.
 
-You'll now need to import the root package into `handler.go` to refer to the Greet method...
+Теперь вам нужно будет импортировать корневой пакет в `handler.go`, чтобы сослаться на метод `Greet`...
 
 ```go
 package httpserver
@@ -760,7 +759,7 @@ func Handler(w http.ResponseWriter, r *http.Request) {
 
 ```
 
-import your httpserver adapter into main.go:
+импортируйте ваш адаптер httpserver в main.go:
 
 ```go
 package main
@@ -777,29 +776,29 @@ func main() {
 }
 ```
 
-and update the import and reference to `Driver` in greeter_server_test.go:
+и обновите импорт и ссылку на `Driver` в greeter_server_test.go:
 
 ```go
 driver := httpserver.Driver{BaseURL: "http://localhost:8080", Client: &client}
 ```
 
-Finally, it's helpful to gather our domain level code in to its own folder too. Don't be lazy and have a `domain` folder in your projects with hundreds of unrelated types and functions. Make an effort to think about your domain and group ideas that belong together, together. This will make your project easier to understand and will improve the quality of your imports.
+Наконец, полезно также собрать наш код доменного уровня в отдельную папку. Не ленитесь и не создавайте в своих проектах папку `domain` с сотнями несвязанных типов и функций. Приложите усилия, чтобы подумать о своей предметной области и сгруппировать идеи, которые принадлежат друг другу. Это облегчит понимание вашего проекта и улучшит качество ваших импортов.
 
-Rather than seeing
+Вместо того чтобы видеть
 
 ```go
 domain.Greet
 ```
 
-Which is just a bit weird, instead favour
+Что довольно странно, лучше отдать предпочтение
 
 ```go
 interactions.Greet
 ```
 
-Create a `domain` folder to house all your domain code, and within it, an `interactions` folder. Depending on your tooling, you may have to update some imports and code.
+Создайте папку `domain` для всего вашего доменного кода, а внутри нее — папку `interactions`. В зависимости от ваших инструментов вам, возможно, придется обновить некоторые импорты и код.
 
-Our project tree should now look like this:
+Наше дерево проекта теперь должно выглядеть так:
 
 ```
 quii@Chriss-MacBook-Pro go-specs-greet % tree
@@ -827,18 +826,18 @@ quii@Chriss-MacBook-Pro go-specs-greet % tree
 
 ```
 
-Our domain code, **essential complexity**, lives at the root of our go module, and code that will allow us to use them in "the real world" are organised into **adapters**. The `cmd` folder is where we can compose these logical groupings into practical applications, which have black-box tests to verify it all works. Nice!
+Наш доменный код, **существенная сложность**, находится в корне нашего модуля Go, а код, который позволит нам использовать его в "реальном мире", организован в **адаптеры**. Папка `cmd` — это место, где мы можем скомпоновать эти логические группы в практические приложения, имеющие черноящичные тесты для проверки их работы. Отлично!
 
-Finally, we can do a _tiny_ bit of tidying up our acceptance test. If you consider the high-level steps of our acceptance test:
+Наконец, мы можем немного привести в порядок наш приемочный тест. Если вы рассмотрите высокоуровневые шаги нашего приемочного теста:
 
-- Build a docker image
-- Wait for it to be listening on _some_ port
-- Create a driver that understands how to translate the DSL into system specific calls
-- Plug in the driver into the specification
+- Собрать образ docker
+- Дождаться, пока он начнет прослушивать _какой-либо_ порт
+- Создать драйвер, который понимает, как переводить DSL в системно-специфичные вызовы
+- Подключить драйвер к спецификации
 
-... you'll realise we have the same requirements for an acceptance test for the gRPC server!
+... вы поймете, что у нас есть те же требования для приемочного теста для gRPC-сервера!
 
-The `adapters` folder seems a good place as any, so inside a file called `docker.go`, encapsulate the first two steps in a function that we'll reuse next.
+Папка `adapters` кажется подходящим местом, поэтому внутри файла `docker.go` инкапсулируем первые два шага в функцию, которую мы повторно используем далее.
 
 ```go
 package adapters
@@ -882,7 +881,7 @@ func StartDockerServer(
 }
 ```
 
-This gives us an opportunity to clean up our acceptance test a little
+Это дает нам возможность немного очистить наш приемочный тест.
 
 ```go
 func TestGreeterServer(t *testing.T) {
@@ -900,17 +899,17 @@ func TestGreeterServer(t *testing.T) {
 }
 ```
 
-This should make writing the _next_ test simpler.
+Это должно упростить написание _следующего_ теста.
 
-## Write the test first
+## Сначала напишите тест
 
-This new functionality can be accomplished by creating a new `adapter` to interact with our domain code. For that reason we:
+Эта новая функциональность может быть реализована путем создания нового `адаптера` для взаимодействия с нашим доменным кодом. По этой причине мы:
 
-- Shouldn't have to change the specification;
-- Should be able to reuse the specification;
-- Should be able to reuse the domain code.
+- Не должны менять спецификацию;
+- Должны иметь возможность повторно использовать спецификацию;
+- Должны иметь возможность повторно использовать доменный код.
 
-Create a new folder `grpcserver` inside `cmd` to house our new program and the corresponding acceptance test. Inside `cmd/grpc_server/greeter_server_test.go`, add an acceptance test, which looks very similar to our HTTP server test, not by coincidence but by design.
+Создайте новую папку `grpcserver` внутри `cmd`, чтобы разместить нашу новую программу и соответствующий приемочный тест. Внутри `cmd/grpc_server/greeter_server_test.go` добавьте приемочный тест, который очень похож на наш тест HTTP-сервера, не случайно, а по замыслу.
 
 ```go
 package main_test
@@ -936,22 +935,22 @@ func TestGreeterServer(t *testing.T) {
 }
 ```
 
-The only differences are:
+Единственные различия:
 
-- We use a different docker file, because we're building a different program
-- This means we'll need a new `Driver`, that'll use `gRPC` to interact with our new program
+- Мы используем другой файл docker, потому что мы создаем другую программу
+- Это означает, что нам понадобится новый `Driver`, который будет использовать `gRPC` для взаимодействия с нашей новой программой
 
-## Try to run the test
+## Попробуйте запустить тест
 
 ```
 ./greeter_server_test.go:26:12: undefined: grpcserver
 ```
 
-We haven't created a `Driver` yet, so it won't compile.
+Мы еще не создали `Driver`, поэтому он не скомпилируется.
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод неудачного теста
 
-Create a `grpcserver` folder inside `adapters` and inside it create `driver.go`
+Создайте папку `grpcserver` внутри `adapters`, а внутри нее создайте `driver.go`.
 
 ```go
 package grpcserver
@@ -965,9 +964,9 @@ func (d Driver) Greet(name string) (string, error) {
 }
 ```
 
-If you run again, it should now _compile_ but not pass because we haven't created a Dockerfile and corresponding program to run.
+Если вы запустите его снова, он теперь должен _скомпилироваться_, но не пройти, потому что мы не создали Dockerfile и соответствующую программу для запуска.
 
-Create a new `Dockerfile` inside `cmd/grpcserver`.
+Создайте новый `Dockerfile` внутри `cmd/grpcserver`.
 
 ```dockerfile
 # Make sure to specify the same Go version as the one in the go.mod file.
@@ -987,7 +986,7 @@ EXPOSE 50051
 CMD [ "./svr" ]
 ```
 
-And a `main.go`
+И `main.go`
 
 ```go
 package main
@@ -999,19 +998,19 @@ func main() {
 }
 ```
 
-You should find now that the test fails because our server is not listening on the port. Now is the time to start building our client and server with gRPC.
+Теперь вы должны обнаружить, что тест не проходит, потому что наш сервер не слушает на порту. Сейчас самое время начать создавать наш клиент и сервер с помощью gRPC.
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы он прошел
 
 ### gRPC
 
-If you're unfamiliar with gRPC, I'd start by looking at the [gRPC website](https://grpc.io). Still, for this chapter, it's just another kind of adapter into our system, a way for other systems to call (**r**emote **p**rocedure **c**all) our excellent domain code.
+Если вы не знакомы с gRPC, я бы посоветовал начать с [веб-сайта gRPC](https://grpc.io). Тем не менее, для этой главы это просто еще один вид адаптера к нашей системе, способ для других систем вызывать (**r**emote **p**rocedure **c**all) наш отличный доменный код.
 
-The twist is you define a "service definition" using Protocol Buffers. You then generate server and client code from the definition. This not only works for Go but for most mainstream languages too. This means you can share a definition with other teams in your company who may not even write Go and can still do service-to-service communication smoothly.
+Особенность заключается в том, что вы определяете "определение службы" с использованием Protocol Buffers. Затем вы генерируете код сервера и клиента из этого определения. Это работает не только для Go, но и для большинства основных языков. Это означает, что вы можете поделиться определением с другими командами в вашей компании, которые, возможно, даже не пишут на Go, и все равно сможете беспрепятственно осуществлять связь между службами.
 
-If you haven't used gRPC before, you'll need to install a **Protocol buffer compiler** and some **Go plugins**. [The gRPC website has clear instructions on how to do this](https://grpc.io/docs/languages/go/quickstart/).
+Если вы раньше не использовали gRPC, вам потребуется установить **компилятор Protocol buffer** и некоторые **Go-плагины**. [На веб-сайте gRPC есть четкие инструкции по этому поводу](https://grpc.io/docs/languages/go/quickstart/).
 
-Inside the same folder as our new driver, add a `greet.proto` file with the following
+В той же папке, что и наш новый драйвер, добавьте файл `greet.proto` со следующим содержимым:
 
 ```protobuf
 syntax = "proto3";
@@ -1033,9 +1032,9 @@ message GreetReply {
 }
 ```
 
-To understand this definition, you don't need to be an expert in Protocol Buffers. We define a service with a Greet method and then describe the incoming and outgoing message types.
+Чтобы понять это определение, вам не нужно быть экспертом в Protocol Buffers. Мы определяем службу с методом Greet, а затем описываем типы входящих и исходящих сообщений.
 
-Inside `adapters/grpcserver` run the following to generate the client and server code
+Внутри `adapters/grpcserver` запустите следующее, чтобы сгенерировать код клиента и сервера:
 
 ```
 protoc --go_out=. --go_opt=paths=source_relative \
@@ -1043,7 +1042,7 @@ protoc --go_out=. --go_opt=paths=source_relative \
     greet.proto
 ```
 
-If it worked, we would have some code generated for us to use. Let's start by using the generated client code inside our `Driver`.
+Если это сработало, у нас будет сгенерирован некоторый код для использования. Давайте начнем с использования сгенерированного клиентского кода внутри нашего `Driver`.
 
 ```go
 package grpcserver
@@ -1079,7 +1078,7 @@ func (d Driver) Greet(name string) (string, error) {
 }
 ```
 
-Now that we have a client, we need to update our `main.go` to create a server. Remember, at this point; we're just trying to get our test to pass and not worrying about code quality.
+Теперь, когда у нас есть клиент, нам нужно обновить наш `main.go`, чтобы создать сервер. Помните, на этом этапе мы просто пытаемся заставить наш тест пройти и не беспокоимся о качестве кода.
 
 ```go
 package main
@@ -1115,7 +1114,7 @@ func (g GreetServer) Greet(ctx context.Context, request *grpcserver.GreetRequest
 }
 ```
 
-To create our gRPC server, we have to implement the interface it generated for us
+Чтобы создать наш gRPC-сервер, мы должны реализовать сгенерированный им для нас интерфейс.
 
 ```go
 // GreeterServer is the server API for Greeter service.
@@ -1127,13 +1126,13 @@ type GreeterServer interface {
 }
 ```
 
-Our `main` function:
+Наша функция `main`:
 
-- Listens on a port
-- Creates a `GreetServer` that implements the interface, and then registers it with `grpcServer.RegisterGreeterServer`, along with a `grpc.Server`.
-- Uses the server with the listener
+- Слушает на порту
+- Создает `GreetServer`, который реализует интерфейс, а затем регистрирует его с помощью `grpcServer.RegisterGreeterServer` вместе с `grpc.Server`.
+- Использует сервер с прослушивателем.
 
-It wouldn't be a massive extra effort to call our domain code inside `greetServer.Greet` rather than hard-coding `fix-me` in the message, but I'd like to run our acceptance test first to see if everything is working on a transport level and verify the failing test output.
+Не потребовалось бы больших дополнительных усилий, чтобы вызвать наш доменный код внутри `greetServer.Greet` вместо жестко закодированного `fix-me` в сообщении, но я хотел бы сначала запустить наш приемочный тест, чтобы убедиться, что все работает на транспортном уровне, и проверить вывод неудачного теста.
 
 ```
 greet.go:16: Expected values to be equal:
@@ -1143,9 +1142,9 @@ greet.go:16: Expected values to be equal:
 \ No newline at end of file
 ```
 
-Nice! We can see our driver is able to connect to our gRPC server in the test.
+Отлично! Мы видим, что наш драйвер способен подключиться к нашему gRPC-серверу в тесте.
 
-Now, call our domain code inside our `GreetServer`
+Теперь вызовите наш доменный код внутри нашего `GreetServer`.
 
 ```go
 type GreetServer struct {
@@ -1157,19 +1156,19 @@ func (g GreetServer) Greet(ctx context.Context, request *grpcserver.GreetRequest
 }
 ```
 
-Finally, it passes! We have an acceptance test that proves our gRPC greet server behaves how we'd like.
+Наконец, он проходит! У нас есть приемочный тест, который доказывает, что наш gRPC-сервер приветствий ведет себя так, как нам хотелось бы.
 
-## Refactor
+## Рефакторинг
 
-We committed several sins to get the test passing, but now they're passing, we have the safety net to refactor.
+Мы совершили несколько "грехов", чтобы тест прошел, но теперь, когда он проходит, у нас есть страховочная сетка для рефакторинга.
 
-### Simplify main
+### Упростите main
 
-As before, we don't want `main` to have too much code inside it. We can move our new `GreetServer` into `adapters/grpcserver` as that's where it should live. In terms of cohesion, if we change the service definition, we want the "blast-radius" of change to be confined to that area of our code.
+Как и прежде, мы не хотим, чтобы `main` содержал слишком много кода. Мы можем переместить наш новый `GreetServer` в `adapters/grpcserver`, так как именно там он и должен находиться. С точки зрения связности, если мы изменим определение службы, мы хотим, чтобы "радиус поражения" изменений был ограничен этой областью нашего кода.
 
-### Don't redial in our driver every time
+### Не переподключайтесь в нашем драйвере каждый раз
 
-We only have one test, but if we expand our specification (we will), it doesn't make sense for the Driver to redial for every RPC call.
+У нас только один тест, но если мы расширим нашу спецификацию (что мы и сделаем), нет смысла, чтобы драйвер переподключался при каждом вызове RPC.
 
 ```go
 package grpcserver
@@ -1216,9 +1215,9 @@ func (d *Driver) getClient() (GreeterClient, error) {
 }
 ```
 
-Here we're showing how we can use [`sync.Once`](https://pkg.go.dev/sync#Once) to ensure our `Driver` only attempts to create a connection to our server once.
+Здесь мы показываем, как использовать [`sync.Once`](https://pkg.go.dev/sync#Once), чтобы гарантировать, что наш `Driver` попытается установить соединение с нашим сервером только один раз.
 
-Let's take a look at the current state of our project structure before moving on.
+Давайте взглянем на текущее состояние нашей структуры проекта, прежде чем двигаться дальше.
 
 ```
 quii@Chriss-MacBook-Pro go-specs-greet % tree
@@ -1255,15 +1254,15 @@ quii@Chriss-MacBook-Pro go-specs-greet % tree
     └── greet.go
 ```
 
-- `adapters` have cohesive units of functionality grouped together
-- `cmd` holds our applications and corresponding acceptance tests
-- Our code is totally decoupled from any accidental complexity
+- `adapters` имеют сплоченные единицы функциональности, сгруппированные вместе.
+- `cmd` содержит наши приложения и соответствующие приемочные тесты.
+- Наш код полностью отвязан от любой случайной сложности.
 
-### Consolidating `Dockerfile`
+### Консолидация `Dockerfile`
 
-You've probably noticed the two `Dockerfiles` are almost identical beyond the path to the binary we wish to build.
+Вы, вероятно, заметили, что два `Dockerfile` почти идентичны, за исключением пути к бинарному файлу, который мы хотим собрать.
 
-`Dockerfiles` can accept arguments to let us reuse them in different contexts, which sounds perfect. We can delete our 2 Dockerfiles and instead have one at the root of the project with the following
+`Dockerfile` могут принимать аргументы, что позволяет нам повторно использовать их в разных контекстах, что кажется идеальным. Мы можем удалить наши 2 Dockerfile и вместо этого иметь один в корне проекта со следующим содержанием:
 
 ```dockerfile
 # Make sure to specify the same Go version as the one in the go.mod file.
@@ -1284,7 +1283,7 @@ RUN go build -o svr cmd/${bin_to_build}/main.go
 CMD [ "./svr" ]
 ```
 
-We'll have to update our `StartDockerServer` function to pass in the argument when we build the images
+Нам придется обновить нашу функцию `StartDockerServer`, чтобы передавать аргумент при сборке образов.
 
 ```go
 func StartDockerServer(
@@ -1317,7 +1316,7 @@ func StartDockerServer(
 }
 ```
 
-And finally, update our tests to pass in the image to build (do this for the other test and change `grpcserver` to `httpserver`).
+И, наконец, обновите наши тесты, чтобы передать образ для сборки (сделайте это для другого теста и измените `grpcserver` на `httpserver`).
 
 ```go
 func TestGreeterServer(t *testing.T) {
@@ -1331,25 +1330,25 @@ func TestGreeterServer(t *testing.T) {
 }
 ```
 
-### Separating different kinds of tests
+### Разделение различных видов тестов
 
-Acceptance tests are great in that they test the whole system works from a pure user-facing, behavioural POV, but they do have their downsides compared to unit tests:
+Приемочные тесты великолепны тем, что они проверяют работу всей системы с чисто пользовательской, поведенческой точки зрения, но у них есть и свои недостатки по сравнению с модульными тестами:
 
-- Slower
-- Quality of feedback is often not as focused as a unit test
-- Doesn't help you with internal quality, or design
+- Медленнее
+- Качество обратной связи часто не так сфокусировано, как в модульном тесте
+- Не помогают с внутренним качеством или дизайном
 
-[The Test Pyramid](https://martinfowler.com/articles/practical-test-pyramid.html) guides us on the kind of mix we want for our test suite, you should read Fowler's post for more detail, but the very simplistic summary for this post is "lots of unit tests and a few acceptance tests".
+[Тестовая пирамида](https://martinfowler.com/articles/practical-test-pyramid.html) указывает нам на то, какой тип сочетания мы хотим для нашего набора тестов; вы должны прочитать пост Фаулера для более подробной информации, но очень упрощенное резюме для этого поста: "много модульных тестов и несколько приемочных тестов".
 
-For that reason, as a project grows you often may be in situations where the acceptance tests can take a few minutes to run. To offer a friendly developer experience for people checking out your project, you can enable developers to run the different kinds of tests separately.
+По этой причине, по мере роста проекта, вы часто можете оказаться в ситуациях, когда выполнение приемочных тестов может занять несколько минут. Чтобы обеспечить удобный для разработчиков опыт для людей, изучающих ваш проект, вы можете позволить разработчикам запускать различные типы тестов отдельно.
 
-It's preferable that running `go test ./...` should be runnable with no further set up from an engineer, beyond say a few key dependencies such as the Go compiler (obviously) and perhaps Docker.
+Предпочтительно, чтобы запуск `go test ./...` был возможен без дополнительной настройки со стороны инженера, помимо, скажем, нескольких ключевых зависимостей, таких как компилятор Go (очевидно) и, возможно, Docker.
 
-Go provides a mechanism for engineers to run only "short" tests with the [short flag](https://pkg.go.dev/testing#Short)
+Go предоставляет механизм, позволяющий инженерам запускать только "короткие" тесты с помощью [флага short](https://pkg.go.dev/testing#Short).
 
 `go test -short ./...`
 
-We can add to our acceptance tests to see if the user wants to run our acceptance tests by inspecting the value of the flag
+Мы можем добавить в наши приемочные тесты проверку, хочет ли пользователь запустить наши приемочные тесты, проанализировав значение флага.
 
 ```go
 if testing.Short() {
@@ -1357,7 +1356,7 @@ if testing.Short() {
 }
 ```
 
-I made a `Makefile` to show this usage
+Я создал `Makefile`, чтобы показать это использование.
 
 ```makefile
 build:
@@ -1368,26 +1367,26 @@ unit-tests:
 	go test -short ./...
 ```
 
-### When should I write acceptance tests?
+### Когда следует писать приемочные тесты?
 
-The best practice is to favour having lots of fast running unit tests and a few acceptance tests, but how do you decide when you should write an acceptance test, vs unit tests?
+Лучшая практика — отдавать предпочтение большому количеству быстро выполняющихся модульных тестов и нескольким приемочным тестам, но как решить, когда следует писать приемочный тест, а когда — модульные?
 
-It's difficult to give a concrete rule, but the questions I typically ask myself are:
+Трудно дать конкретное правило, но вопросы, которые я обычно задаю себе:
 
-- Is this an edge case? I'd prefer to unit test those
-- Is this something that the non-computer people talk about a lot? I would prefer to have a lot of confidence the key thing "really" works, so I'd add an acceptance test
-- Am I describing a user journey, rather than a specific function? Acceptance test
-- Would unit tests give me enough confidence? Sometimes you're taking an existing journey that already has an acceptance test, but you're adding other functionality to deal with different scenarios due to different inputs. In this case, adding another acceptance test adds a cost but brings little value, so I'd prefer some unit tests.
+- Это граничный случай? Я бы предпочел протестировать его модульным тестом.
+- Это то, о чем много говорят нетехнические специалисты? Я бы предпочел иметь большую уверенность в том, что ключевая вещь "действительно" работает, поэтому я бы добавил приемочный тест.
+- Я описываю пользовательский путь, а не конкретную функцию? Приемочный тест.
+- Модульные тесты дадут мне достаточную уверенность? Иногда вы используете существующий путь, который уже имеет приемочный тест, но вы добавляете другую функциональность для обработки различных сценариев из-за разных входных данных. В этом случае добавление еще одного приемочного теста увеличивает стоимость, но приносит мало пользы, поэтому я бы предпочел несколько модульных тестов.
 
-## Iterating on our work
+## Итерационная работа
 
-With all this effort, you'd hope extending our system will now be simple. Making a system that is simple to work on, is not necessarily easy, but it's worth the time, and is substantially easier to do when you start a project.
+Со всеми этими усилиями вы, надеюсь, ожидаете, что расширение нашей системы теперь будет простым. Создание системы, с которой легко работать, не обязательно является легкой задачей, но это стоит времени и значительно легче сделать, когда вы начинаете проект.
 
-Let's extend our API to include a "curse" functionality.
+Давайте расширим наш API, чтобы включить функцию "проклятия".
 
-## Write the test first
+## Сначала напишите тест
 
-This is brand-new behaviour, so we should start with an acceptance test. In our specification file, add the following
+Это совершенно новое поведение, поэтому мы должны начать с приемочного теста. В нашем файле спецификации добавьте следующее:
 
 ```go
 type MeanGreeter interface {
@@ -1401,7 +1400,7 @@ func CurseSpecification(t *testing.T, meany MeanGreeter) {
 }
 ```
 
-Pick one of our acceptance tests and try to use the specification
+Выберите один из наших приемочных тестов и попробуйте использовать спецификацию:
 
 ```go
 func TestGreeterServer(t *testing.T) {
@@ -1420,7 +1419,7 @@ func TestGreeterServer(t *testing.T) {
 }
 ```
 
-## Try to run the test
+## Попробуйте запустить тест
 
 ```
 # github.com/quii/go-specs-greet/cmd/grpcserver_test [github.com/quii/go-specs-greet/cmd/grpcserver.test]
@@ -1428,11 +1427,11 @@ func TestGreeterServer(t *testing.T) {
 	*grpcserver.Driver does not implement specifications.MeanGreeter (missing Curse method)
 ```
 
-Our `Driver` doesn't support `Curse` yet.
+Наш `Driver` еще не поддерживает `Curse`.
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод неудачного теста
 
-Remember we're just trying to get the test to run, so add the method to `Driver`
+Помните, мы просто пытаемся заставить тест работать, поэтому добавьте метод к `Driver`.
 
 ```go
 func (d *Driver) Curse(name string) (string, error) {
@@ -1440,7 +1439,7 @@ func (d *Driver) Curse(name string) (string, error) {
 }
 ```
 
-If you try again, the test should compile, run, and fail
+Если вы попробуете еще раз, тест должен скомпилироваться, запуститься и завершиться неудачей.
 
 ```
 greet.go:26: Expected values to be equal:
@@ -1448,9 +1447,9 @@ greet.go:26: Expected values to be equal:
 \ No newline at end of file
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы он прошел
 
-We'll need to update our protocol buffer specification have a `Curse` method on it, and then regenerate our code.
+Нам нужно будет обновить нашу спецификацию protocol buffer, чтобы она имела метод `Curse`, а затем перегенерировать наш код.
 
 ```protobuf
 service Greeter {
@@ -1459,9 +1458,9 @@ service Greeter {
 }
 ```
 
-You could argue that reusing the types `GreetRequest` and `GreetReply` is inappropriate coupling, but we can deal with that in the refactoring stage. As I keep stressing, we're just trying to get the test passing, so we verify the software works, _then_ we can make it nice.
+Можно утверждать, что повторное использование типов `GreetRequest` и `GreetReply` является неуместной связью, но мы можем разобраться с этим на этапе рефакторинга. Как я постоянно подчеркиваю, мы просто пытаемся заставить тест пройти, чтобы проверить работу программного обеспечения, _а затем_ мы можем сделать его красивым.
 
-Re-generate our code with (inside `adapters/grpcserver`).
+Перегенерируйте наш код (внутри `adapters/grpcserver`).
 
 ```
 protoc --go_out=. --go_opt=paths=source_relative \
@@ -1469,9 +1468,9 @@ protoc --go_out=. --go_opt=paths=source_relative \
     greet.proto
 ```
 
-### Update driver
+### Обновление драйвера
 
-Now the client code has been updated, we can now call `Curse` in our `Driver`
+Теперь, когда клиентский код обновлен, мы можем вызывать `Curse` в нашем `Driver`.
 
 ```go
 func (d *Driver) Curse(name string) (string, error) {
@@ -1491,9 +1490,9 @@ func (d *Driver) Curse(name string) (string, error) {
 }
 ```
 
-### Update server
+### Обновление сервера
 
-Finally, we need to add the `Curse` method to our `Server`
+Наконец, нам нужно добавить метод `Curse` к нашему `Server`.
 
 ```go
 package grpcserver
@@ -1518,58 +1517,59 @@ func (g GreetServer) Greet(ctx context.Context, request *GreetRequest) (*GreetRe
 }
 ```
 
-The tests should now pass.
+Тесты теперь должны пройти.
 
-## Refactor
+## Рефакторинг
 
-Try doing this yourself.
+Попробуйте сделать это самостоятельно.
 
-- Extract the `Curse` "domain logic", away from the grpc server, as we did for `Greet`. Use the specification as a unit test against your domain logic
-- Have different types in the protobuf to ensure the message types for `Greet` and `Curse` are decoupled.
+- Извлеките "доменную логику" `Curse` из grpc-сервера, как мы это сделали для `Greet`. Используйте спецификацию в качестве модульного теста для вашей доменной логики.
+- Используйте разные типы в protobuf, чтобы обеспечить несвязанность типов сообщений для `Greet` и `Curse`.
 
-## Implementing `Curse` for the HTTP server
+## Реализация `Curse` для HTTP-сервера
 
-Again, an exercise for you, the reader. We have our domain-level specification and our domain-level logic neatly separated. If you've followed this chapter, this should be very straightforward.
+Опять же, это упражнение для вас, читатель. У нас есть спецификация доменного уровня и логика доменного уровня, аккуратно разделенные. Если вы следовали этой главе, это должно быть очень просто.
 
-- Add the specification to the existing acceptance test for the HTTP server
-- Update your `Driver`
-- Add the new endpoint to the server, and reuse the domain code to implement the functionality. You may wish to use `http.NewServeMux` to handle the routeing to the separate endpoints.
+- Добавьте спецификацию к существующему приемочному тесту для HTTP-сервера.
+- Обновите ваш `Driver`.
+- Добавьте новую конечную точку к серверу и повторно используйте доменный код для реализации функциональности. Возможно, вы захотите использовать `http.NewServeMux` для маршрутизации к отдельным конечным точкам.
 
-Remember to work in small steps, commit and run your tests frequently. If you get really stuck [you can find my implementation on GitHub](https://github.com/quii/go-specs-greet).
+Помните, что нужно работать небольшими шагами, часто коммитить и запускать тесты. Если вы застрянете, [вы можете найти мою реализацию на GitHub](https://github.com/quii/go-specs-greet).
 
-## Enhance both systems by updating the domain logic with a unit test
+## Улучшение обеих систем путем обновления доменной логики с помощью модульного теста
 
-As mentioned, not every change to a system should be driven via an acceptance test. Permutations of business rules and edge cases should be simple to drive via a unit test if you have separated concerns well.
+Как уже упоминалось, не каждое изменение системы должно быть обусловлено приемочным тестом. Вариации бизнес-правил и граничные случаи должны быть простыми для проверки модульным тестом, если вы хорошо разделили обязанности.
 
-Add a unit test to our `Greet` function to default the `name` to `World` if it is empty. You should see how simple this is, and then the business rules are reflected in both applications for "free".
+Добавьте модульный тест к нашей функции `Greet`, чтобы установить значение `name` по умолчанию на `World`, если оно пусто. Вы должны увидеть, как это просто, и тогда бизнес-правила будут отражены в обоих приложениях "бесплатно".
 
-## Wrapping up
+## Завершение
 
-Building systems with a reasonable cost of change requires you to have ATs engineered to help you, not become a maintenance burden. They can be used as a means of guiding, or as a GOOS says, "growing" your software methodically.
+Создание систем с разумной стоимостью изменений требует, чтобы ваши AT были спроектированы таким образом, чтобы помогать вам, а не становиться бременем поддержки. Их можно использовать как средство руководства или, как говорится в GOOS, "выращивания" вашего программного обеспечения методично.
 
-Hopefully, with this example, you can see our application's predictable, structured workflow for driving change and how you could use it for your work.
+Надеюсь, на этом примере вы видите предсказуемый, структурированный рабочий процесс для внесения изменений в наше приложение и то, как вы могли бы использовать его для своей работы.
 
-You can imagine talking to a stakeholder who wants to extend the system you work on in some way. Capture it in a domain-centric, implementation-agnostic way in a specification, and use it as a north star towards your efforts. Riya and I describe leveraging BDD techniques like "Example Mapping" [in our GopherconUK talk](https://www.youtube.com/watch?v=ZMWJCk_0WrY) to help you understand the essential complexity more deeply and allow you to write more detailed and meaningful specifications.
+Вы можете представить разговор с заинтересованной стороной, которая хочет каким-либо образом расширить систему, над которой вы работаете. Зафиксируйте это в доменно-ориентированной, независимой от реализации форме в спецификации и используйте ее как путеводную звезду в своих усилиях. Мы с Рией описываем использование методов BDD, таких как "Примерное картирование" (Example Mapping), [в нашей лекции на GopherconUK](https://www.youtube.com/watch?v=ZMWJCk_0WrY), чтобы помочь вам глубже понять существенную сложность и позволить вам писать более подробные и значимые спецификации.
 
-Separating essential and accidental complexity concerns will make your work less ad-hoc and more structured and deliberate; this ensures the resiliency of your acceptance tests and helps them become less of a maintenance burden.
+Разделение существенной и случайной сложности сделает вашу работу менее хаотичной и более структурированной и целенаправленной; это обеспечит отказоустойчивость ваших приемочных тестов и поможет им стать менее обременительными в обслуживании.
 
-Dave Farley gives an excellent tip:
+Дэйв Фарли дает отличный совет:
 
-> Imagine the least technical person that you can think of, who understands the problem-domain, reading your Acceptance Tests. The tests should make sense to that person.
+> Представьте себе самого нетехнического человека, которого вы можете придумать, который понимает предметную область проблемы, читающего ваши приемочные тесты. Тесты должны быть понятны этому человеку.
 
-Specifications should then double up as documentation. They should specify clearly how a system should behave. This idea is the principle around tools like [Cucumber](https://cucumber.io), which offers you a DSL for capturing behaviours as code, and then you convert that DSL into system calls, just like we did here.
+Спецификации затем должны служить документацией. Они должны четко определять, как должна вести себя система. Эта идея является принципом, лежащим в основе таких инструментов, как [Cucumber](https://cucumber.io), который предлагает вам DSL для фиксации поведения в виде кода, а затем вы преобразуете этот DSL в системные вызовы, как мы это сделали здесь.
 
-### What has been covered
+### Что было рассмотрено
 
-- Writing abstract specifications allows you to express the essential complexity of the problem you're solving and remove accidental complexity. This will enable you to reuse the specifications in different contexts.
-- How to use [Testcontainers](https://golang.testcontainers.org) to manage the life-cycle of your system for ATs. This allows you to thoroughly test the image you intend to ship on your computer, giving you fast feedback and confidence.
-- A brief intro into containerising your application with Docker
+- Написание абстрактных спецификаций позволяет выразить существенную сложность решаемой проблемы и устранить случайную сложность. Это позволяет повторно использовать спецификации в разных контекстах.
+- Как использовать [Testcontainers](https://golang.testcontainers.org) для управления жизненным циклом вашей системы для AT. Это позволяет вам тщательно тестировать образ, который вы собираетесь выпустить, на вашем компьютере, давая вам быструю обратную связь и уверенность.
+- Краткое введение в контейнеризацию вашего приложения с помощью Docker.
 - gRPC
-- Rather than chasing canned folder structures, you can use your development approach to naturally drive out the structure of your application, based on your own needs
+- Вместо того чтобы гоняться за шаблонными структурами папок, вы можете использовать свой подход к разработке, чтобы естественным образом формировать структуру вашего приложения, исходя из ваших собственных потребностей.
 
-### Further material
+### Дополнительные материалы
 
-- In this example, our "DSL" is not much of a DSL; we just used interfaces to decouple our specification from the real world and allow us to express domain logic cleanly. As your system grows, this level of abstraction might become clumsy and unclear. [Read into the "Screenplay Pattern"](https://cucumber.io/blog/bdd/understanding-screenplay-(part-1)/) if you want to find more ideas as to how to structure your specifications.
-- For emphasis, [Growing Object-Oriented Software, Guided by Tests,](http://www.growing-object-oriented-software.com) is a classic. It demonstrates applying this "London style", "top-down" approach to writing software. Anyone who has enjoyed Learn Go with Tests should get much value from reading GOOS.
-- [In the example code repository](https://github.com/quii/go-specs-greet), there's more code and ideas I haven't written about here, such as multi-stage docker build, you may wish to check this out.
-  - In particular, *for fun*, I made a **third program**, a website with some HTML forms to `Greet` and `Curse`. The `Driver` leverages the excellent-looking [https://github.com/go-rod/rod](https://github.com/go-rod/rod) module, which allows it to work with the website with a browser, just like a user would. Looking at the git history, you can see how I started not using any templating tools "just to make it work" Then, once I passed my acceptance test, I had the freedom to do so without fear of breaking things. -->
+- В этом примере наш "DSL" не совсем DSL; мы просто использовали интерфейсы для отделения нашей спецификации от реального мира и позволения чисто выразить доменную логику. По мере роста вашей системы этот уровень абстракции может стать громоздким и неясным. [Ознакомьтесь с "Шаблоном сценария" (Screenplay Pattern)](https://cucumber.io/blog/bdd/understanding-screenplay-(part-1)/), если хотите найти больше идей о том, как структурировать свои спецификации.
+- Для акцента, [Growing Object-Oriented Software, Guided by Tests](http://www.growing-object-oriented-software.com), — это классика. Она демонстрирует применение этого "лондонского стиля", "нисходящего" подхода к написанию программного обеспечения. Любой, кому понравилась книга "Изучаем Go с тестами", получит большую пользу от прочтения GOOS.
+- [В репозитории с примером кода](https://github.com/quii/go-specs-greet) есть больше кода и идей, о которых я здесь не писал, например, многостадийная сборка Docker; возможно, вам захочется это проверить.
+  - В частности, *для развлечения* я создал **третью программу**, веб-сайт с несколькими HTML-формами для `Greet` и `Curse`. `Driver` использует отлично выглядящий модуль [https://github.com/go-rod/rod](https://github.com/go-rod/rod), который позволяет ему работать с веб-сайтом через браузер, точно так же, как пользователь. Глядя на историю Git, вы можете увидеть, как я сначала не использовал никаких инструментов шаблонизации "просто чтобы заставить его работать". Затем, как только мой приемочный тест прошел, у меня появилась свобода делать это без страха что-либо сломать.
+```

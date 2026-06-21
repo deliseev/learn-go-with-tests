@@ -1,58 +1,60 @@
-# Table of contents
+---
+# Оглавление
 
-* [Learn Go with Tests](gb-readme.md)
+* [Изучаем Go с тестами](gb-readme.md)
 
-## Go fundamentals
+## Основы Go
 
-* [Install Go](install-go.md)
-* [Hello, World](hello-world.md)
-* [Integers](integers.md)
-* [Iteration](iteration.md)
-* [Arrays and slices](arrays-and-slices.md)
-* [Structs, methods & interfaces](structs-methods-and-interfaces.md)
-* [Pointers & errors](pointers-and-errors.md)
-* [Maps](maps.md)
-* [Dependency Injection](dependency-injection.md)
-* [Mocking](mocking.md)
-* [Concurrency](concurrency.md)
+* [Установка Go](install-go.md)
+* [Привет, мир](hello-world.md)
+* [Целые числа](integers.md)
+* [Итерации](iteration.md)
+* [Массивы и срезы](arrays-and-slices.md)
+* [Структуры, методы и интерфейсы](structs-methods-and-interfaces.md)
+* [Указатели и ошибки](pointers-and-errors.md)
+* [Карты](maps.md)
+* [Внедрение зависимостей](dependency-injection.md)
+* [Мокирование](mocking.md)
+* [Параллелизм](concurrency.md)
 * [Select](select.md)
-* [Reflection](reflection.md)
+* [Рефлексия](reflection.md)
 * [Sync](sync.md)
-* [Context](context.md)
-* [Intro to property based tests](roman-numerals.md)
-* [Maths](math.md)
-* [Reading files](reading-files.md)
-* [Templating](html-templates.md)
-* [Generics](generics.md)
-* [Revisiting arrays and slices with generics](revisiting-arrays-and-slices-with-generics.md)
+* [Контекст](context.md)
+* [Введение в тестирование на основе свойств](roman-numerals.md)
+* [Математика](math.md)
+* [Чтение файлов](reading-files.md)
+* [Шаблоны](html-templates.md)
+* [Обобщения](generics.md)
+* [Повторное рассмотрение массивов и срезов с обобщениями](revisiting-arrays-and-slices-with-generics.md)
 
-## Testing fundamentals
+## Основы тестирования
 
 * [Введение в приёмочные тесты](intro-to-acceptance-tests.md)
-* [Scaling acceptance tests](scaling-acceptance-tests.md)
-* [Working without mocks](working-without-mocks.md)
-* [Refactoring Checklist](refactoring-checklist.md)
+* [Масштабирование приёмочных тестов](scaling-acceptance-tests.md)
+* [Работа без моков](working-without-mocks.md)
+* [Чек-лист рефакторинга](refactoring-checklist.md)
 
-## Build an application
+## Создание приложения
 
-* [Intro](app-intro.md)
-* [HTTP server](http-server.md)
-* [JSON, routing and embedding](json.md)
-* [IO and sorting](io.md)
-* [Command line & package structure](command-line.md)
-* [Time](time.md)
-* [WebSockets](websockets.md)
+* [Введение](app-intro.md)
+* [HTTP-сервер](http-server.md)
+* [JSON, маршрутизация и встраивание](json.md)
+* [Ввод-вывод и сортировка](io.md)
+* [Командная строка и структура пакетов](command-line.md)
+* [Время](time.md)
+* [Веб-сокеты](websockets.md)
 
-## Questions and answers
+## Вопросы и ответы
 
 * [OS Exec](os-exec.md)
-* [Error types](error-types.md)
-* [Context-aware Reader](context-aware-reader.md)
-* [Revisiting HTTP Handlers](http-handlers-revisited.md)
+* [Типы ошибок](error-types.md)
+* [Reader, учитывающий контекст](context-aware-reader.md)
+* [Повторное рассмотрение HTTP-обработчиков](http-handlers-revisited.md)
 
-## Meta
+## Мета
 
-* [Why unit tests and how to make them work for you](why.md)
-* [Anti-patterns](anti-patterns.md)
-* [Contributing](contributing.md)
-* [Chapter Template](template.md)
+* [Зачем нужны юнит-тесты и как заставить их работать на вас](why.md)
+* [Антипаттерны](anti-patterns.md)
+* [Участие](contributing.md)
+* [Шаблон главы](template.md)
+---

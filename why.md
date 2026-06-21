@@ -1,291 +1,297 @@
-# Why unit tests and how to make them work for you
+# Почему юнит-тесты важны и как заставить их работать на вас
 
-[Here's a link to a video of me chatting about this topic](https://www.youtube.com/watch?v=Kwtit8ZEK7U)
+[Здесь ссылка на видео, где я рассказываю об этой теме](https://www.youtube.com/watch?v=Kwtit8ZEK7U)
 
-If you're not into videos, here's wordy version of it.
+Если вы не любите видео, вот текстовая версия.
 
-## Software 
+## Программное обеспечение
 
-The promise of software is that it can change. This is why it is called _soft_ ware, it is malleable compared to hardware. A great engineering team should be an amazing asset to a company, writing systems that can evolve with a business to keep delivering value. 
+Обещание программного обеспечения в том, что оно может меняться. Вот почему оно называется _гибким_ ПО, оно податливо по сравнению с аппаратным обеспечением. Отличная команда инженеров должна быть потрясающим активом для компании, создавая системы, которые могут развиваться вместе с бизнесом, продолжая приносить ценность.
 
-So why are we so bad at it? How many projects do you hear about that outright fail? Or become "legacy" and have to be entirely re-written (and the re-writes often fail too!) 
+Так почему же мы так плохо справляемся с этим? О скольких проектах вы слышали, которые полностью провалились? Или стали "наследием" (legacy) и должны быть полностью переписаны (и переписывания часто тоже терпят неудачу!)
 
-How does a software system "fail" anyway? Can't it just be changed until it's correct? That's what we're promised!
+Как вообще программная система "терпит неудачу"? Разве её нельзя просто менять, пока она не станет правильной? Это то, что нам обещали!
 
-A lot of people are choosing Go to build systems because it has made a number of choices which one hopes will make it more legacy-proof. 
+Многие люди выбирают Go для создания систем, потому что он сделал ряд выборов, которые, как надеются, сделают его более устойчивым к устареванию.
 
-- Compared to my previous life of Scala where [I described how it has enough rope to hang yourself](http://www.quii.dev/Scala_-_Just_enough_rope_to_hang_yourself), Go has only 25 keywords and _a lot_ of systems can be built from the standard library and a few other small libraries. The hope is that with Go you can write code and come back to it in 6 months time and it'll still make sense.
-- The tooling in respect to testing, benchmarking, linting & shipping is first class compared to most alternatives.
-- The standard library is brilliant.
-- Very fast compilation speed for tight feedback loops
-- The Go backward compatibility promise. It looks like Go will get generics and other features in the future but the designers have promised that even Go code you wrote 5 years ago will still build. I literally spent weeks upgrading a project from Scala 2.8 to 2.10. 
+- По сравнению с моей предыдущей жизнью в Scala, где [я описывал, как в ней достаточно возможностей, чтобы выстрелить себе в ногу](http://www.quii.dev/Scala_-_Just_enough_rope_to_hang_yourself), в Go всего 25 ключевых слов, и _много_ систем можно построить из стандартной библиотеки и нескольких других небольших библиотек. Надежда состоит в том, что с Go вы можете написать код, вернуться к нему через 6 месяцев, и он всё ещё будет иметь смысл.
+- Инструменты для тестирования, бенчмаркинга, линтинга и развёртывания являются первоклассными по сравнению с большинством альтернатив.
+- Стандартная библиотека великолепна.
+- Очень высокая скорость компиляции для коротких циклов обратной связи.
+- Обещание обратной совместимости Go. Похоже, Go получит дженерики и другие функции в будущем, но разработчики пообещали, что даже код Go, написанный 5 лет назад, всё равно будет собираться. Я буквально потратил недели на обновление проекта со Scala 2.8 до 2.10.
 
-Even with all these great properties we can still make terrible systems, so we should look to the past and understand lessons in software engineering that apply no matter how shiny (or not) your language is.
+Даже со всеми этими замечательными свойствами мы всё равно можем создавать ужасные системы, поэтому нам следует обратиться к прошлому и извлечь уроки из инженерии программного обеспечения, которые применимы независимо от того, насколько "блестящ" (или нет) ваш язык.
 
-In 1974 a clever software engineer called [Manny Lehman](https://en.wikipedia.org/wiki/Manny_Lehman_%28computer_scientist%29) wrote [Lehman's laws of software evolution](https://en.wikipedia.org/wiki/Lehman%27s_laws_of_software_evolution).
+В 1974 году умный инженер-программист по имени [Мэнни Леман](https://en.wikipedia.org/wiki/Manny_Lehman_%28computer_scientist%29) написал [законы эволюции ПО Лемана](https://en.wikipedia.org/wiki/Lehman%27s_laws_of_software_evolution).
 
-> The laws describe a balance between forces driving new developments on one hand, and forces that slow down progress on the other hand.
+> Законы описывают баланс между силами, движущими новые разработки с одной стороны, и силами, замедляющими прогресс, с другой.
 
-These forces seem like important things to understand if we have any hope of not being in an endless cycle of shipping systems that turn into legacy and then get re-written over and over again.
+Эти силы кажутся важными для понимания, если мы хотим избежать бесконечного цикла создания систем, которые превращаются в "наследие", а затем переписываются снова и снова.
 
-## The Law of Continuous Change
+## Закон непрерывных изменений
 
-> Any software system used in the real-world must change or become less and less useful in the environment
+> Любая программная система, используемая в реальном мире, должна меняться или становиться всё менее полезной в своей среде.
 
-It feels obvious that a system _has_ to change or it becomes less useful but how often is this ignored? 
+Кажется очевидным, что система _должна_ меняться, иначе она становится менее полезной, но как часто это игнорируется?
 
-Many teams are incentivised to deliver a project on a particular date and then move on to the next project. If the software is "lucky" there is at least some kind of hand-off to another set of individuals to maintain it, but they didn't write it of course. 
+Многие команды стимулируются к сдаче проекта к определённой дате, а затем переходят к следующему проекту. Если ПО "повезёт", происходит хотя бы какая-то передача другой группе лиц для его поддержки, но они, конечно, его не писали.
 
-People often concern themselves with trying to pick a framework which will help them "deliver quickly" but not focusing on the longevity of the system in terms of how it needs to evolve.
+Люди часто озабочены выбором фреймворка, который поможет им "быстро сдать проект", но не уделяют внимания долговечности системы с точки зрения её необходимости к эволюции.
 
-Even if you're an incredible software engineer, you will still fall victim to not knowing the future needs of your system. As the business changes some of the brilliant code you wrote is now no longer relevant.
+Даже если вы невероятный инженер-программист, вы всё равно станете жертвой незнания будущих потребностей вашей системы. По мере изменения бизнеса часть блестящего кода, который вы написали, становится неактуальной.
 
-Lehman was on a roll in the 70s because he gave us another law to chew on.
+Леман был в ударе в 70-х, потому что он дал нам ещё один закон для размышления.
 
-## The Law of Increasing Complexity
+## Закон возрастающей сложности
 
-> As a system evolves, its complexity increases unless work is done to reduce it
+> По мере эволюции системы её сложность возрастает, если не предпринимаются действия по её снижению.
 
-What he's saying here is we can't have software teams as blind feature factories, piling more and more features on to software in the hope it will survive in the long run. 
+То, что он здесь говорит, означает, что мы не можем позволить командам разработчиков быть слепыми фабриками фич, нагромождающими всё больше и больше функций на ПО в надежде, что оно выживет в долгосрочной перспективе.
 
-We **have** to keep managing the complexity of the system as the knowledge of our domain changes. 
+Мы **должны** продолжать управлять сложностью системы по мере изменения наших знаний о предметной области.
 
-## Refactoring
+## Рефакторинг
 
-There are _many_ facets of software engineering that keeps software malleable, such as:
+Существует _множество_ аспектов инженерии программного обеспечения, которые поддерживают его податливость, такие как:
 
-- Developer empowerment
-- Generally "good" code. Sensible separation of concerns, etc etc
-- Communication skills
-- Architecture
-- Observability
-- Deployability
-- Automated tests
-- Feedback loops
+- Расширение прав и возможностей разработчиков
+- В целом "хороший" код. Разумное разделение обязанностей и т.д.
+- Коммуникативные навыки
+- Архитектура
+- Наблюдаемость
+- Развёртываемость
+- Автоматизированные тесты
+- Циклы обратной связи
 
-I am going to focus on refactoring. It's a phrase that gets thrown around a lot "we need to refactor this" - said to a developer on their first day of programming without a second thought. 
+Я собираюсь сосредоточиться на рефакторинге. Это фраза, которую часто произносят: "нам нужно это отрефакторить" — говорят разработчику в первый день его программирования, не задумываясь.
 
-Where does the phrase come from? How is refactoring just different from writing code?
+Откуда взялась эта фраза? Чем рефакторинг отличается от простого написания кода?
 
-I know that I and many others have _thought_ we were doing refactoring but we were mistaken
+Я знаю, что я, как и многие другие, _думал_, что мы делали рефакторинг, но мы ошибались.
 
-[Martin Fowler describes how people are getting it wrong](https://martinfowler.com/bliki/RefactoringMalapropism.html)
+[Мартин Фаулер описывает, как люди ошибаются](https://martinfowler.com/bliki/RefactoringMalapropism.html)
 
-> However the term "refactoring" is often used when it's not appropriate. If somebody talks about a system being broken for a couple of days while they are refactoring, you can be pretty sure they are not refactoring.
+> Однако термин "рефакторинг" часто используется там, где он неуместен. Если кто-то говорит о том, что система не работает пару дней, пока они занимаются рефакторингом, вы можете быть уверены, что они не занимаются рефакторингом.
 
-So what is it?
+Так что же это такое?
 
-### Factorisation
+### Факторизация
 
-When learning maths at school you probably learned about factorisation. Here's a very simple example
+Изучая математику в школе, вы, вероятно, узнали о факторизации. Вот очень простой пример:
 
-Calculate `1/2 + 1/4`
+Вычислите `1/2 + 1/4`
 
-To do this you _factorise_ the denominators, turning the expression into 
+Для этого вы _факторизуете_ знаменатели, превращая выражение в
 
-`2/4 + 1/4` which you can then turn into `3/4`. 
+`2/4 + 1/4`, что затем можно превратить в `3/4`.
 
-We can take some important lessons from this. When we _factorise the expression_ we have **not changed the meaning of the expression**. Both of them equal `3/4` but we have made it easier for us to work with; by changing `1/2` to `2/4` it fits into our "domain" easier. 
+Из этого мы можем извлечь несколько важных уроков. Когда мы _факторизуем выражение_, мы **не изменяем смысл выражения**. Оба они равны `3/4`, но мы облегчили работу с ними; изменив `1/2` на `2/4`, оно легче вписывается в нашу "область".
 
-When you refactor your code, you are trying to find ways of making your code easier to understand and "fit" into your current understanding of what the system needs to do. Crucially **you should not be changing behaviour**. 
+Когда вы рефакторите свой код, вы пытаетесь найти способы сделать его более понятным и "вписать" в ваше текущее понимание того, что должна делать система. Важно то, что **вы не должны менять поведение**.
 
-#### An example in Go
+#### Пример в Go
 
-Here is a function which greets `name` in a particular `language`
+Вот функция, которая приветствует `name` на определённом `language`:
 
-    func Hello(name, language string) string {
-    
-      if language == "es" {
-         return "Hola, " + name
-      }
-    
-      if language == "fr" {
-         return "Bonjour, " + name
-      }
-      
-      // imagine dozens more languages
-    
-      return "Hello, " + name
-    }
+```go
+func Hello(name, language string) string {
 
-Having dozens of `if` statements doesn't feel good and we have a duplication of concatenating a language specific greeting with `, ` and the `name.` So I'll refactor the code.
+  if language == "es" {
+     return "Hola, " + name
+  }
 
-    func Hello(name, language string) string {
-      	return fmt.Sprintf(
-      		"%s, %s",
-      		greeting(language),
-      		name,
-      	)
-    }
-    
-    var greetings = map[string]string {
-      "es": "Hola",
-      "fr": "Bonjour",
-      //etc..
-    }
-    
-    func greeting(language string) string {
-      greeting, exists := greetings[language]
-      
-      if exists {
-         return greeting
-      }
-      
-      return "Hello"
-    }
+  if language == "fr" {
+     return "Bonjour, " + name
+  }
+  
+  // imagine dozens more languages
 
-The nature of this refactor isn't actually important, what's important is I haven't changed behaviour. 
+  return "Hello, " + name
+}
+```
 
-When refactoring you can do whatever you like, add interfaces, new types, functions, methods etc. The only rule is you don't change behaviour
+Наличие десятков `if` операторов не очень хорошо, и у нас есть дублирование конкатенации приветствия на конкретном языке с `, ` и `name`. Поэтому я отрефакторю код.
 
-### When refactoring code you must not be changing behaviour
+```go
+func Hello(name, language string) string {
+  	return fmt.Sprintf(
+  		"%s, %s",
+  		greeting(language),
+  		name,
+  	)
+}
 
-This is very important. If you are changing behaviour at the same time you are doing _two_ things at once. As software engineers we learn to break systems up into different files/packages/functions/etc because we know trying to understand a big blob of stuff is hard. 
+var greetings = map[string]string {
+  "es": "Hola",
+  "fr": "Bonjour",
+  //etc..
+}
 
-We don't want to have to be thinking about lots of things at once because that's when we make mistakes. I've witnessed so many refactoring endeavours fail because the developers are biting off more than they can chew.  
+func greeting(language string) string {
+  greeting, exists := greetings[language]
+  
+  if exists {
+     return greeting
+  }
+  
+  return "Hello"
+}
+```
 
-When I was doing factorisations in maths classes with pen and paper I would have to manually check that I hadn't changed the meaning of the expressions in my head. How do we know we aren't changing behaviour when refactoring when working with code, especially on a system that is non-trivial?
+Суть этого рефакторинга на самом деле не важна, важно то, что я не изменил поведение.
 
-Those who choose not to write tests will typically be reliant on manual testing. For anything other than a small project this will be a tremendous time-sink and does not scale in the long run. 
- 
-**In order to safely refactor you need unit tests** because they provide
+При рефакторинге вы можете делать всё, что угодно: добавлять интерфейсы, новые типы, функции, методы и т.д. Единственное правило — вы не меняете поведение.
 
-- Confidence you can reshape code without worrying about changing behaviour
-- Documentation for humans as to how the system should behave
-- Much faster and more reliable feedback than manual testing
+### При рефакторинге кода вы не должны менять поведение
 
-#### An example in Go
+Это очень важно. Если вы одновременно меняете поведение, вы делаете _две_ вещи сразу. Как инженеры-программисты, мы учимся разбивать системы на разные файлы/пакеты/функции/и т.д., потому что знаем, что пытаться понять большой объём информации сложно.
 
-A unit test for our `Hello` function could look like this
+Мы не хотим думать о многих вещах одновременно, потому что именно тогда мы совершаем ошибки. Я был свидетелем того, как многие попытки рефакторинга проваливались, потому что разработчики брались за непосильную задачу.
 
-    func TestHello(t *testing.T) {
-      got := Hello(“Chris”, es)
-      want := "Hola, Chris"
-    
-      if got != want {
-         t.Errorf("got %q want %q", got, want)
-      }
-    }
+Когда я выполнял факторизации на уроках математики с ручкой и бумагой, мне приходилось вручную проверять, что я не изменил смысл выражений в уме. Как мы можем знать, что мы не меняем поведение при рефакторинге при работе с кодом, особенно в нетривиальной системе?
 
-At the command line I can run `go test` and get immediate feedback as to whether my refactoring efforts have altered behaviour. In practice it's best to learn the magic button to run your tests within your editor/IDE. 
+Те, кто предпочитает не писать тесты, обычно полагаются на ручное тестирование. Для всего, кроме небольшого проекта, это будет огромной тратой времени и не масштабируется в долгосрочной перспективе.
 
-You want to get in to a state where you are doing 
+**Для безопасного рефакторинга вам нужны юнит-тесты**, потому что они обеспечивают:
 
-- Small refactor
-- Run tests
-- Repeat
+- Уверенность, что вы можете изменять код, не беспокоясь об изменении поведения.
+- Документацию для людей о том, как система должна себя вести.
+- Гораздо более быструю и надёжную обратную связь, чем ручное тестирование.
 
-All within a very tight feedback loop so you don't go down rabbit holes and make mistakes.
+#### Пример в Go
 
-Having a project where all your key behaviours are unit tested and give you feedback well under a second is a very empowering safety net to do bold refactoring when you need to. This helps us manage the incoming force of complexity that Lehman describes.
+Юнит-тест для нашей функции `Hello` может выглядеть так:
 
-## If unit tests are so great, why is there sometimes resistance to writing them?
+```go
+func TestHello(t *testing.T) {
+  got := Hello("Chris", "es") // Fixed 'es' to be a string literal for Go
+  want := "Hola, Chris"
 
-On the one hand you have people (like me) saying that unit tests are important for the long term health of your system because they ensure you can keep refactoring with confidence. 
+  if got != want {
+     t.Errorf("got %q want %q", got, want)
+  }
+}
+```
 
-On the other you have people describing experiences of unit tests actually _hindering_ refactoring.
+В командной строке я могу запустить `go test` и получить немедленную обратную связь о том, изменили ли мои усилия по рефакторингу поведение. На практике лучше научиться пользоваться "волшебной кнопкой" для запуска тестов в вашем редакторе/IDE.
 
-Ask yourself, how often do you have to change your tests when refactoring? Over the years I have been on many projects with very good test coverage and yet the engineers are reluctant to refactor because of the perceived effort of changing tests.
+Вы хотите прийти к состоянию, когда вы делаете:
 
-This is the opposite of what we are promised!
+- Небольшой рефакторинг
+- Запускаете тесты
+- Повторяете
 
-### Why is this happening?
+Всё это в очень коротком цикле обратной связи, чтобы вы не заходили в кроличьи норы и не совершали ошибок.
 
-Imagine you were asked to develop a square and we thought the best way to accomplish that would be stick two triangles together. 
+Наличие проекта, где все ваши ключевые поведения проверяются юнит-тестами и дают обратную связь менее чем за секунду, — это очень надёжная страховка, дающая уверенность для смелого рефакторинга, когда это необходимо. Это помогает нам управлять нарастающей силой сложности, которую описывает Леман.
 
-![Two right-angled triangles to form a square](https://i.imgur.com/ela7SVf.jpg)
+## Если юнит-тесты так хороши, почему иногда возникает сопротивление их написанию?
 
-We write our unit tests around our square to make sure the sides are equal and then we write some tests around our triangles. We want to make sure our triangles render correctly so we assert that the angles sum up to 180 degrees, perhaps check we make 2 of them, etc etc. Test coverage is really important and writing these tests is pretty easy so why not? 
+С одной стороны, есть люди (как я), говорящие, что юнит-тесты важны для долгосрочного здоровья вашей системы, потому что они гарантируют, что вы можете продолжать рефакторинг с уверенностью.
 
-A few weeks later The Law of Continuous Change strikes our system and a new developer makes some changes. She now believes it would be better if squares were formed with 2 rectangles instead of 2 triangles. 
+С другой стороны, есть люди, описывающие случаи, когда юнит-тесты фактически _препятствуют_ рефакторингу.
 
-![Two rectangles to form a square](https://i.imgur.com/1G6rYqD.jpg)
+Спросите себя, как часто вам приходится менять тесты при рефакторинге? За годы я работал над многими проектами с очень хорошим покрытием тестами, но инженеры неохотно занимаются рефакторингом из-за кажущихся усилий по изменению тестов.
 
-She tries to do this refactor and gets mixed signals from a number of failing tests. Has she actually broken important behaviours here? She now has to dig through these triangle tests and try and understand what's going on. 
+Это противоположность тому, что нам обещали!
 
-_It's not actually important that the square was formed out of triangles_ but **our tests have falsely elevated the importance of our implementation details**. 
+### Почему это происходит?
 
-## Favour testing behaviour rather than implementation detail
+Представьте, что вас попросили разработать квадрат, и мы подумали, что лучший способ сделать это — склеить два треугольника вместе.
 
-When I hear people complaining about unit tests it is often because the tests are at the wrong abstraction level. They're testing implementation details, overly spying on collaborators and mocking too much. 
+![Два прямоугольных треугольника образуют квадрат](https://i.imgur.com/ela7SVf.jpg)
 
-I believe it stems from a misunderstanding of what unit tests are and chasing vanity metrics (test coverage). 
+Мы пишем юнит-тесты для нашего квадрата, чтобы убедиться, что стороны равны, а затем пишем тесты для наших треугольников. Мы хотим убедиться, что наши треугольники отображаются правильно, поэтому мы утверждаем, что сумма углов составляет 180 градусов, возможно, проверяем, что их 2, и так далее. Покрытие тестами очень важно, и написание этих тестов довольно просто, так почему бы и нет?
 
-If I am saying just test behaviour, should we not just only write system/black-box tests? These kind of tests do have lots of value in terms of verifying key user journeys but they are typically expensive to write and slow to run. For that reason they're not too helpful for _refactoring_ because the feedback loop is slow. In addition black box tests don't tend to help you very much with root causes compared to unit tests. 
+Через несколько недель Закон непрерывных изменений поражает нашу систему, и новый разработчик вносит некоторые изменения. Она теперь считает, что было бы лучше, если бы квадраты формировались из 2 прямоугольников вместо 2 треугольников.
 
-So what _is_ the right abstraction level?
+![Два прямоугольника образуют квадрат](https://i.imgur.com/1G6rYqD.jpg)
 
-## Writing effective unit tests is a design problem
+Она пытается выполнить этот рефакторинг и получает смешанные сигналы от ряда не проходящих тестов. Действительно ли она нарушила здесь важные поведения? Теперь ей приходится копаться в этих тестах треугольников и пытаться понять, что происходит.
 
-Forgetting about tests for a moment, it is desirable to have within your system self-contained, decoupled "units" centered around key concepts in your domain. 
+_На самом деле неважно, что квадрат был образован из треугольников_, но **наши тесты ложно преувеличили важность деталей нашей реализации**.
 
-I like to imagine these units as simple Lego bricks which have coherent APIs that I can combine with other bricks to make bigger systems. Underneath these APIs there could be dozens of things (types, functions et al) collaborating to make them work how they need to.
+## Отдавайте предпочтение тестированию поведения, а не деталей реализации
 
-For instance if you were writing a bank in Go, you might have an "account" package. It will present an API that does not leak implementation detail and is easy to integrate with.
+Когда я слышу, как люди жалуются на юнит-тесты, это часто происходит потому, что тесты находятся на неправильном уровне абстракции. Они тестируют детали реализации, чрезмерно "шпионят" за коллабораторами и слишком много мокируют.
 
-If you have these units that follow these properties you can write unit tests against their public APIs. _By definition_ these tests can only be testing useful behaviour. Underneath these units I am free to refactor the implementation as much as I need to and the tests for the most part should not get in the way.
+Я считаю, что это происходит из-за неправильного понимания того, что такое юнит-тесты, и погони за метриками тщеславия (покрытием тестами).
 
-### Are these unit tests?
+Если я говорю только о тестировании поведения, разве мы не должны писать только системные тесты / тесты чёрного ящика? Такие тесты имеют большую ценность с точки зрения проверки ключевых пользовательских сценариев, но они, как правило, дороги в написании и медленны в выполнении. По этой причине они не очень полезны для _рефакторинга_, потому что цикл обратной связи медленный. Кроме того, тесты чёрного ящика не слишком помогают с поиском первопричин по сравнению с юнит-тестами.
 
-**YES**. Unit tests are against "units" like I described. They were _never_ about only being against a single class/function/whatever.
+Так какой же _правильный_ уровень абстракции?
 
-## Bringing these concepts together
+## Написание эффективных юнит-тестов — это проблема проектирования
 
-We've covered
+Забыв на мгновение о тестах, желательно иметь в вашей системе самодостаточные, слабосвязанные "единицы", центрированные вокруг ключевых концепций вашей предметной области.
 
-- Refactoring
-- Unit tests
-- Unit design
+Я люблю представлять эти единицы как простые кирпичики Lego с согласованными API, которые я могу комбинировать с другими кирпичиками для создания более крупных систем. Под этими API могут быть десятки вещей (типов, функций и т.д.), взаимодействующих, чтобы они работали так, как нужно.
 
-What we can start to see is that these facets of software design reinforce each other. 
+Например, если вы пишете банк на Go, у вас может быть пакет "account". Он будет представлять API, который не раскрывает детали реализации и легко интегрируется.
 
-### Refactoring
+Если у вас есть такие единицы, которые обладают этими свойствами, вы можете писать юнит-тесты для их публичных API. _По определению_ эти тесты могут проверять только полезное поведение. Под этими единицами я могу свободно рефакторить реализацию столько, сколько мне нужно, и тесты в большинстве случаев не должны мешать.
 
-- Gives us signals about our unit tests. If we have to do manual checks, we need more tests. If tests are wrongly failing then our tests are at the wrong abstraction level (or have no value and should be deleted).
-- Helps us handle the complexities within and between our units.
+### Это юнит-тесты?
 
-### Unit tests
+**ДА**. Юнит-тесты направлены на "единицы", как я описал. Они _никогда_ не были исключительно о тестировании отдельного класса/функции/чего-либо ещё.
 
-- Give a safety net to refactor.
-- Verify and document the behaviour of our units.
+## Объединение этих концепций
 
-### (Well designed) units
+Мы рассмотрели:
 
-- Easy to write _meaningful_ unit tests.
-- Easy to refactor.
+- Рефакторинг
+- Юнит-тесты
+- Проектирование единиц (Units)
 
-Is there a process to help us arrive at a point where we can constantly refactor our code to manage complexity and keep our systems malleable?
+Мы начинаем видеть, что эти аспекты проектирования программного обеспечения взаимно усиливают друг друга.
 
-## Why Test Driven Development (TDD)
+### Рефакторинг
 
-Some people might take Lehman's quotes about how software has to change and overthink elaborate designs, wasting lots of time upfront trying to create the "perfect" extensible system and end up getting it wrong and going nowhere. 
+- Даёт нам сигналы о наших юнит-тестах. Если нам приходится выполнять ручные проверки, нам нужно больше тестов. Если тесты ошибочно падают, то наши тесты находятся на неправильном уровне абстракции (или не имеют ценности и должны быть удалены).
+- Помогает нам справляться со сложностями внутри наших единиц и между ними.
 
-This is the bad old days of software where an analyst team would spend 6 months writing a requirements document and an architect team would spend another 6 months coming up with a design and a few years later the whole project fails.
+### Юнит-тесты
 
-I say bad old days but this still happens! 
+- Обеспечивают страховку для рефакторинга.
+- Проверяют и документируют поведение наших единиц.
 
-Agile teaches us that we need to work iteratively, starting small and evolving the software so that we get fast feedback on the design of our software and how it works with real users;  TDD enforces this approach.
+### (Хорошо спроектированные) единицы
 
-TDD addresses the laws that Lehman talks about and other lessons hard learned through history by encouraging a methodology of constantly refactoring and delivering iteratively.
+- Легко писать _осмысленные_ юнит-тесты.
+- Легко рефакторить.
 
-### Small steps
+Существует ли процесс, который поможет нам прийти к точке, где мы можем постоянно рефакторить наш код для управления сложностью и сохранения гибкости наших систем?
 
-- Write a small test for a small amount of desired behaviour
-- Check the test fails with a clear error (red)
-- Write the minimal amount of code to make the test pass (green)
-- Refactor
-- Repeat
+## Почему разработка через тестирование (TDD)
 
-As you become proficient, this way of working will become natural and fast.
+Некоторые люди могут воспринять цитаты Лемана о том, как программное обеспечение должно меняться, и слишком много размышлять над сложными архитектурами, тратя много времени на создание "идеальной" расширяемой системы и в итоге ошибаясь и никуда не приходя.
 
-You'll come to expect this feedback loop to not take very long and feel uneasy if you're in a state where the system isn't "green" because it indicates you may be down a rabbit hole. 
+Это плохие старые времена программного обеспечения, когда команда аналитиков тратила 6 месяцев на написание документа с требованиями, а команда архитекторов тратила ещё 6 месяцев на разработку дизайна, и через несколько лет весь проект проваливался.
 
-You'll always be driving small & useful functionality comfortably backed by the feedback from your tests.
+Я говорю "плохие старые времена", но это до сих пор происходит!
 
-## Wrapping up 
+Agile учит нас, что нам нужно работать итеративно, начиная с малого и развивая программное обеспечение, чтобы получать быструю обратную связь по дизайну нашего ПО и по тому, как оно работает с реальными пользователями; TDD усиливает этот подход.
 
-- The strength of software is that we can change it. _Most_ software will require change over time in unpredictable ways; but don't try and over-engineer because it's too hard to predict the future.
-- Instead we need to make it so we can keep our software malleable. In order to change software we have to refactor it as it evolves or it will turn into a mess
-- A good test suite can help you refactor quicker and in a less stressful manner
-- Writing good unit tests is a design problem so think about structuring your code so you have meaningful units that you can integrate together like Lego bricks.
-- TDD can help and force you to design well factored software iteratively, backed by tests to help future work as it arrives.
+TDD учитывает законы, о которых говорит Леман, и другие уроки, извлечённые из истории, поощряя методологию постоянного рефакторинга и итеративной поставки.
+
+### Малые шаги
+
+- Напишите небольшой тест для небольшого желаемого поведения.
+- Проверьте, что тест падает с чёткой ошибкой (красный).
+- Напишите минимальное количество кода, чтобы тест прошёл (зелёный).
+- Отрефакторьте.
+- Повторите.
+
+По мере того, как вы станете опытнее, такой способ работы станет естественным и быстрым.
+
+Вы будете ожидать, что этот цикл обратной связи не займёт много времени, и будете чувствовать себя неловко, если система находится не в "зелёном" состоянии, потому что это указывает на то, что вы, возможно, зашли в кроличью нору.
+
+Вы всегда будете двигаться вперёд, добавляя небольшую и полезную функциональность, уверенно опираясь на обратную связь от ваших тестов.
+
+## В заключение
+
+- Сила программного обеспечения в том, что мы можем его менять. _Большинству_ программного обеспечения со временем потребуются изменения непредсказуемым образом; но не пытайтесь перепроектировать, потому что слишком сложно предсказать будущее.
+- Вместо этого мы должны сделать так, чтобы наше ПО оставалось податливым. Чтобы изменить ПО, мы должны рефакторить его по мере эволюции, иначе оно превратится в беспорядок.
+- Хороший набор тестов может помочь вам рефакторить быстрее и с меньшим стрессом.
+- Написание хороших юнит-тестов — это проблема проектирования, поэтому думайте о структурировании вашего кода таким образом, чтобы у вас были осмысленные единицы, которые вы можете интегрировать вместе, как кирпичики Lego.
+- TDD может помочь и заставить вас итеративно проектировать хорошо декомпозированное ПО, подкреплённое тестами, чтобы помочь в будущей работе по мере её возникновения.

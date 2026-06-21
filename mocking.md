@@ -1,8 +1,8 @@
-# Mocking
+# Мокирование (Mocking)
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/mocking)**
+**[Вы можете найти весь код для этой главы здесь](https://github.com/quii/learn-go-with-tests/tree/main/mocking)**
 
-You have been asked to write a program which counts down from 3, printing each number on a new line (with a 1-second pause) and when it reaches zero it will print "Go!" and exit.
+Вас попросили написать программу, которая отсчитывает время от 3, выводя каждое число на новой строке (с 1-секундной паузой), а когда оно достигает нуля, выводит "Go!" и завершает работу.
 
 ```
 3
@@ -11,7 +11,7 @@ You have been asked to write a program which counts down from 3, printing each n
 Go!
 ```
 
-We'll tackle this by writing a function called `Countdown` which we will then put inside a `main` program so it looks something like this:
+Мы решим эту задачу, написав функцию `Countdown`, которую затем поместим в программу `main`, чтобы она выглядела примерно так:
 
 ```go
 package main
@@ -21,21 +21,21 @@ func main() {
 }
 ```
 
-While this is a pretty trivial program, to test it fully we will need as always to take an _iterative_, _test-driven_ approach.
+Хотя это довольно тривиальная программа, чтобы полностью ее протестировать, нам, как всегда, потребуется _итеративный_, _тестоориентированный_ подход.
 
-What do I mean by iterative? We make sure we take the smallest steps we can to have _useful software_.
+Что я подразумеваю под итеративным? Мы следим за тем, чтобы делать самые маленькие шаги, которые мы можем, чтобы получить _полезное программное обеспечение_.
 
-We don't want to spend a long time with code that will theoretically work after some hacking because that's often how developers fall down rabbit holes. **It's an important skill to be able to slice up requirements as small as you can so you can have _working software_.**
+Мы не хотим тратить много времени на код, который теоретически заработает после некоторых доработок, потому что именно так разработчики часто заходят в тупик. **Умение разбивать требования на максимально мелкие части, чтобы получить _рабочее программное обеспечение_, является важным навыком.**
 
-Here's how we can divide our work up and iterate on it:
+Вот как мы можем разделить нашу работу и итерировать ее:
 
-- Print 3
-- Print 3, 2, 1 and Go!
-- Wait a second between each line
+- Вывести 3
+- Вывести 3, 2, 1 и Go!
+- Ждать секунду между каждой строкой
 
-## Write the test first
+## Сначала напишите тест
 
-Our software needs to print to stdout and we saw how we could use Dependency Injection (DI) to facilitate testing this in the DI section.
+Наше программное обеспечение должно выводить данные в стандартный вывод (stdout), и мы видели, как можно использовать внедрение зависимостей (DI) для облегчения тестирования этого в разделе DI.
 
 ```go
 func TestCountdown(t *testing.T) {
@@ -52,26 +52,26 @@ func TestCountdown(t *testing.T) {
 }
 ```
 
-If anything like `buffer` is unfamiliar to you, re-read [the previous section](dependency-injection.md).
+Если что-то вроде `buffer` вам незнакомо, перечитайте [предыдущий раздел](dependency-injection.md).
 
-We know we want our `Countdown` function to write data somewhere and `io.Writer` is the de-facto way of capturing that as an interface in Go.
+Мы знаем, что наша функция `Countdown` должна записывать данные куда-то, и `io.Writer` — это де-факто способ захвата этого в виде интерфейса в Go.
 
-- In `main` we will send to `os.Stdout` so our users see the countdown printed to the terminal.
-- In test we will send to `bytes.Buffer` so our tests can capture what data is being generated.
+- В `main` мы будем отправлять данные в `os.Stdout`, чтобы наши пользователи видели обратный отсчет, выводимый в терминал.
+- В тесте мы будем отправлять данные в `bytes.Buffer`, чтобы наши тесты могли захватывать генерируемые данные.
 
-## Try and run the test
+## Попробуйте запустить тест
 
 `./countdown_test.go:11:2: undefined: Countdown`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальный объем кода для запуска теста и проверьте вывод неудачного теста
 
-Define `Countdown`
+Определите `Countdown`
 
 ```go
 func Countdown() {}
 ```
 
-Try again
+Попробуйте снова
 
 ```
 ./countdown_test.go:11:11: too many arguments in call to Countdown
@@ -79,7 +79,7 @@ Try again
     want ()
 ```
 
-The compiler is telling you what your function signature could be, so update it.
+Компилятор подсказывает, какой может быть сигнатура вашей функции, поэтому обновите ее.
 
 ```go
 func Countdown(out *bytes.Buffer) {}
@@ -87,9 +87,9 @@ func Countdown(out *bytes.Buffer) {}
 
 `countdown_test.go:17: got '' want '3'`
 
-Perfect!
+Идеально!
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошел
 
 ```go
 func Countdown(out *bytes.Buffer) {
@@ -97,11 +97,11 @@ func Countdown(out *bytes.Buffer) {
 }
 ```
 
-We're using `fmt.Fprint` which takes an `io.Writer` (like `*bytes.Buffer`) and sends a `string` to it. The test should pass.
+Мы используем `fmt.Fprint`, которая принимает `io.Writer` (например, `*bytes.Buffer`) и отправляет в него `string`. Тест должен пройти.
 
-## Refactor
+## Рефакторинг
 
-We know that while `*bytes.Buffer` works, it would be better to use a general purpose interface instead.
+Мы знаем, что хотя `*bytes.Buffer` работает, лучше использовать более общий интерфейс.
 
 ```go
 func Countdown(out io.Writer) {
@@ -109,9 +109,9 @@ func Countdown(out io.Writer) {
 }
 ```
 
-Re-run the tests and they should be passing.
+Перезапустите тесты, и они должны пройти.
 
-To complete matters, let's now wire up our function into a `main` so we have some working software to reassure ourselves we're making progress.
+Чтобы завершить, давайте теперь подключим нашу функцию к `main`, чтобы у нас было какое-то работающее программное обеспечение, чтобы убедиться, что мы движемся вперед.
 
 ```go
 package main
@@ -131,15 +131,15 @@ func main() {
 }
 ```
 
-Try and run the program and be amazed at your handywork.
+Попробуйте запустить программу и восхититесь своей работой.
 
-Yes this seems trivial but this approach is what I would recommend for any project. **Take a thin slice of functionality and make it work end-to-end, backed by tests.**
+Да, это кажется тривиальным, но именно такой подход я бы рекомендовал для любого проекта. **Возьмите тонкий срез функциональности и заставьте его работать от начала до конца, подкрепленный тестами.**
 
-Next we can make it print 2,1 and then "Go!".
+Далее мы можем заставить его выводить 2,1, а затем "Go!".
 
-## Write the test first
+## Сначала напишите тест
 
-By investing in getting the overall plumbing working right, we can iterate on our solution safely and easily. We will no longer need to stop and re-run the program to be confident of it working as all the logic is tested.
+Инвестируя в правильную работу всей системы, мы можем безопасно и легко итерировать наше решение. Нам больше не нужно будет останавливать и перезапускать программу, чтобы быть уверенными в ее работе, так как вся логика протестирована.
 
 ```go
 func TestCountdown(t *testing.T) {
@@ -159,9 +159,9 @@ Go!`
 }
 ```
 
-The backtick syntax is another way of creating a `string` but lets you include things like newlines, which is perfect for our test.
+Синтаксис с обратными кавычками — это еще один способ создания `string`, но он позволяет включать такие вещи, как новые строки, что идеально подходит для нашего теста.
 
-## Try and run the test
+## Попробуйте запустить тест
 
 ```
 countdown_test.go:21: got '3' want '3
@@ -169,7 +169,7 @@ countdown_test.go:21: got '3' want '3
         1
         Go!'
 ```
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошел
 
 ```go
 func Countdown(out io.Writer) {
@@ -180,11 +180,11 @@ func Countdown(out io.Writer) {
 }
 ```
 
-Use a `for` loop counting backwards with `i--` and use `fmt.Fprintln` to print to `out` with our number followed by a newline character. Finally use `fmt.Fprint` to send "Go!" aftward.
+Используйте цикл `for`, отсчитывающий в обратном порядке с `i--`, и используйте `fmt.Fprintln` для вывода в `out` нашего числа, за которым следует символ новой строки. Наконец, используйте `fmt.Fprint` для отправки "Go!".
 
-## Refactor
+## Рефакторинг
 
-There's not much to refactor other than refactoring some magic values into named constants.
+Особо нечего рефакторить, кроме как превратить некоторые "магические" значения в именованные константы.
 
 ```go
 const finalWord = "Go!"
@@ -198,9 +198,9 @@ func Countdown(out io.Writer) {
 }
 ```
 
-If you run the program now, you should get the desired output but we don't have it as a dramatic countdown with the 1-second pauses.
+Если вы запустите программу сейчас, вы должны получить желаемый вывод, но у нас нет драматического обратного отсчета с 1-секундными паузами.
 
-Go lets you achieve this with `time.Sleep`. Try adding it in to our code.
+Go позволяет добиться этого с помощью `time.Sleep`. Попробуйте добавить его в наш код.
 
 ```go
 func Countdown(out io.Writer) {
@@ -213,24 +213,24 @@ func Countdown(out io.Writer) {
 }
 ```
 
-If you run the program it works as we want it to.
+Если вы запустите программу, она будет работать так, как мы хотим.
 
-## Mocking
+## Мокирование
 
-The tests still pass and the software works as intended but we have some problems:
-- Our tests take 3 seconds to run.
-    - Every forward-thinking post about software development emphasises the importance of quick feedback loops.
-    - **Slow tests ruin developer productivity**.
-    - Imagine if the requirements get more sophisticated warranting more tests. Are we happy with 3s added to the test run for every new test of `Countdown`?
-- We have not tested an important property of our function.
+Тесты по-прежнему проходят, и программное обеспечение работает, как задумано, но у нас есть некоторые проблемы:
+- Наши тесты занимают 3 секунды.
+    - Каждая дальновидная публикация о разработке программного обеспечения подчеркивает важность быстрых циклов обратной связи.
+    - **Медленные тесты снижают продуктивность разработчика**.
+    - Представьте, если требования станут более сложными, требуя больше тестов. Довольны ли мы добавлением 3 секунд к выполнению теста для каждого нового теста `Countdown`?
+- Мы не протестировали важное свойство нашей функции.
 
-We have a dependency on `Sleep`ing which we need to extract so we can then control it in our tests.
+У нас есть зависимость от `Sleep`ing, которую нам нужно извлечь, чтобы мы могли затем контролировать ее в наших тестах.
 
-If we can _mock_ `time.Sleep` we can use _dependency injection_ to use it instead of a "real" `time.Sleep` and then we can **spy on the calls** to make assertions on them.
+Если мы можем _замокировать_ `time.Sleep`, мы можем использовать _внедрение зависимостей_, чтобы использовать его вместо "настоящего" `time.Sleep`, а затем мы можем **шпионить за вызовами**, чтобы делать утверждения о них.
 
-## Write the test first
+## Сначала напишите тест
 
-Let's define our dependency as an interface. This lets us then use a _real_ Sleeper in `main` and a _spy sleeper_ in our tests. By using an interface our `Countdown` function is oblivious to this and adds some flexibility for the caller.
+Давайте определим нашу зависимость как интерфейс. Это позволит нам использовать _настоящий_ Sleeper в `main` и _шпионский sleeper_ в наших тестах. Используя интерфейс, наша функция `Countdown` остается невосприимчивой к этому и добавляет некоторую гибкость для вызывающей стороны.
 
 ```go
 type Sleeper interface {
@@ -238,9 +238,9 @@ type Sleeper interface {
 }
 ```
 
-I made a design decision that our `Countdown` function would not be responsible for how long the sleep is. This simplifies our code a little for now at least and means a user of our function can configure that sleepiness however they like.
+Я принял решение о том, что наша функция `Countdown` не будет отвечать за продолжительность сна. Это немного упрощает наш код, по крайней мере, на данный момент, и означает, что пользователь нашей функции может настроить эту "сонливость" по своему усмотрению.
 
-Now we need to make a _mock_ of it for our tests to use.
+Теперь нам нужно создать его _мок_ для использования в наших тестах.
 
 ```go
 type SpySleeper struct {
@@ -252,9 +252,9 @@ func (s *SpySleeper) Sleep() {
 }
 ```
 
-_Spies_ are a kind of _mock_ which can record how a dependency is used. They can record the arguments sent in, how many times it has been called, etc. In our case, we're keeping track of how many times `Sleep()` is called so we can check it in our test.
+_Шпионы_ — это разновидность _мока_, которая может записывать, как используется зависимость. Они могут записывать переданные аргументы, сколько раз она была вызвана и т.д. В нашем случае мы отслеживаем, сколько раз вызывается `Sleep()`, чтобы мы могли проверить это в нашем тесте.
 
-Update the tests to inject a dependency on our Spy and assert that the sleep has been called 3 times.
+Обновите тесты, чтобы внедрить зависимость от нашего Spy и утверждать, что `sleep` был вызван 3 раза.
 
 ```go
 func TestCountdown(t *testing.T) {
@@ -279,7 +279,7 @@ Go!`
 }
 ```
 
-## Try and run the test
+## Попробуйте запустить тест
 
 ```
 too many arguments in call to Countdown
@@ -287,9 +287,9 @@ too many arguments in call to Countdown
     want (io.Writer)
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальный объем кода для запуска теста и проверьте вывод неудачного теста
 
-We need to update `Countdown` to accept our `Sleeper`
+Нам нужно обновить `Countdown`, чтобы он принимал наш `Sleeper`
 
 ```go
 func Countdown(out io.Writer, sleeper Sleeper) {
@@ -302,7 +302,7 @@ func Countdown(out io.Writer, sleeper Sleeper) {
 }
 ```
 
-If you try again, your `main` will no longer compile for the same reason
+Если вы попробуете снова, ваш `main` больше не будет компилироваться по той же причине
 
 ```
 ./main.go:26:11: not enough arguments in call to Countdown
@@ -310,7 +310,7 @@ If you try again, your `main` will no longer compile for the same reason
     want (io.Writer, Sleeper)
 ```
 
-Let's create a _real_ sleeper which implements the interface we need
+Давайте создадим _настоящий_ sleeper, который реализует нужный нам интерфейс.
 
 ```go
 type DefaultSleeper struct{}
@@ -320,7 +320,7 @@ func (d *DefaultSleeper) Sleep() {
 }
 ```
 
-We can then use it in our real application like so
+Затем мы можем использовать его в нашем реальном приложении следующим образом:
 
 ```go
 func main() {
@@ -329,9 +329,9 @@ func main() {
 }
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошел
 
-The test is now compiling but not passing because we're still calling the `time.Sleep` rather than the injected in dependency. Let's fix that.
+Тест теперь компилируется, но не проходит, потому что мы по-прежнему вызываем `time.Sleep` вместо внедренной зависимости. Давайте это исправим.
 
 ```go
 func Countdown(out io.Writer, sleeper Sleeper) {
@@ -344,24 +344,24 @@ func Countdown(out io.Writer, sleeper Sleeper) {
 }
 ```
 
-The test should pass and no longer take 3 seconds.
+Тест должен пройти и больше не занимать 3 секунды.
 
-### Still some problems
+### Все еще есть проблемы
 
-There's still another important property we haven't tested.
+Есть еще одно важное свойство, которое мы не протестировали.
 
-`Countdown` should sleep before each next print, e.g:
+`Countdown` должен "спать" перед каждым следующим выводом, например:
 
 - `Print N`
 - `Sleep`
 - `Print N-1`
 - `Sleep`
 - `Print Go!`
-- etc
+- и т.д.
 
-Our latest change only asserts that it has slept 3 times, but those sleeps could occur out of sequence.
+Наше последнее изменение только утверждает, что он "спал" 3 раза, но эти "сны" могли произойти не по порядку.
 
-When writing tests if you're not confident that your tests are giving you sufficient confidence, just break it! (make sure you have committed your changes to source control first though). Change the code to the following
+При написании тестов, если вы не уверены, что ваши тесты дают вам достаточно уверенности, просто сломайте его! (убедитесь, что вы предварительно зафиксировали свои изменения в системе контроля версий). Измените код на следующий:
 
 ```go
 func Countdown(out io.Writer, sleeper Sleeper) {
@@ -377,11 +377,11 @@ func Countdown(out io.Writer, sleeper Sleeper) {
 }
 ```
 
-If you run your tests they should still be passing even though the implementation is wrong.
+Если вы запустите свои тесты, они по-прежнему должны проходить, хотя реализация неверна.
 
-Let's use spying again with a new test to check the order of operations is correct.
+Давайте снова используем "шпионирование" с новым тестом, чтобы проверить правильность порядка операций.
 
-We have two different dependencies and we want to record all of their operations into one list. So we'll create _one spy for them both_.
+У нас есть две разные зависимости, и мы хотим записать все их операции в один список. Поэтому мы создадим _один шпион для них обоих_.
 
 ```go
 type SpyCountdownOperations struct {
@@ -401,9 +401,9 @@ const write = "write"
 const sleep = "sleep"
 ```
 
-Our `SpyCountdownOperations` implements both `io.Writer` and `Sleeper`, recording every call into one slice. In this test we're only concerned about the order of operations, so just recording them as list of named operations is sufficient.
+Наша структура `SpyCountdownOperations` реализует как `io.Writer`, так и `Sleeper`, записывая каждый вызов в один срез. В этом тесте нас беспокоит только порядок операций, поэтому простого их записи в виде списка именованных операций достаточно.
 
-We can now add a sub-test into our test suite which verifies our sleeps and prints operate in the order we hope
+Теперь мы можем добавить подтест в наш набор тестов, который проверяет, что наши "сны" и выводы работают в том порядке, на который мы надеемся.
 
 ```go
 t.Run("sleep before every print", func(t *testing.T) {
@@ -426,9 +426,9 @@ t.Run("sleep before every print", func(t *testing.T) {
 })
 ```
 
-This test should now fail. Revert `Countdown` back to how it was to fix the test.
+Этот тест теперь должен завершиться неудачно. Верните `Countdown` к прежнему состоянию, чтобы исправить тест.
 
-We now have two tests spying on the `Sleeper` so we can now refactor our test so one is testing what is being printed and the other one is ensuring we're sleeping between the prints. Finally, we can delete our first spy as it's not used anymore.
+Теперь у нас есть два теста, шпионящие за `Sleeper`, поэтому мы можем рефакторить наш тест так, чтобы один тестировал, что выводится, а другой гарантировал, что мы "спим" между выводами. Наконец, мы можем удалить нашего первого шпиона, так как он больше не используется.
 
 ```go
 func TestCountdown(t *testing.T) {
@@ -469,15 +469,15 @@ Go!`
 }
 ```
 
-We now have our function and its 2 important properties properly tested.
+Теперь у нас есть функция и ее 2 важных свойства, должным образом протестированные.
 
-## Extending Sleeper to be configurable
+## Расширение Sleeper для возможности настройки
 
-A nice feature would be for the `Sleeper` to be configurable. This means that we can adjust the sleep time in our main program.
+Хорошей функцией было бы сделать `Sleeper` настраиваемым. Это означает, что мы можем регулировать время "сна" в нашей основной программе.
 
-### Write the test first
+### Сначала напишите тест
 
-Let's first create a new type for `ConfigurableSleeper` that accepts what we need for configuration and testing.
+Сначала давайте создадим новый тип для `ConfigurableSleeper`, который будет принимать то, что нам нужно для настройки и тестирования.
 
 ```go
 type ConfigurableSleeper struct {
@@ -486,7 +486,7 @@ type ConfigurableSleeper struct {
 }
 ```
 
-We are using `duration` to configure the time slept and `sleep` as a way to pass in a sleep function. The signature of `sleep` is the same as for `time.Sleep` allowing us to use `time.Sleep` in our real implementation and the following spy in our tests:
+Мы используем `duration` для настройки времени "сна" и `sleep` как способ передачи функции "сна". Сигнатура `sleep` та же, что и у `time.Sleep`, что позволяет нам использовать `time.Sleep` в нашей реальной реализации и следующий шпион в наших тестах:
 
 ```go
 type SpyTime struct {
@@ -498,7 +498,7 @@ func (s *SpyTime) SetDurationSlept(duration time.Duration) {
 }
 ```
 
-With our spy in place, we can create a new test for the configurable sleeper.
+Имея нашего шпиона, мы можем создать новый тест для настраиваемого sleeper.
 
 ```go
 func TestConfigurableSleeper(t *testing.T) {
@@ -514,31 +514,31 @@ func TestConfigurableSleeper(t *testing.T) {
 }
 ```
 
-There should be nothing new in this test and it is set up very similar to the previous mock tests.
+В этом тесте не должно быть ничего нового, и он настроен очень похоже на предыдущие тесты моков.
 
-### Try and run the test
+### Попробуйте запустить тест
 ```
 sleeper.Sleep undefined (type ConfigurableSleeper has no field or method Sleep, but does have sleep)
 
 ```
 
-You should see a very clear error message indicating that we do not have a `Sleep` method created on our `ConfigurableSleeper`.
+Вы должны увидеть очень четкое сообщение об ошибке, указывающее на то, что у нас нет метода `Sleep`, созданного в нашей `ConfigurableSleeper`.
 
-### Write the minimal amount of code for the test to run and check failing test output
+### Напишите минимальный объем кода для запуска теста и проверьте вывод неудачного теста
 ```go
 func (c *ConfigurableSleeper) Sleep() {
 }
 ```
 
-With our new `Sleep` function implemented we have a failing test.
+С нашим новым методом `Sleep` у нас есть неудачный тест.
 
 ```
 countdown_test.go:56: should have slept for 5s but slept for 0s
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы тест прошел
 
-All we need to do now is implement the `Sleep` function for `ConfigurableSleeper`.
+Все, что нам нужно сделать сейчас, это реализовать функцию `Sleep` для `ConfigurableSleeper`.
 
 ```go
 func (c *ConfigurableSleeper) Sleep() {
@@ -546,11 +546,11 @@ func (c *ConfigurableSleeper) Sleep() {
 }
 ```
 
-With this change all of the tests should be passing again and you might wonder why all the hassle as the main program didn't change at all. Hopefully it becomes clear after the following section.
+С этим изменением все тесты снова должны проходить, и вы, возможно, задаетесь вопросом, зачем все эти хлопоты, если основная программа вообще не изменилась. Надеюсь, это станет ясно после следующего раздела.
 
-### Cleanup and refactor
+### Очистка и рефакторинг
 
-The last thing we need to do is to actually use our `ConfigurableSleeper` in the main function.
+Последнее, что нам нужно сделать, это фактически использовать наш `ConfigurableSleeper` в основной функции.
 
 ```go
 func main() {
@@ -559,89 +559,89 @@ func main() {
 }
 ```
 
-If we run the tests and the program manually, we can see that all the behavior remains the same.
+Если мы запустим тесты и программу вручную, мы увидим, что все поведение остается прежним.
 
-Since we are using the `ConfigurableSleeper`, it is now safe to delete the `DefaultSleeper` implementation. Wrapping up our program and having a more [generic](https://stackoverflow.com/questions/19291776/whats-the-difference-between-abstraction-and-generalization) Sleeper with arbitrary long countdowns.
+Поскольку мы используем `ConfigurableSleeper`, теперь безопасно удалить реализацию `DefaultSleeper`. Завершая нашу программу и имея более [обобщенный](https://stackoverflow.com/questions/19291776/whats-the-difference-between-abstraction-and-generalization) Sleeper с произвольно длинными обратными отсчетами.
 
-## But isn't mocking evil?
+## Но разве мокирование не зло?
 
-You may have heard mocking is evil. Just like anything in software development it can be used for evil, just like [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
+Вы, возможно, слышали, что мокирование — это зло. Как и все в разработке программного обеспечения, оно может быть использовано во зло, так же как и [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself).
 
-People normally get in to a bad state when they don't _listen to their tests_ and are _not respecting the refactoring stage_.
+Люди обычно попадают в плохую ситуацию, когда они не _слушают свои тесты_ и _не уважают стадию рефакторинга_.
 
-If your mocking code is becoming complicated or you are having to mock out lots of things to test something, you should _listen_ to that bad feeling and think about your code. Usually it is a sign of
+Если ваш код мокирования становится сложным или вам приходится мокировать множество вещей, чтобы что-то протестировать, вы должны _прислушаться_ к этому плохому чувству и подумать о своем коде. Обычно это признак того, что:
 
-- The thing you are testing is having to do too many things (because it has too many dependencies to mock)
-  - Break the module apart so it does less
-- Its dependencies are too fine-grained
-  - Think about how you can consolidate some of these dependencies into one meaningful module
-- Your test is too concerned with implementation details
-  - Favour testing expected behaviour rather than the implementation
+- Тестируемый вами объект делает слишком много вещей (потому что у него слишком много зависимостей для мокирования)
+  - Разделите модуль, чтобы он делал меньше
+- Его зависимости слишком детализированы
+  - Подумайте, как можно объединить некоторые из этих зависимостей в один значимый модуль
+- Ваш тест слишком озабочен деталями реализации
+  - Отдавайте предпочтение тестированию ожидаемого поведения, а не реализации
 
-Normally a lot of mocking points to _bad abstraction_ in your code.
+Обычно большое количество мокирования указывает на _плохую абстракцию_ в вашем коде.
 
-**What people see here is a weakness in TDD but it is actually a strength**, more often than not poor test code is a result of bad design or put more nicely, well-designed code is easy to test.
+**То, что люди видят здесь как слабость TDD, на самом деле является силой**: чаще всего плохой тестовый код является результатом плохого дизайна или, выражаясь более мягко, хорошо спроектированный код легко тестировать.
 
-### But mocks and tests are still making my life hard!
+### Но моки и тесты все еще усложняют мне жизнь!
 
-Ever run into this situation?
+Вы когда-нибудь сталкивались с такой ситуацией?
 
-- You want to do some refactoring
-- To do this you end up changing lots of tests
-- You question TDD and make a post on Medium titled "Mocking considered harmful"
+- Вы хотите выполнить рефакторинг
+- Для этого вы в конечном итоге меняете множество тестов
+- Вы ставите под сомнение TDD и публикуете статью на Medium под названием "Мокирование вредно"
 
-This is usually a sign of you testing too much _implementation detail_. Try to make it so your tests are testing _useful behaviour_ unless the implementation is really important to how the system runs.
+Это обычно признак того, что вы слишком много тестируете _детали реализации_. Постарайтесь сделать так, чтобы ваши тесты проверяли _полезное поведение_, если только реализация действительно не важна для работы системы.
 
-It is sometimes hard to know _what level_ to test exactly but here are some thought processes and rules I try to follow:
+Иногда трудно понять, _какой уровень_ тестировать, но вот некоторые мыслительные процессы и правила, которым я стараюсь следовать:
 
-- **The definition of refactoring is that the code changes but the behaviour stays the same**. If you have decided to do some refactoring in theory you should be able to make the commit without any test changes. So when writing a test ask yourself
-  - Am I testing the behaviour I want, or the implementation details?
-  - If I were to refactor this code, would I have to make lots of changes to the tests?
-- Although Go lets you test private functions, I would avoid it as private functions are implementation detail to support public behaviour. Test the public behaviour. Sandi Metz describes private functions as being "less stable" and you don't want to couple your tests to them.
-- I feel like if a test is working with **more than 3 mocks then it is a red flag** - time for a rethink on the design
-- Use spies with caution. Spies let you see the insides of the algorithm you are writing which can be very useful but that means a tighter coupling between your test code and the implementation. **Be sure you actually care about these details if you're going to spy on them**
+- **Определение рефакторинга заключается в том, что код меняется, но поведение остается тем же**. Если вы решили выполнить рефакторинг, теоретически вы должны иметь возможность сделать коммит без каких-либо изменений в тестах. Поэтому, когда вы пишете тест, спросите себя:
+  - Тестирую ли я желаемое поведение или детали реализации?
+  - Если бы я рефакторизировал этот код, пришлось бы мне вносить много изменений в тесты?
+- Хотя Go позволяет тестировать приватные функции, я бы избегал этого, так как приватные функции являются деталями реализации для поддержки публичного поведения. Тестируйте публичное поведение. Sandi Metz описывает приватные функции как "менее стабильные", и вы не хотите связывать свои тесты с ними.
+- Мне кажется, что если тест работает с **более чем 3 моками, то это красный флаг** — пора переосмыслить дизайн.
+- Используйте шпионов с осторожностью. Шпионы позволяют вам видеть внутренности алгоритма, который вы пишете, что может быть очень полезно, но это означает более тесную связь между вашим тестовым кодом и реализацией. **Убедитесь, что вам действительно важны эти детали, если вы собираетесь шпионить за ними.**
 
-#### Can't I just use a mocking framework?
+#### Разве я не могу просто использовать фреймворк для мокирования?
 
-Mocking requires no magic and is relatively simple; using a framework can make mocking seem more complicated than it is. We don't use automocking in this chapter so that we get:
+Мокирование не требует никакой магии и относительно просто; использование фреймворка может сделать мокирование более сложным, чем оно есть. В этой главе мы не используем автомакирование, чтобы получить:
 
-- a better understanding of how to mock
-- practice implementing interfaces
+- лучшее понимание того, как мокировать
+- практику реализации интерфейсов
 
-In collaborative projects there is value in auto-generating mocks. In a team, a mock generation tool codifies consistency around the test doubles. This will avoid inconsistently written test doubles which can translate to inconsistently written tests.
+В совместных проектах есть ценность в автогенерации моков. В команде инструмент генерации моков кодифицирует согласованность в тестовых дублях. Это позволит избежать непоследовательно написанных тестовых дублей, что может привести к непоследовательно написанным тестам.
 
-You should only use a mock generator that generates test doubles against an interface. Any tool that overly dictates how tests are written, or that use lots of 'magic', can get in the sea.
+Вы должны использовать только генератор моков, который генерирует тестовые дубли для интерфейса. Любой инструмент, который чрезмерно диктует, как пишутся тесты, или который использует много "магии", может быть отправлен в море.
 
-## Wrapping up
+## Подводим итоги
 
-### More on TDD approach
+### Подробнее о подходе TDD
 
-- When faced with less trivial examples, break the problem down into "thin vertical slices". Try to get to a point where you have _working software backed by tests_ as soon as you can, to avoid getting in rabbit holes and taking a "big bang" approach.
-- Once you have some working software it should be easier to _iterate with small steps_ until you arrive at the software you need.
+- При столкновении с менее тривиальными примерами разбивайте проблему на "тонкие вертикальные срезы". Старайтесь как можно скорее достичь точки, когда у вас есть _рабочее программное обеспечение, подкрепленное тестами_, чтобы избежать попадания в тупики и применения подхода "большого взрыва".
+- Как только у вас появится некоторое работающее программное обеспечение, будет легче _итерировать небольшими шагами_, пока вы не получите необходимое программное обеспечение.
 
-> "When to use iterative development? You should use iterative development only on projects that you want to succeed."
+> "Когда использовать итеративную разработку? Вы должны использовать итеративную разработку только в проектах, которые вы хотите, чтобы преуспели."
 
-Martin Fowler.
+Мартин Фаулер.
 
-### Mocking
+### Мокирование
 
-- **Without mocking important areas of your code will be untested**. In our case we would not be able to test that our code paused between each print but there are countless other examples. Calling a service that _can_ fail? Wanting to test your system in a particular state? It is very hard to test these scenarios without mocking.
-- Without mocks you may have to set up databases and other third parties things just to test simple business rules. You're likely to have slow tests, resulting in **slow feedback loops**.
-- By having to spin up a database or a webservice to test something you're likely to have **fragile tests** due to the unreliability of such services.
+- **Без мокирования важные области вашего кода останутся непроверенными**. В нашем случае мы не смогли бы протестировать, что наш код приостанавливался между каждым выводом, но есть бесчисленное множество других примеров. Вызов сервиса, который _может_ выйти из строя? Желание протестировать вашу систему в определенном состоянии? Очень трудно протестировать эти сценарии без мокирования.
+- Без моков вам, возможно, придется настраивать базы данных и другие сторонние вещи только для проверки простых бизнес-правил. У вас, вероятно, будут медленные тесты, что приведет к **медленным циклам обратной связи**.
+- Из-за необходимости запускать базу данных или веб-сервис для тестирования чего-либо, у вас, вероятно, будут **хрупкие тесты** из-за ненадежности таких сервисов.
 
-Once a developer learns about mocking it becomes very easy to over-test every single facet of a system in terms of the _way it works_ rather than _what it does_. Always be mindful about **the value of your tests** and what impact they would have in future refactoring.
+Как только разработчик узнает о мокировании, становится очень легко чрезмерно тестировать каждый аспект системы с точки зрения _того, как она работает_, а не _того, что она делает_. Всегда помните о **ценности ваших тестов** и о том, какое влияние они окажут на будущий рефакторинг.
 
-In this post about mocking we have only covered **Spies**, which are a kind of mock. Mocks are a type of "test double."
+В этой статье о мокировании мы рассмотрели только **шпионов** (Spies), которые являются разновидностью моков. Моки — это тип "тестового дубля".
 
-> [Test Double is a generic term for any case where you replace a production object for testing purposes.](https://martinfowler.com/bliki/TestDouble.html)
+> [Тестовый дубль — это общий термин для любого случая, когда вы заменяете производственный объект для целей тестирования.](https://martinfowler.com/bliki/TestDouble.html)
 
-Under test doubles, there are various types like stubs, spies and indeed mocks! Check out [Martin Fowler's post](https://martinfowler.com/bliki/TestDouble.html) for more detail.
+Среди тестовых дублей существуют различные типы, такие как заглушки (stubs), шпионы (spies) и, конечно, моки! Дополнительную информацию см. в [статье Мартина Фаулера](https://martinfowler.com/bliki/TestDouble.html).
 
-## Bonus - Example of iterators from go 1.23
+## Бонус - Пример итераторов из Go 1.23
 
-In Go 1.23 [iterators were introduced](https://tip.golang.org/doc/go1.23). We can use iterators in various ways, in this instance we can make a `countdownFrom` iterator, which will return the numbers to countdown in reverse order.
+В Go 1.23 [были представлены итераторы](https://tip.golang.org/doc/go1.23). Мы можем использовать итераторы различными способами, в данном случае мы можем создать итератор `countdownFrom`, который будет возвращать числа для обратного отсчета в обратном порядке.
 
-Before we get into how we write custom iterators, let's see how we use them. Rather than writing a fairly imperative looking loop to count down from a number, we can make this code look more expressive by `range`-ing over our custom `countdownFrom` iterator.
+Прежде чем мы углубимся в то, как писать пользовательские итераторы, давайте посмотрим, как их использовать. Вместо того, чтобы писать довольно императивный цикл для обратного отсчета от числа, мы можем сделать этот код более выразительным, используя `range` по нашему пользовательскому итератору `countdownFrom`.
 
 ```go
 func Countdown(out io.Writer, sleeper Sleeper) {
@@ -654,16 +654,16 @@ func Countdown(out io.Writer, sleeper Sleeper) {
 }
 ```
 
-To write an iterator like `countDownFrom`, you need to write a function in a particular way. From the docs:
+Чтобы написать итератор, подобный `countDownFrom`, вам нужно написать функцию определенным образом. Из документации:
 
-    The “range” clause in a “for-range” loop now accepts iterator functions of the following types
+    Предложение “range” в цикле “for-range” теперь принимает функции-итераторы следующих типов
         func(func() bool)
         func(func(K) bool)
         func(func(K, V) bool)
 
-(The `K` and `V` stand for key and value types, respectively.)
+(Буквы `K` и `V` обозначают типы ключа и значения соответственно.)
 
-In our case, we don't have keys, just values. Go also provides a convenience type `iter.Seq[T]` which is a type alias for `func(func(T) bool)`.
+В нашем случае у нас нет ключей, только значения. Go также предоставляет удобный тип `iter.Seq[T]`, который является псевдонимом типа для `func(func(T) bool)`.
 
 ```go
 func countDownFrom(from int) iter.Seq[int] {
@@ -677,4 +677,4 @@ func countDownFrom(from int) iter.Seq[int] {
 }
 ```
 
-This is a simple iterator, which will yield numbers in reverse order, starting from, `from` - perfect for our usecase. 
+Это простой итератор, который будет выдавать числа в обратном порядке, начиная с `from` — идеально для нашего случая использования.

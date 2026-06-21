@@ -1,18 +1,18 @@
-# Maths
+# Математика
 
-[**You can find all the code for this chapter here**](https://github.com/quii/learn-go-with-tests/tree/main/math)
+[**Весь код для этой главы вы найдете здесь**](https://github.com/quii/learn-go-with-tests/tree/main/math)
 
-For all the power of modern computers to perform huge sums at lightning speed, the average developer rarely uses any mathematics to do their job. But not today! Today we'll use mathematics to solve a _real_ problem. And not boring mathematics - we're going to use trigonometry and vectors and all sorts of stuff that you always said you'd never have to use after highschool.
+Несмотря на всю мощь современных компьютеров, способных выполнять огромные вычисления с молниеносной скоростью, средний разработчик редко использует математику в своей работе. Но не сегодня! Сегодня мы будем использовать математику для решения _настоящей_ проблемы. И не скучную математику — мы будем использовать тригонометрию, векторы и все прочее, о чем вы всегда говорили, что вам никогда не придется использовать это после школы.
 
-## The Problem
+## Проблема
 
-You want to make an SVG of a clock. Not a digital clock - no, that would be easy - an _analogue_ clock, with hands. You're not looking for anything fancy, just a nice function that takes a `Time` from the `time` package and spits out an SVG of a clock with all the hands - hour, minute and second - pointing in the right direction. How hard can that be?
+Вы хотите создать SVG-изображение часов. Не цифровых часов – нет, это было бы слишком просто – а _аналоговых_, со стрелками. Вам не нужно ничего вычурного, просто хорошая функция, которая принимает `Time` из пакета `time` и выдает SVG-изоизображение часов со всеми стрелками – часовой, минутной и секундной – указывающими в правильном направлении. Насколько это может быть сложно?
 
-First we're going to need an SVG of a clock for us to play with. SVGs are a fantastic image format to manipulate programmatically because they're written as a series of shapes, described in XML. So this clock:
+Сначала нам понадобится SVG-изображение часов, чтобы мы могли с ним работать. SVG – это фантастический формат изображений для программного манипулирования, потому что они записываются как серия фигур, описанных в XML. Итак, эти часы:
 
 ![an svg of a clock](.gitbook/assets/example_clock.svg)
 
-is described like this:
+описываются так:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -40,51 +40,51 @@ is described like this:
 </svg>
 ```
 
-It's a circle with three lines, each of the lines starting in the middle of the circle (x=150, y=150), and ending some distance away.
+Это круг с тремя линиями, каждая из которых начинается в центре круга (x=150, y=150) и заканчивается на некотором расстоянии.
 
-So what we're going to do is reconstruct the above somehow, but change the lines so they point in the appropriate directions for a given time.
+Итак, мы собираемся как-то реконструировать вышеизложенное, но изменить линии так, чтобы они указывали в соответствующих направлениях для заданного времени.
 
-## An Acceptance Test
+## Приемочный тест
 
-Before we get too stuck in, lets think about an acceptance test.
+Прежде чем мы углубимся в это, давайте подумаем о приемочном тесте.
 
-Wait, you don't know what an acceptance test is yet. Look, let me try to explain.
+Подождите, вы еще не знаете, что такое приемочный тест. Позвольте мне попытаться объяснить.
 
-Let me ask you: what does winning look like? How do we know we've finished work? TDD provides a good way of knowing when you've finished: when the test passes. Sometimes it's nice - actually, almost all of the time it's nice - to write a test that tells you when you've finished writing the whole usable feature. Not just a test that tells you that a particular function is working in the way you expect, but a test that tells you that the whole thing you're trying to achieve - the 'feature' - is complete.
+Позвольте мне спросить вас: как выглядит победа? Как мы узнаем, что закончили работу? TDD предлагает хороший способ узнать, когда вы закончили: когда тест проходит. Иногда бывает приятно – на самом деле, почти всегда приятно – написать тест, который сообщает вам, когда вы закончили писать всю пригодную для использования функцию. Не просто тест, который сообщает, что конкретная функция работает так, как вы ожидаете, а тест, который сообщает, что все, чего вы пытаетесь достичь – «фича» – завершено.
 
-These tests are sometimes called 'acceptance tests', sometimes called 'feature tests'. The idea is that you write a really high level test to describe what you're trying to achieve - a user clicks a button on a website, and they see a complete list of the Pokémon they've caught, for instance. When we've written that test, we can then write more tests - unit tests - that build towards a working system that will pass the acceptance test. So for our example these tests might be about rendering a webpage with a button, testing route handlers on a web server, performing database look ups, etc. All of these things will be TDD'd, and all of them will go towards making the original acceptance test pass.
+Эти тесты иногда называют «приемочными тестами» (acceptance tests), иногда «фиче-тестами» (feature tests). Идея состоит в том, что вы пишете очень высокоуровневый тест, чтобы описать то, чего вы пытаетесь достичь – например, пользователь нажимает кнопку на веб-сайте, и он видит полный список пойманных им покемонов. Когда мы написали этот тест, мы можем написать больше тестов – модульных тестов – которые приведут к рабочей системе, которая пройдет приемочный тест. Так, для нашего примера эти тесты могут быть о рендеринге веб-страницы с кнопкой, тестировании обработчиков маршрутов на веб-сервере, выполнении запросов к базе данных и т. д. Все это будет реализовано с использованием TDD, и все это будет способствовать прохождению исходного приемочного теста.
 
-Something like this _classic_ picture by Nat Pryce and Steve Freeman
+Что-то вроде этой _классической_ картины Ната Прайса и Стива Фримена:
 
 ![Outside-in feedback loops in TDD](.gitbook/assets/TDD-outside-in.jpg)
 
-Anyway, let's try and write that acceptance test - the one that will let us know when we're done.
+В любом случае, давайте попробуем написать этот приемочный тест – тот, который даст нам знать, когда мы закончим.
 
-We've got an example clock, so let's think about what the important parameters are going to be.
+У нас есть пример часов, поэтому давайте подумаем о том, каковы будут важные параметры.
 
 ```
 <line x1="150" y1="150" x2="114.150000" y2="132.260000"
         style="fill:none;stroke:#000;stroke-width:7px;"/>
 ```
 
-The centre of the clock (the attributes `x1` and `y1` for this line) is the same for each hand of the clock. The numbers that need to change for each hand of the clock - the parameters to whatever builds the SVG - are the `x2` and `y2` attributes. We'll need an X and a Y for each of the hands of the clock.
+Центр часов (атрибуты `x1` и `y1` для этой линии) одинаков для каждой стрелки часов. Числа, которые необходимо изменить для каждой стрелки часов – параметры для всего, что строит SVG – это атрибуты `x2` и `y2`. Нам понадобятся X и Y для каждой стрелки часов.
 
-I _could_ think about more parameters - the radius of the clockface circle, the size of the SVG, the colours of the hands, their shape, etc... but it's better to start off by solving a simple, concrete problem with a simple, concrete solution, and then to start adding parameters to make it generalised.
+Я _мог бы_ подумать о большем количестве параметров – радиусе циферблата, размере SVG, цветах стрелок, их форме и т. д... но лучше начать с решения простой, конкретной проблемы простым, конкретным решением, а затем начать добавлять параметры, чтобы сделать его более общим.
 
-So we'll say that
+Итак, мы скажем, что
 
-* every clock has a centre of (150, 150)
-* the hour hand is 50 long
-* the minute hand is 80 long
-* the second hand is 90 long.
+*   каждые часы имеют центр (150, 150)
+*   часовая стрелка длиной 50
+*   минутная стрелка длиной 80
+*   секундная стрелка длиной 90.
 
-A thing to note about SVGs: the origin - point (0,0) - is at the _top left_ hand corner, not the _bottom left_ as we might expect. It'll be important to remember this when we're working out where what numbers to plug in to our lines.
+Что следует отметить об SVG: начало координат – точка (0,0) – находится в _верхнем левом_ углу, а не в _нижнем левом_, как мы могли бы ожидать. Важно помнить об этом, когда мы будем вычислять, какие числа подставлять в наши линии.
 
-Finally, I'm not deciding _how_ to construct the SVG - we could use a template from the [`text/template`](https://golang.org/pkg/text/template/) package, or we could just send bytes into a `bytes.Buffer` or a writer. But we know we'll need those numbers, so let's focus on testing something that creates them.
+Наконец, я не решаю, _как_ конструировать SVG – мы могли бы использовать шаблон из пакета [`text/template`](https://golang.org/pkg/text/template/), или мы могли бы просто отправить байты в `bytes.Buffer` или `writer`. Но мы знаем, что нам понадобятся эти числа, поэтому давайте сосредоточимся на тестировании чего-то, что их создает.
 
-### Write the test first
+### Сначала напишите тест
 
-So my first test looks like this:
+Итак, мой первый тест выглядит так:
 
 ```go
 package clockface_test
@@ -107,11 +107,11 @@ func TestSecondHandAtMidnight(t *testing.T) {
 }
 ```
 
-Remember how SVGs plot their coordinates from the top left hand corner? To place the second hand at midnight we expect that it hasn't moved from the centre of the clockface on the X axis - still 150 - and the Y axis is the length of the hand 'up' from the centre; 150 minus 90.
+Помните, как SVG строит свои координаты из верхнего левого угла? Чтобы разместить секундную стрелку в полночь, мы ожидаем, что она не сдвинулась от центра циферблата по оси X – все еще 150 – а ось Y находится на длину стрелки «вверх» от центра; 150 минус 90.
 
-### Try to run the test
+### Попытайтесь запустить тест
 
-This drives out the expected failures around the missing functions and types:
+Это приводит к ожидаемым ошибкам из-за отсутствия функций и типов:
 
 ```
 --- FAIL: TestSecondHandAtMidnight (0.00s)
@@ -119,11 +119,11 @@ This drives out the expected failures around the missing functions and types:
 ./clockface_test.go:14:9: undefined: clockface.SecondHand
 ```
 
-So a `Point` where the tip of the second hand should go, and a function to get it.
+Итак, `Point`, куда должна указывать секундная стрелка, и функция для ее получения.
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод ошибочного теста
 
-Let's implement those types to get the code to compile
+Давайте реализуем эти типы, чтобы код скомпилировался:
 
 ```go
 package clockface
@@ -143,7 +143,7 @@ func SecondHand(t time.Time) Point {
 }
 ```
 
-and now we get:
+и теперь мы получаем:
 
 ```
 --- FAIL: TestSecondHandAtMidnight (0.00s)
@@ -153,9 +153,9 @@ exit status 1
 FAIL	learn-go-with-tests/math/clockface	0.006s
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
-When we get the expected failure, we can fill in the return value of `SecondHand`:
+Когда мы получаем ожидаемую ошибку, мы можем заполнить возвращаемое значение `SecondHand`:
 
 ```go
 // SecondHand is the unit vector of the second hand of an analogue clock at time `t`
@@ -165,22 +165,22 @@ func SecondHand(t time.Time) Point {
 }
 ```
 
-Behold, a passing test.
+Вот, тест пройден.
 
 ```
 PASS
 ok  	    clockface	0.006s
 ```
 
-### Refactor
+### Рефакторинг
 
-No need to refactor yet - there's barely enough code!
+Пока нет необходимости в рефакторинге – кода едва достаточно!
 
-### Repeat for new requirements
+### Повторите для новых требований
 
-We probably need to do some work here that doesn't just involve returning a clock that shows midnight for every time...
+Вероятно, нам нужно проделать здесь некоторую работу, которая не просто возвращает часы, показывающие полночь для любого времени...
 
-### Write the test first
+### Сначала напишите тест
 
 ```go
 func TestSecondHandAt30Seconds(t *testing.T) {
@@ -195,65 +195,65 @@ func TestSecondHandAt30Seconds(t *testing.T) {
 }
 ```
 
-Same idea, but now the second hand is pointing _downwards_ so we _add_ the length to the Y axis.
+Та же идея, но теперь секундная стрелка указывает _вниз_, поэтому мы _добавляем_ длину к оси Y.
 
-This will compile... but how do we make it pass?
+Это скомпилируется... но как нам заставить его пройти?
 
-## Thinking time
+## Время для размышлений
 
-How are we going to solve this problem?
+Как мы собираемся решить эту проблему?
 
-Every minute the second hand goes through the same 60 states, pointing in 60 different directions. When it's 0 seconds it points to the top of the clockface, when it's 30 seconds it points to the bottom of the clockface. Easy enough.
+Каждую минуту секундная стрелка проходит через 60 одинаковых состояний, указывая в 60 разных направлениях. Когда 0 секунд, она указывает на верхнюю часть циферблата, когда 30 секунд, она указывает на нижнюю часть циферблата. Достаточно просто.
 
-So if I wanted to think about in what direction the second hand was pointing at, say, 37 seconds, I'd want the angle between 12 o'clock and 37/60ths around the circle. In degrees this is `(360 / 60 ) * 37 = 222`, but it's easier just to remember that it's `37/60` of a complete rotation.
+Итак, если бы я хотел понять, в каком направлении указывает секундная стрелка, скажем, в 37 секунд, мне бы нужен был угол между 12 часами и 37/60 долей окружности. В градусах это `(360 / 60) * 37 = 222`, но проще просто запомнить, что это `37/60` полного оборота.
 
-But the angle is only half the story; we need to know the X and Y coordinate that the tip of the second hand is pointing at. How can we work that out?
+Но угол – это только половина истории; нам нужно знать координаты X и Y, на которые указывает кончик секундной стрелки. Как мы можем это выяснить?
 
-## Math
+## Математика
 
-Imagine a circle with a radius of 1 drawn around the origin - the coordinate `0, 0`.
+Представьте себе круг радиусом 1, нарисованный вокруг начала координат – точки `0, 0`.
 
 ![picture of the unit circle](.gitbook/assets/unit_circle.png)
 
-This is called the 'unit circle' because... well, the radius is 1 unit!
+Это называется «единичный круг», потому что... ну, радиус равен 1 единице!
 
-The circumference of the circle is made of points on the grid - more coordinates. The x and y components of each of these coordinates form a triangle, the hypotenuse of which is always 1 (i.e. the radius of the circle).
+Окружность круга состоит из точек на сетке – то есть координат. Компоненты x и y каждой из этих координат образуют треугольник, гипотенуза которого всегда равна 1 (то есть радиусу круга).
 
 ![picture of the unit circle with a point defined on the circumference](.gitbook/assets/unit_circle_coords.png)
 
-Now, trigonometry will let us work out the lengths of X and Y for each triangle if we know the angle they make with the origin. The X coordinate will be cos(a), and the Y coordinate will be sin(a), where a is the angle made between the line and the (positive) x axis.
+Теперь тригонометрия позволит нам вычислить длины X и Y для каждого треугольника, если мы знаем угол, который они образуют с началом координат. Координата X будет cos(a), а координата Y будет sin(a), где a – это угол, образованный линией и (положительной) осью x.
 
 ![picture of the unit circle with the x and y elements of a ray defined as cos(a) and sin(a) respectively, where a is the angle made by the ray with the x axis](<.gitbook/assets/unit_circle_params (1).png>)
 
-(If you don't believe this, [go and look at Wikipedia...](https://en.wikipedia.org/wiki/Sine#Unit_circle_definition))
+(Если вы не верите, [посмотрите на Википедию...](https://en.wikipedia.org/wiki/Sine#Unit_circle_definition))
 
-One final twist - because we want to measure the angle from 12 o'clock rather than from the X axis (3 o'clock), we need to swap the axis around; now x = sin(a) and y = cos(a).
+Последний нюанс: поскольку мы хотим измерять угол от 12 часов, а не от оси X (3 часа), нам нужно поменять оси местами; теперь x = sin(a), а y = cos(a).
 
 ![unit circle ray defined from by angle from y axis](.gitbook/assets/unit_circle_12_oclock.png)
 
-So now we know how to get the angle of the second hand (1/60th of a circle for each second) and the X and Y coordinates. We'll need functions for both `sin` and `cos`.
+Итак, теперь мы знаем, как получить угол секундной стрелки (1/60 часть круга за каждую секунду) и координаты X и Y. Нам понадобятся функции как для `sin`, так и для `cos`.
 
 ## `math`
 
-Happily the Go `math` package has both, with one small snag we'll need to get our heads around; if we look at the description of [`math.Cos`](https://golang.org/pkg/math/#Cos):
+К счастью, Go пакет `math` имеет обе эти функции, с одной небольшой загвоздкой, которую нам нужно будет понять; если мы посмотрим на описание [`math.Cos`](https://golang.org/pkg/math/#Cos):
 
-> Cos returns the cosine of the radian argument x.
+> Cos возвращает косинус аргумента x в радианах.
 
-It wants the angle to be in radians. So what's a radian? Instead of defining the full turn of a circle to be made up of 360 degrees, we define a full turn as being 2π radians. There are good reasons to do this that we won't go in to.
+Он хочет, чтобы угол был в радианах. Так что же такое радиан? Вместо того чтобы определять полный оборот круга как 360 градусов, мы определяем полный оборот как 2π радиан. Для этого есть веские причины, в которые мы не будем углубляться.
 
-Now that we've done some reading, some learning and some thinking, we can write our next test.
+Теперь, когда мы немного почитали, поучились и подумали, мы можем написать наш следующий тест.
 
-### Write the test first
+### Сначала напишите тест
 
-All this maths is hard and confusing. I'm not confident I understand what's going on - so let's write a test! We don't need to solve the whole problem in one go - let's start off with working out the correct angle, in radians, for the second hand at a particular time.
+Вся эта математика сложна и запутанна. Я не уверен, что понимаю, что происходит – так что давайте напишем тест! Нам не нужно решать всю проблему за один раз – давайте начнем с вычисления правильного угла в радианах для секундной стрелки в определенное время.
 
-I'm going to _comment out_ the acceptance test that I was working on while I'm working on these tests - I don't want to get distracted by that test while I'm getting this one to pass.
+Я собираюсь _закомментировать_ приемочный тест, над которым я работал, пока работаю над этими тестами – я не хочу отвлекаться на этот тест, пока не заставлю этот пройти.
 
-### A recap on packages
+### Краткое повторение о пакетах
 
-At the moment, our acceptance tests are in the `clockface_test` package. Our tests can be outside of the `clockface` package - as long as their name ends with `_test.go` they can be run.
+В данный момент наши приемочные тесты находятся в пакете `clockface_test`. Наши тесты могут находиться за пределами пакета `clockface` — если их имя заканчивается на `_test.go`, их можно запускать.
 
-I'm going to write these radians tests _within_ the `clockface` package; they may never get exported, and they may get deleted (or moved) once I have a better grip on what's going on. I'll rename my acceptance test file to `clockface_acceptance_test.go`, so that I can create a _new_ file called `clockface_test` to test seconds in radians.
+Я собираюсь написать эти тесты радианов _внутри_ пакета `clockface`; возможно, они никогда не будут экспортированы, и возможно, будут удалены (или перемещены), как только я лучше пойму, что происходит. Я переименую свой файл приемочных тестов в `clockface_acceptance_test.go`, чтобы я мог создать _новый_ файл `clockface_test` для тестирования секунд в радианах.
 
 ```go
 package clockface
@@ -275,15 +275,15 @@ func TestSecondsInRadians(t *testing.T) {
 }
 ```
 
-Here we're testing that 30 seconds past the minute should put the second hand at halfway around the clock. And it's our first use of the `math` package! If a full turn of a circle is 2π radians, we know that halfway round should just be π radians. `math.Pi` provides us with a value for π.
+Здесь мы тестируем, что 30 секунд после минуты должны поместить секундную стрелку на половину оборота часов. И это наше первое использование пакета `math`! Если полный оборот круга составляет 2π радиан, мы знаем, что половина оборота должна составлять просто π радиан. `math.Pi` предоставляет нам значение для π.
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 ./clockface_test.go:12:9: undefined: secondsInRadians
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод ошибочного теста
 
 ```go
 func secondsInRadians(t time.Time) float64 {
@@ -295,7 +295,7 @@ func secondsInRadians(t time.Time) float64 {
 clockface_test.go:15: Wanted 3.141592653589793 radians, but got 0
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
 ```go
 func secondsInRadians(t time.Time) float64 {
@@ -308,13 +308,13 @@ PASS
 ok  	clockface	0.011s
 ```
 
-### Refactor
+### Рефакторинг
 
-Nothing needs refactoring yet
+Пока ничего не требует рефакторинга
 
-### Repeat for new requirements
+### Повторите для новых требований
 
-Now we can extend the test to cover a few more scenarios. I'm going to skip forward a bit and show some already refactored test code - it should be clear enough how I got where I want to.
+Теперь мы можем расширить тест, чтобы охватить еще несколько сценариев. Я немного забегу вперед и покажу уже отрефакторенный тестовый код – должно быть достаточно ясно, как я пришел к тому, что мне нужно.
 
 ```go
 func TestSecondsInRadians(t *testing.T) {
@@ -339,7 +339,7 @@ func TestSecondsInRadians(t *testing.T) {
 }
 ```
 
-I added a couple of helper functions to make writing this table based test a little less tedious. `testName` converts a time into a digital watch format (HH:MM:SS), and `simpleTime` constructs a `time.Time` using only the parts we actually care about (again, hours, minutes and seconds). Here they are:
+Я добавил пару вспомогательных функций, чтобы сделать написание этого табличного теста немного менее утомительным. `testName` преобразует время в формат цифровых часов (HH:MM:SS), а `simpleTime` конструирует `time.Time`, используя только те части, которые нам действительно важны (опять же, часы, минуты и секунды). Вот они:
 
 ```go
 func simpleTime(hours, minutes, seconds int) time.Time {
@@ -351,9 +351,9 @@ func testName(t time.Time) string {
 }
 ```
 
-These two functions should help make these tests (and future tests) a little easier to write and maintain.
+Эти две функции должны помочь сделать эти (и будущие) тесты немного проще для написания и поддержки.
 
-This gives us some nice test output:
+Это дает нам хороший тестовый вывод:
 
 ```
 clockface_test.go:24: Wanted 0 radians, but got 3.141592653589793
@@ -361,7 +361,7 @@ clockface_test.go:24: Wanted 0 radians, but got 3.141592653589793
 clockface_test.go:24: Wanted 4.71238898038469 radians, but got 3.141592653589793
 ```
 
-Time to implement all of that maths stuff we were talking about above:
+Время реализовать всю ту математику, о которой мы говорили выше:
 
 ```go
 func secondsInRadians(t time.Time) float64 {
@@ -369,40 +369,40 @@ func secondsInRadians(t time.Time) float64 {
 }
 ```
 
-One second is (2π / 60) radians... cancel out the 2 and we get π/30 radians. Multiply that by the number of seconds (as a `float64`) and we should now have all the tests passing...
+Одна секунда – это (2π / 60) радиан... сокращаем 2, и получаем π/30 радиан. Умножаем это на количество секунд (как `float64`), и теперь все тесты должны пройти...
 
 ```
 clockface_test.go:24: Wanted 3.141592653589793 radians, but got 3.1415926535897936
 ```
 
-Wait, what?
+Подождите, что?
 
-### Floats are horrible
+### С плавающей точкой всё ужасно
 
-Floating point arithmetic is [notoriously inaccurate](https://0.30000000000000004.com/). Computers can only really handle integers, and rational numbers to some extent. Decimal numbers start to become inaccurate, especially when we factor them up and down as we are in the `secondsInRadians` function. By dividing `math.Pi` by 30 and then by multiplying it by 30 we've ended up with _a number that's no longer the same as `math.Pi`_.
+Арифметика с плавающей точкой [печально известна своей неточностью](https://0.30000000000000004.com/). Компьютеры действительно могут работать только с целыми числами и в некоторой степени с рациональными. Десятичные числа начинают становиться неточными, особенно когда мы масштабируем их вверх и вниз, как в функции `secondsInRadians`. Разделив `math.Pi` на 30, а затем умножив на 30, мы получили _число, которое больше не равно `math.Pi`_.
 
-There are two ways around this:
+Есть два способа обойти это:
 
-1. Live with it
-2. Refactor our function by refactoring our equation
+1.  Смириться с этим
+2.  Переделать нашу функцию, переделав наше уравнение
 
-Now (1) may not seem all that appealing, but it's often the only way to make floating point equality work. Being inaccurate by some infinitesimal fraction is frankly not going to matter for the purposes of drawing a clockface, so we could write a function that defines a 'close enough' equality for our angles. But there's a simple way we can get the accuracy back: we rearrange the equation so that we're no longer dividing down and then multiplying up. We can do it all by just dividing.
+Теперь (1) может показаться не очень привлекательным, но зачастую это единственный способ заставить работать равенство чисел с плавающей точкой. Неточность на какую-то бесконечно малую долю, честно говоря, не будет иметь значения для целей рисования циферблата, поэтому мы могли бы написать функцию, которая определяет «достаточно близкое» равенство для наших углов. Но есть простой способ вернуть точность: мы перестраиваем уравнение так, чтобы больше не делить вниз, а затем умножать вверх. Мы можем сделать все, просто разделив.
 
-So instead of
+Итак, вместо
 
 ```
 numberOfSeconds * π / 30
 ```
 
-we can write
+мы можем написать
 
 ```
 π / (30 / numberOfSeconds)
 ```
 
-which is equivalent.
+что эквивалентно.
 
-In Go:
+В Go:
 
 ```go
 func secondsInRadians(t time.Time) float64 {
@@ -410,20 +410,20 @@ func secondsInRadians(t time.Time) float64 {
 }
 ```
 
-And we get a pass.
+И мы получаем прохождение.
 
 ```
 PASS
 ok      clockface     0.005s
 ```
 
-It should all look [something like this](https://github.com/quii/learn-go-with-tests/tree/main/math/v3/clockface).
+Все должно выглядеть [примерно так](https://github.com/quii/learn-go-with-tests/tree/main/math/v3/clockface).
 
-### A note on dividing by zero
+### Примечание о делении на ноль
 
-Computers often don't like dividing by zero because infinity is a bit strange.
+Компьютеры часто не любят деление на ноль, потому что бесконечность — это немного странно.
 
-In Go if you try to explicitly divide by zero you will get a compilation error.
+В Go, если вы попытаетесь явно разделить на ноль, вы получите ошибку компиляции.
 
 ```go
 package main
@@ -437,9 +437,9 @@ func main() {
 }
 ```
 
-Obviously the compiler can't always predict that you'll divide by zero, such as our `t.Second()`
+Очевидно, что компилятор не всегда может предсказать, что вы разделите на ноль, как в нашем `t.Second()`
 
-Try this
+Попробуйте это:
 
 ```go
 func main() {
@@ -451,7 +451,7 @@ func zero() float64 {
 }
 ```
 
-It will print `+Inf` (infinity). Dividing by +Inf seems to result in zero and we can see this with the following:
+Он выведет `+Inf` (бесконечность). Деление на +Inf, кажется, приводит к нулю, и мы можем увидеть это на следующем примере:
 
 ```go
 package main
@@ -474,13 +474,13 @@ func secondsinradians() float64 {
 }
 ```
 
-### Repeat for new requirements
+### Повторите для новых требований
 
-So we've got the first part covered here - we know what angle the second hand will be pointing at in radians. Now we need to work out the coordinates.
+Итак, мы рассмотрели первую часть – мы знаем, на какой угол в радианах будет указывать секундная стрелка. Теперь нам нужно выяснить координаты.
 
-Again, let's keep this as simple as possible and only work with the _unit circle_; the circle with a radius of 1. This means that our hands will all have a length of one but, on the bright side, it means that the maths will be easy for us to swallow.
+Опять же, давайте сделаем это как можно проще и будем работать только с _единичным кругом_; кругом с радиусом 1. Это означает, что наши стрелки будут иметь длину один, но, с другой стороны, это означает, что математика будет для нас легкой.
 
-### Write the test first
+### Сначала напишите тест
 
 ```go
 func TestSecondHandPoint(t *testing.T) {
@@ -502,13 +502,13 @@ func TestSecondHandPoint(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 ./clockface_test.go:40:11: undefined: secondHandPoint
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод ошибочного теста
 
 ```go
 func secondHandPoint(t time.Time) Point {
@@ -520,7 +520,7 @@ func secondHandPoint(t time.Time) Point {
 clockface_test.go:42: Wanted {0 -1} Point, but got {0 0}
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
 ```go
 func secondHandPoint(t time.Time) Point {
@@ -533,7 +533,7 @@ PASS
 ok  	clockface	0.007s
 ```
 
-### Repeat for new requirements
+### Повторите для новых требований
 
 ```go
 func TestSecondHandPoint(t *testing.T) {
@@ -556,23 +556,23 @@ func TestSecondHandPoint(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 clockface_test.go:43: Wanted {-1 0} Point, but got {0 -1}
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
-Remember our unit circle picture?
+Помните нашу картинку единичного круга?
 
 ![picture of the unit circle with the x and y elements of a ray defined as cos(a) and sin(a) respectively, where a is the angle made by the ray with the x axis](<.gitbook/assets/unit_circle_params (1).png>)
 
-Also recall that we want to measure the angle from 12 o'clock which is the Y axis instead of from the X axis which we would like measuring the angle between the second hand and 3 o'clock.
+Также вспомните, что мы хотим измерять угол от 12 часов, то есть от оси Y, вместо оси X, что означало бы измерение угла между секундной стрелкой и 3 часами.
 
 ![unit circle ray defined from by angle from y axis](.gitbook/assets/unit_circle_12_oclock.png)
 
-We now want the equation that produces X and Y. Let's write it into seconds:
+Теперь нам нужно уравнение, которое выдает X и Y. Давайте запишем его в секундах:
 
 ```go
 func secondHandPoint(t time.Time) Point {
@@ -584,7 +584,7 @@ func secondHandPoint(t time.Time) Point {
 }
 ```
 
-Now we get
+Теперь мы получаем:
 
 ```
 clockface_test.go:43: Wanted {0 -1} Point, but got {1.2246467991473515e-16 -1}
@@ -592,9 +592,9 @@ clockface_test.go:43: Wanted {0 -1} Point, but got {1.2246467991473515e-16 -1}
 clockface_test.go:43: Wanted {-1 0} Point, but got {-1 -1.8369701987210272e-16}
 ```
 
-Wait, what (again)? Looks like we've been cursed by the floats once more - both of those unexpected numbers are _infinitesimal_ - way down at the 16th decimal place. So again we can either choose to try to increase precision, or to just say that they're roughly equal and get on with our lives.
+Подождите, что (опять)? Кажется, нас снова прокляли числа с плавающей запятой – оба эти неожиданных числа _бесконечно малы_ – находятся на 16-м десятичном знаке. Итак, опять же, мы можем либо попытаться увеличить точность, либо просто сказать, что они примерно равны, и продолжать жить своей жизнью.
 
-One option to increase the accuracy of these angles would be to use the rational type `Rat` from the `math/big` package. But given the objective is to draw an SVG and not land on the moon, I think we can live with a bit of fuzziness.
+Одним из вариантов повышения точности этих углов было бы использование рационального типа `Rat` из пакета `math/big`. Но, учитывая, что цель состоит в том, чтобы нарисовать SVG, а не приземлиться на Луну, я думаю, мы можем смириться с небольшой нечеткостью.
 
 ```go
 func TestSecondHandPoint(t *testing.T) {
@@ -627,24 +627,24 @@ func roughlyEqualPoint(a, b Point) bool {
 }
 ```
 
-We've defined two functions to define approximate equality between two `Points` - they'll work if the X and Y elements are within 0.0000001 of each other. That's still pretty accurate.
+Мы определили две функции для определения приблизительного равенства между двумя `Point` – они будут работать, если элементы X и Y находятся в пределах 0.0000001 друг от друга. Это все еще довольно точно.
 
-And now we get:
+И теперь мы получаем:
 
 ```
 PASS
 ok  	clockface	0.007s
 ```
 
-### Refactor
+### Рефакторинг
 
-I'm still pretty happy with this.
+Я все еще очень доволен этим.
 
-Here's [what it looks like now](https://github.com/quii/learn-go-with-tests/tree/main/math/v4/clockface)
+Вот [как это выглядит сейчас](https://github.com/quii/learn-go-with-tests/tree/main/math/v4/clockface)
 
-### Repeat for new requirements
+### Повторите для новых требований
 
-Well, saying _new_ isn't entirely accurate - really what we can do now is get that acceptance test passing! Let's remind ourselves of what it looks like:
+Ну, говорить _новые_ не совсем точно – на самом деле, что мы можем сделать сейчас, это добиться прохождения приемочного теста! Давайте напомним себе, как он выглядит:
 
 ```go
 func TestSecondHandAt30Seconds(t *testing.T) {
@@ -659,21 +659,21 @@ func TestSecondHandAt30Seconds(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 clockface_acceptance_test.go:28: Got {150 60}, wanted {150 240}
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
-We need to do three things to convert our unit vector into a point on the SVG:
+Нам нужно сделать три вещи, чтобы преобразовать наш единичный вектор в точку на SVG:
 
-1. Scale it to the length of the hand
-2. Flip it over the X axis to account for the SVG having an origin in the top left hand corner
-3. Translate it to the right position (so that it's coming from an origin of (150,150))
+1.  Масштабировать его до длины стрелки
+2.  Отразить его по оси X, чтобы учесть, что у SVG начало координат находится в верхнем левом углу
+3.  Переместить его в правильное положение (так, чтобы он исходил из начала координат (150,150))
 
-Fun times!
+Веселые времена!
 
 ```go
 // SecondHand is the unit vector of the second hand of an analogue clock at time `t`
@@ -687,16 +687,16 @@ func SecondHand(t time.Time) Point {
 }
 ```
 
-Scale, flip, and translate in exactly that order. Hooray maths!
+Масштабировать, отразить и переместить именно в таком порядке. Ура, математика!
 
 ```
 PASS
 ok  	clockface	0.007s
 ```
 
-### Refactor
+### Рефакторинг
 
-There's a few magic numbers here that should get pulled out as constants, so let's do that
+Здесь есть несколько «магических чисел», которые следует вынести в константы, так что давайте сделаем это:
 
 ```go
 const secondHandLength = 90
@@ -714,13 +714,13 @@ func SecondHand(t time.Time) Point {
 }
 ```
 
-## Draw the clock
+## Нарисуйте часы
 
-Well... the second hand anyway...
+Ну... во всяком случае, секундную стрелку...
 
-Let's do this thing - because there's nothing worse than not delivering some value when it's just sitting there waiting to get out into the world to dazzle people. Let's draw a second hand!
+Давайте сделаем это – потому что нет ничего хуже, чем не предоставить какую-то ценность, когда она просто сидит и ждет, чтобы выйти в мир и поразить людей. Давайте нарисуем секундную стрелку!
 
-We're going to stick a new directory under our main `clockface` package directory, called (confusingly), `clockface`. In there we'll put the `main` package that will create the binary that will build an SVG:
+Мы собираемся создать новый каталог в нашем основном каталоге пакета `clockface`, который будет называться (запутанно) `clockface`. В него мы поместим пакет `main`, который создаст двоичный файл, строящий SVG:
 
 ```
 |-- clockface
@@ -730,7 +730,7 @@ We're going to stick a new directory under our main `clockface` package director
 |-- clockface_test.go
 ```
 
-Inside `main.go`, you'll start with this code but change the import for the clockface package to point at your own version:
+Внутри `main.go` вы начнете с этого кода, но измените импорт пакета `clockface`, чтобы он указывал на вашу собственную версию:
 
 ```go
 package main
@@ -770,36 +770,36 @@ const bezel = `<circle cx="150" cy="150" r="100" style="fill:#fff;stroke:#000;st
 const svgEnd = `</svg>`
 ```
 
-Oh boy am I not trying to win any prizes for beautiful code with _this_ mess - but it does the job. It's writing an SVG out to `os.Stdout` - one string at a time.
+О, боже, я не пытаюсь выиграть никаких призов за красивый код с _этим_ беспорядком – но он выполняет свою работу. Он записывает SVG в `os.Stdout` – по одной строке за раз.
 
-If we build this
+Если мы скомпилируем это:
 
 ```
 go build
 ```
 
-and run it, sending the output into a file
+и запустим, перенаправив вывод в файл:
 
 ```
 ./clockface > clock.svg
 ```
 
-We should see something like
+Мы должны увидеть что-то вроде:
 
 ![a clock with only a second hand](.gitbook/assets/clock.svg)
 
-And this is [how the code looks](https://github.com/quii/learn-go-with-tests/tree/main/math/v6/clockface).
+И вот [как выглядит код](https://github.com/quii/learn-go-with-tests/tree/main/math/v6/clockface).
 
-### Refactor
+### Рефакторинг
 
-This stinks. Well, it doesn't quite _stink_ stink, but I'm not happy about it.
+Это ужасно. Ну, не совсем _ужасно-ужасно_, но я этим недоволен.
 
-1. That whole `SecondHand` function is _super_ tied to being an SVG... without mentioning SVGs or actually producing an SVG...
-2. ... while at the same time I'm not testing any of my SVG code.
+1.  Вся эта функция `SecondHand` _супер_ привязана к тому, чтобы быть SVG... не упоминая SVG и фактически не производя SVG...
+2.  ... в то же время я не тестирую свой SVG-код.
 
-Yeah, I guess I screwed up. This feels wrong. Let's try to recover with a more SVG-centric test.
+Да, кажется, я облажался. Это неправильно. Давайте попробуем исправить это с помощью более SVG-ориентированного теста.
 
-What are our options? Well, we could try testing that the characters spewing out of the `SVGWriter` contain things that look like the sort of SVG tag we're expecting for a particular time. For instance:
+Какие у нас есть варианты? Ну, мы могли бы попытаться протестировать, что символы, выдаваемые `SVGWriter`, содержат то, что похоже на ожидаемый нами SVG-тег для определенного времени. Например:
 
 ```go
 func TestSVGWriterAtMidnight(t *testing.T) {
@@ -817,21 +817,21 @@ func TestSVGWriterAtMidnight(t *testing.T) {
 }
 ```
 
-But is this really an improvement?
+Но действительно ли это улучшение?
 
-Not only will it still pass if I don't produce a valid SVG (as it's only testing that a string appears in the output), but it will also fail if I make the smallest, unimportant change to that string - if I add an extra space between the attributes, for instance.
+Мало того, что он все равно пройдет, если я не создам действительный SVG (поскольку он тестирует только появление строки в выводе), так он еще и провалится, если я внесу малейшее, неважное изменение в эту строку – например, добавлю лишний пробел между атрибутами.
 
-The _biggest_ smell is that I'm testing a data structure - XML - by looking at its representation as a series of characters - as a string. This is _never_, _ever_ a good idea as it produces problems just like the ones I outline above: a test that's both too fragile and not sensitive enough. A test that's testing the wrong thing!
+_Самый большой_ признак плохого качества в том, что я тестирую структуру данных – XML – глядя на ее представление в виде последовательности символов – в виде строки. Это _никогда_, _никогда_ не является хорошей идеей, так как это приводит к таким проблемам, как те, что я описал выше: тест, который одновременно слишком хрупкий и недостаточно чувствительный. Тест, который тестирует неправильную вещь!
 
-So the only solution is to test the output _as XML_. And to do that we'll need to parse it.
+Итак, единственное решение — тестировать вывод _как XML_. А для этого нам нужно его разобрать.
 
-## Parsing XML
+## Разбор XML
 
-[`encoding/xml`](https://pkg.go.dev/encoding/xml) is the Go package that can handle all things to do with simple XML parsing.
+[`encoding/xml`](https://pkg.go.dev/encoding/xml) — это Go-пакет, который может обрабатывать все, что связано с простым синтаксическим анализом XML.
 
-The function [`xml.Unmarshal`](https://pkg.go.dev/encoding/xml#Unmarshal) takes a `[]byte` of XML data, and a pointer to a struct for it to get unmarshalled in to.
+Функция [`xml.Unmarshal`](https://pkg.go.dev/encoding/xml#Unmarshal) принимает `[]byte` XML-данных и указатель на структуру, в которую они должны быть демаршалированы.
 
-So we'll need a struct to unmarshall our XML into. We could spend some time working out what the correct names for all of the nodes and attributes, and how to write the correct structure but, happily, someone has written [`zek`](https://github.com/miku/zek) a program that will automate all of that hard work for us. Even better, there's an online version at [https://xml-to-go.github.io/](https://xml-to-go.github.io/). Just paste the SVG from the top of the file into one box and - bam - out pops:
+Итак, нам понадобится структура для демаршализации нашего XML. Мы могли бы потратить некоторое время на выяснение правильных имен для всех узлов и атрибутов, а также на то, как написать правильную структуру, но, к счастью, кто-то написал [`zek`](https://github.com/miku/zek) — программу, которая автоматизирует всю эту тяжелую работу за нас. Более того, есть онлайн-версия по адресу [https://xml-to-go.github.io/](https://xml-to-go.github.io/). Просто вставьте SVG из верхней части файла в одно окно, и — бам — вы получите:
 
 ```go
 type Svg struct {
@@ -860,7 +860,7 @@ type Svg struct {
 }
 ```
 
-We could make adjustments to this if we needed to (like changing the name of the struct to `SVG`) but it's definitely good enough to start us off. Paste the struct into the `clockface_acceptance_test` file and let's write a test with it:
+Мы могли бы внести коррективы, если бы нам это понадобилось (например, изменить имя структуры на `SVG`), но этого определенно достаточно, чтобы начать. Вставьте структуру в файл `clockface_acceptance_test` и давайте напишем с ней тест:
 
 ```go
 func TestSVGWriterAtMidnight(t *testing.T) {
@@ -885,13 +885,13 @@ func TestSVGWriterAtMidnight(t *testing.T) {
 }
 ```
 
-We write the output of `clockface.SVGWriter` to a `bytes.Buffer` and then `Unmarshal` it into an `Svg`. We then look at each `Line` in the `Svg` to see if any of them have the expected `X2` and `Y2` values. If we get a match we return early (passing the test); if not we fail with a (hopefully) informative message.
+Мы записываем вывод `clockface.SVGWriter` в `bytes.Buffer`, а затем `Unmarshal` его в `Svg`. Затем мы просматриваем каждую `Line` в `Svg`, чтобы увидеть, есть ли у какой-либо из них ожидаемые значения `X2` и `Y2`. Если мы находим совпадение, мы возвращаемся раньше (проходя тест); в противном случае мы выдаем ошибку с (надеюсь) информативным сообщением.
 
 ```sh
 ./clockface_acceptance_test.go:41:2: undefined: clockface.SVGWriter
 ```
 
-Looks like we'd better create `SVGWriter.go`...
+Похоже, нам лучше создать `SVGWriter.go`...
 
 ```go
 package clockface
@@ -921,7 +921,7 @@ func secondHand(w io.Writer, t time.Time) {
 	p = Point{p.X * secondHandLength, p.Y * secondHandLength} // scale
 	p = Point{p.X, -p.Y}                                      // flip
 	p = Point{p.X + clockCentreX, p.Y + clockCentreY}         // translate
-	fmt.Fprintf(w, `<line x1="150" y1="150" x2="%f" y2="%f" style="fill:none;stroke:#f00;stroke-width:3px;"/>`, p.X, p.Y)
+	fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#f00;stroke-width:3px;"/>`, p.X, p.Y)
 }
 
 const svgStart = `<?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -937,7 +937,7 @@ const bezel = `<circle cx="150" cy="150" r="100" style="fill:#fff;stroke:#000;st
 const svgEnd = `</svg>`
 ```
 
-The most beautiful SVG writer? No. But hopefully it'll do the job...
+Самый красивый SVG-писатель? Нет. Но, надеюсь, он справится с работой...
 
 ```
 clockface_acceptance_test.go:56: Expected to find the second hand with x2 of 150 and y2 of 60, in the SVG output <?xml version="1.0" encoding="UTF-8" standalone="no"?>
@@ -949,27 +949,27 @@ clockface_acceptance_test.go:56: Expected to find the second hand with x2 of 150
          version="2.0"><circle cx="150" cy="150" r="100" style="fill:#fff;stroke:#000;stroke-width:5px;"/><line x1="150" y1="150" x2="150.000000" y2="60.000000" style="fill:none;stroke:#f00;stroke-width:3px;"/></svg>
 ```
 
-Oooops! The `%f` format directive is printing our coordinates to the default level of precision - six decimal places. We should be explicit as to what level of precision we're expecting for the coordinates. Let's say three decimal places.
+Ой! Директива формата `%f` выводит наши координаты с точностью по умолчанию – до шести знаков после запятой. Нам следует явно указать ожидаемый уровень точности для координат. Скажем, три знака после запятой.
 
 ```go
 	fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#f00;stroke-width:3px;"/>`, p.X, p.Y)
 ```
 
-And after we update our expectations in the test
+И после того, как мы обновим наши ожидания в тесте:
 
 ```go
 	x2 := "150.000"
 	y2 := "60.000"
 ```
 
-We get:
+Мы получаем:
 
 ```
 PASS
 ok  	clockface	0.006s
 ```
 
-We can now shorten our `main` function:
+Теперь мы можем сократить нашу функцию `main`:
 
 ```go
 package main
@@ -987,19 +987,19 @@ func main() {
 }
 ```
 
-This is what [things should look like now](https://github.com/quii/learn-go-with-tests/tree/main/math/v7b/clockface).
+Так [должно выглядеть сейчас](https://github.com/quii/learn-go-with-tests/tree/main/math/v7b/clockface).
 
-And we can write a test for another time following the same pattern, but not before...
+И мы можем написать тест для другого времени, следуя той же схеме, но не раньше...
 
-### Refactor
+### Рефакторинг
 
-Three things stick out:
+Три вещи выделяются:
 
-1. We're not really testing for all of the information we need to ensure is present - what about the `x1` values, for instance?
-2. Also, those attributes for `x1` etc. aren't really `strings` are they? They're numbers!
-3. Do I really care about the `style` of the hand? Or, for that matter, the empty `Text` node that's been generated by `zak`?
+1.  Мы на самом деле не тестируем всю информацию, которую нам нужно убедиться, что она присутствует – что насчет значений `x1`, например?
+2.  Кроме того, эти атрибуты для `x1` и т.д. на самом деле не `string`, верно? Они числа!
+3.  Действительно ли меня волнует `style` стрелки? Или, если на то пошло, пустой узел `Text`, сгенерированный `zak`?
 
-We can do better. Let's make a few adjustments to the `Svg` struct, and the tests, to sharpen everything up.
+Мы можем сделать лучше. Давайте внесем несколько корректировок в структуру `Svg` и тесты, чтобы все уточнить.
 
 ```go
 type SVG struct {
@@ -1027,14 +1027,14 @@ type Line struct {
 }
 ```
 
-Here I've
+Здесь я:
 
-* Made the important parts of the struct named types -- the `Line` and the `Circle`
-* Turned the numeric attributes into `float64`s instead of `string`s.
-* Deleted unused attributes like `Style` and `Text`
-* Renamed `Svg` to `SVG` because _it's the right thing to do_.
+*   Сделал важные части структуры именованными типами – `Line` и `Circle`.
+*   Превратил числовые атрибуты в `float64` вместо `string`.
+*   Удалил неиспользуемые атрибуты, такие как `Style` и `Text`.
+*   Переименовал `Svg` в `SVG`, потому что _это правильно_.
 
-This will let us assert more precisely on the line we're looking for:
+Это позволит нам более точно проверять искомую строку:
 
 ```go
 func TestSVGWriterAtMidnight(t *testing.T) {
@@ -1059,7 +1059,7 @@ func TestSVGWriterAtMidnight(t *testing.T) {
 }
 ```
 
-Finally we can take a leaf out of the unit tests' tables, and we can write a helper function `containsLine(line Line, lines []Line) bool` to really make these tests shine:
+Наконец, мы можем взять пример из таблиц модульных тестов и написать вспомогательную функцию `containsLine(line Line, lines []Line) bool`, чтобы эти тесты действительно засияли:
 
 ```go
 func TestSVGWriterSecondHand(t *testing.T) {
@@ -1102,13 +1102,13 @@ func containsLine(l Line, ls []Line) bool {
 }
 ```
 
-Here's what [it looks like](https://github.com/quii/learn-go-with-tests/tree/main/math/v7c/clockface)
+Вот [как это выглядит](https://github.com/quii/learn-go-with-tests/tree/main/math/v7c/clockface)
 
-Now _that's_ what I call an acceptance test!
+Вот _это_ я называю приемочным тестом!
 
-### Write the test first
+### Сначала напишите тест
 
-So that's the second hand done. Now let's get started on the minute hand.
+Итак, секундная стрелка готова. Теперь давайте приступим к минутной стрелке.
 
 ```go
 func TestSVGWriterMinuteHand(t *testing.T) {
@@ -1138,13 +1138,13 @@ func TestSVGWriterMinuteHand(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 clockface_acceptance_test.go:87: Expected to find the minute hand line {X1:150 Y1:150 X2:150 Y2:70}, in the SVG lines [{X1:150 Y1:150 X2:150 Y2:60}]
 ```
 
-We'd better start building some other clock hands, Much in the same way as we produced the tests for the second hand, we can iterate to produce the following set of tests. Again we'll comment out our acceptance test while we get this working:
+Нам лучше начать создавать другие стрелки часов. Подобно тому, как мы создавали тесты для секундной стрелки, мы можем итерироваться, чтобы получить следующий набор тестов. Опять же, мы закомментируем наш приемочный тест, пока не заставим это работать:
 
 ```go
 func TestMinutesInRadians(t *testing.T) {
@@ -1166,13 +1166,13 @@ func TestMinutesInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 ./clockface_test.go:59:11: undefined: minutesInRadians
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод ошибочного теста
 
 ```go
 func minutesInRadians(t time.Time) float64 {
@@ -1180,9 +1180,9 @@ func minutesInRadians(t time.Time) float64 {
 }
 ```
 
-### Repeat for new requirements
+### Повторите для новых требований
 
-Well, OK - now let's make ourselves do some _real_ work. We could model the minute hand as only moving every full minute - so that it 'jumps' from 30 to 31 minutes past without moving in between. But that would look a bit rubbish. What we want it to do is move a _tiny little bit_ every second.
+Ну, хорошо – теперь давайте заставим себя поработать _по-настоящему_. Мы могли бы смоделировать минутную стрелку, движущуюся только каждую полную минуту – так, чтобы она «перепрыгивала» с 30 до 31 минуты без промежуточных движений. Но это выглядело бы довольно нелепо. Мы хотим, чтобы она двигалась _чуть-чуть_ каждую секунду.
 
 ```go
 func TestMinutesInRadians(t *testing.T) {
@@ -1205,23 +1205,23 @@ func TestMinutesInRadians(t *testing.T) {
 }
 ```
 
-How much is that tiny little bit? Well...
+Насколько это крошечный кусочек? Ну...
 
-* Sixty seconds in a minute
-* thirty minutes in a half turn of the circle (`math.Pi` radians)
-* so `30 * 60` seconds in a half turn.
-* So if the time is 7 seconds past the hour ...
-* ... we're expecting to see the minute hand at `7 * (math.Pi / (30 * 60))` radians past the 12.
+*   Шестьдесят секунд в минуте
+*   Тридцать минут за пол-оборота круга (`math.Pi` радиан)
+*   Итак, `30 * 60` секунд за пол-оборота.
+*   Значит, если время 7 секунд после часа...
+*   ... мы ожидаем, что минутная стрелка будет на `7 * (math.Pi / (30 * 60))` радиан после 12.
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 clockface_test.go:62: Wanted 0.012217304763960306 radians, but got 3.141592653589793
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
-In the immortal words of Jennifer Aniston: [Here comes the science bit](https://www.youtube.com/watch?v=29Im23SPNok)
+По бессмертным словам Дженнифер Энистон: [Начинается научная часть](https://www.youtube.com/watch?v=29Im23SPNok)
 
 ```go
 func minutesInRadians(t time.Time) float64 {
@@ -1230,38 +1230,38 @@ func minutesInRadians(t time.Time) float64 {
 }
 ```
 
-Rather than working out how far to push the minute hand around the clockface for every second from scratch, here we can just leverage the `secondsInRadians` function. For every second the minute hand will move 1/60th of the angle the second hand moves.
+Вместо того чтобы с нуля вычислять, насколько повернуть минутную стрелку по циферблату за каждую секунду, здесь мы можем просто использовать функцию `secondsInRadians`. За каждую секунду минутная стрелка будет перемещаться на 1/60 угла, на который перемещается секундная стрелка.
 
 ```go
 secondsInRadians(t) / 60
 ```
 
-Then we just add on the movement for the minutes - similar to the movement of the second hand.
+Затем мы просто добавляем движение для минут – похожее на движение секундной стрелки.
 
 ```go
 math.Pi / (30 / float64(t.Minute()))
 ```
 
-And...
+И...
 
 ```
 PASS
 ok  	clockface	0.007s
 ```
 
-Nice and easy. This is what things [look like now](https://github.com/quii/learn-go-with-tests/tree/main/math/v8/clockface/clockface_acceptance_test.go)
+Красиво и просто. Вот [как все выглядит сейчас](https://github.com/quii/learn-go-with-tests/tree/main/math/v8/clockface/clockface_acceptance_test.go)
 
-### Repeat for new requirements
+### Повторите для новых требований
 
-Should I add more cases to the `minutesInRadians` test? At the moment there are only two. How many cases do I need before I move on to the testing the `minuteHandPoint` function?
+Следует ли мне добавить больше вариантов в тест `minutesInRadians`? В данный момент их только два. Сколько вариантов мне нужно, прежде чем я перейду к тестированию функции `minuteHandPoint`?
 
-One of my favourite TDD quotes, often attributed to Kent Beck, is
+Одна из моих любимых цитат о TDD, часто приписываемая Кенту Беку:
 
-> Write tests until fear is transformed into boredom.
+> Пишите тесты, пока страх не превратится в скуку.
 
-And, frankly, I'm bored of testing that function. I'm confident I know how it works. So it's on to the next one.
+И, честно говоря, мне надоело тестировать эту функцию. Я уверен, что знаю, как она работает. Так что переходим к следующей.
 
-### Write the test first
+### Сначала напишите тест
 
 ```go
 func TestMinuteHandPoint(t *testing.T) {
@@ -1283,13 +1283,13 @@ func TestMinuteHandPoint(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 ./clockface_test.go:79:11: undefined: minuteHandPoint
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод ошибочного теста
 
 ```go
 func minuteHandPoint(t time.Time) Point {
@@ -1301,7 +1301,7 @@ func minuteHandPoint(t time.Time) Point {
 clockface_test.go:80: Wanted {0 -1} Point, but got {0 0}
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
 ```go
 func minuteHandPoint(t time.Time) Point {
@@ -1314,9 +1314,9 @@ PASS
 ok  	clockface	0.007s
 ```
 
-### Repeat for new requirements
+### Повторите для новых требований
 
-And now for some actual work
+А теперь за работу:
 
 ```go
 func TestMinuteHandPoint(t *testing.T) {
@@ -1343,9 +1343,9 @@ func TestMinuteHandPoint(t *testing.T) {
 clockface_test.go:81: Wanted {-1 0} Point, but got {0 -1}
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
-A quick copy and paste of the `secondHandPoint` function with some minor changes ought to do it...
+Быстрое копирование и вставка функции `secondHandPoint` с некоторыми незначительными изменениями должно сработать...
 
 ```go
 func minuteHandPoint(t time.Time) Point {
@@ -1362,9 +1362,9 @@ PASS
 ok  	clockface	0.009s
 ```
 
-### Refactor
+### Рефакторинг
 
-We've definitely got a bit of repetition in the `minuteHandPoint` and `secondHandPoint` - I know because we just copied and pasted one to make the other. Let's DRY it out with a function.
+У нас определенно есть некоторое дублирование в `minuteHandPoint` и `secondHandPoint` – я знаю, потому что мы только что скопировали и вставили одну, чтобы создать другую. Давайте устраним его с помощью функции.
 
 ```go
 func angleToPoint(angle float64) Point {
@@ -1375,7 +1375,7 @@ func angleToPoint(angle float64) Point {
 }
 ```
 
-and we can rewrite `minuteHandPoint` and `secondHandPoint` as one liners:
+и мы можем переписать `minuteHandPoint` и `secondHandPoint` как однострочники:
 
 ```go
 func minuteHandPoint(t time.Time) Point {
@@ -1394,11 +1394,11 @@ PASS
 ok  	clockface	0.007s
 ```
 
-Now we can uncomment the acceptance test and get to work drawing the minute hand.
+Теперь мы можем раскомментировать приемочный тест и приступить к рисованию минутной стрелки.
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
-The `minuteHand` function is a copy-and-paste of `secondHand` with some minor adjustments, such as declaring a `minuteHandLength`:
+Функция `minuteHand` — это копия функции `secondHand` с некоторыми незначительными изменениями, такими как объявление `minuteHandLength`:
 
 ```go
 const minuteHandLength = 80
@@ -1406,15 +1406,14 @@ const minuteHandLength = 80
 //...
 
 func minuteHand(w io.Writer, t time.Time) {
-	p := minuteHandPoint(t)
-	p = Point{p.X * minuteHandLength, p.Y * minuteHandLength}
+	p := makeHand(minuteHandPoint(t), minuteHandLength)
 	p = Point{p.X, -p.Y}
 	p = Point{p.X + clockCentreX, p.Y + clockCentreY}
 	fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#000;stroke-width:3px;"/>`, p.X, p.Y)
 }
 ```
 
-And a call to it in our `SVGWriter` function:
+И вызов этой функции в нашей функции `SVGWriter`:
 
 ```go
 func SVGWriter(w io.Writer, t time.Time) {
@@ -1426,20 +1425,20 @@ func SVGWriter(w io.Writer, t time.Time) {
 }
 ```
 
-Now we should see that `TestSVGWriterMinuteHand` passes:
+Теперь мы должны увидеть, что `TestSVGWriterMinuteHand` проходит:
 
 ```
 PASS
 ok  	clockface	0.006s
 ```
 
-But the proof of the pudding is in the eating - if we now compile and run our `clockface` program, we should see something like
+Но доказать пудинг можно, только съев его – если мы теперь скомпилируем и запустим нашу программу `clockface`, мы должны увидеть что-то вроде:
 
 ![a clock with second and minute hands](<.gitbook/assets/clock (1).svg>)
 
-### Refactor
+### Рефакторинг
 
-Let's remove the duplication from the `secondHand` and `minuteHand` functions, putting all of that scale, flip and translate logic all in one place.
+Давайте уберем дублирование из функций `secondHand` и `minuteHand`, поместив всю эту логику масштабирования, отражения и перемещения в одно место.
 
 ```go
 func secondHand(w io.Writer, t time.Time) {
@@ -1464,11 +1463,11 @@ PASS
 ok  	clockface	0.007s
 ```
 
-This is [where we're up to now](https://github.com/quii/learn-go-with-tests/tree/main/math/v9/clockface).
+Это [то, чего мы достигли сейчас](https://github.com/quii/learn-go-with-tests/tree/main/math/v9/clockface).
 
-There... now it's just the hour hand to do!
+Вот... теперь осталось сделать только часовую стрелку!
 
-### Write the test first
+### Сначала напишите тест
 
 ```go
 func TestSVGWriterHourHand(t *testing.T) {
@@ -1498,15 +1497,15 @@ func TestSVGWriterHourHand(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 clockface_acceptance_test.go:113: Expected to find the hour hand line {X1:150 Y1:150 X2:150 Y2:200}, in the SVG lines [{X1:150 Y1:150 X2:150 Y2:60} {X1:150 Y1:150 X2:150 Y2:70}]
 ```
 
-Again, let's comment this one out until we've got the some coverage with the lower level tests:
+Опять же, давайте закомментируем этот тест, пока не получим некоторое покрытие с помощью низкоуровневых тестов:
 
-### Write the test first
+### Сначала напишите тест
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1528,13 +1527,13 @@ func TestHoursInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 ./clockface_test.go:97:11: undefined: hoursInRadians
 ```
 
-### Write the minimal amount of code for the test to run and check the failing test output
+### Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод ошибочного теста
 
 ```go
 func hoursInRadians(t time.Time) float64 {
@@ -1547,7 +1546,7 @@ PASS
 ok  	clockface	0.007s
 ```
 
-### Repeat for new requirements
+### Повторите для новых требований
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1570,13 +1569,13 @@ func TestHoursInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 clockface_test.go:100: Wanted 0 radians, but got 3.141592653589793
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
 ```go
 func hoursInRadians(t time.Time) float64 {
@@ -1584,7 +1583,7 @@ func hoursInRadians(t time.Time) float64 {
 }
 ```
 
-### Repeat for new requirements
+### Повторите для новых требований
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1608,13 +1607,13 @@ func TestHoursInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 clockface_test.go:101: Wanted 4.71238898038469 radians, but got 10.995574287564276
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
 ```go
 func hoursInRadians(t time.Time) float64 {
@@ -1622,16 +1621,16 @@ func hoursInRadians(t time.Time) float64 {
 }
 ```
 
-Remember, this is not a 24-hour clock; we have to use the remainder operator to get the remainder of the current hour divided by 12.
+Помните, это не 24-часовые часы; мы должны использовать оператор остатка, чтобы получить остаток от текущего часа, деленного на 12.
 
 ```
 PASS
 ok  	learn-go-with-tests/math/clockface	0.008s
 ```
 
-### Write the test first
+### Сначала напишите тест
 
-Now let's try to move the hour hand around the clockface based on the minutes and the seconds that have passed.
+Теперь давайте попробуем передвинуть часовую стрелку по циферблату, основываясь на прошедших минутах и секундах.
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1656,17 +1655,17 @@ func TestHoursInRadians(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 clockface_test.go:102: Wanted 0.013089969389957472 radians, but got 0
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
-Again, a bit of thinking is now required. We need to move the hour hand along a little bit for both the minutes and the seconds. Luckily we have an angle already to hand for the minutes and the seconds - the one returned by `minutesInRadians`. We can reuse it!
+Опять же, теперь требуется немного подумать. Нам нужно немного передвинуть часовую стрелку как для минут, так и для секунд. К счастью, у нас уже есть угол для минут и секунд – тот, который возвращает `minutesInRadians`. Мы можем его переиспользовать!
 
-So the only question is by what factor to reduce the size of that angle. One full turn is one hour for the minute hand, but for the hour hand it's twelve hours. So we just divide the angle returned by `minutesInRadians` by twelve:
+Итак, единственный вопрос заключается в том, на какой коэффициент уменьшить размер этого угла. Один полный оборот составляет один час для минутной стрелки, но для часовой стрелки это двенадцать часов. Поэтому мы просто делим угол, возвращаемый `minutesInRadians`, на двенадцать:
 
 ```go
 func hoursInRadians(t time.Time) float64 {
@@ -1675,15 +1674,15 @@ func hoursInRadians(t time.Time) float64 {
 }
 ```
 
-and behold:
+и вот:
 
 ```
 clockface_test.go:104: Wanted 0.013089969389957472 radians, but got 0.01308996938995747
 ```
 
-Floating point arithmetic strikes again.
+Снова арифметика с плавающей точкой.
 
-Let's update our test to use `roughlyEqualFloat64` for the comparison of the angles.
+Давайте обновим наш тест, чтобы использовать `roughlyEqualFloat64` для сравнения углов.
 
 ```go
 func TestHoursInRadians(t *testing.T) {
@@ -1713,15 +1712,15 @@ PASS
 ok  	clockface	0.007s
 ```
 
-### Refactor
+### Рефакторинг
 
-If we're going to use `roughlyEqualFloat64` in _one_ of our radians tests, we should probably use it for _all_ of them. That's a nice and simple refactor, which will leave things [looking like this](https://github.com/quii/learn-go-with-tests/tree/main/math/v10/clockface).
+Если мы собираемся использовать `roughlyEqualFloat64` в _одном_ из наших тестов на радианы, нам, вероятно, следует использовать его для _всех_ из них. Это приятный и простой рефакторинг, который оставит все [выглядящим так](https://github.com/quii/learn-go-with-tests/tree/main/math/v10/clockface).
 
-## Hour Hand Point
+## Точка часовой стрелки
 
-Right, it's time to calculate where the hour hand point is going to go by working out the unit vector.
+Итак, пришло время вычислить, куда будет указывать часовая стрелка, путем определения единичного вектора.
 
-### Write the test first
+### Сначала напишите тест
 
 ```go
 func TestHourHandPoint(t *testing.T) {
@@ -1744,27 +1743,27 @@ func TestHourHandPoint(t *testing.T) {
 }
 ```
 
-Wait, am I going to write _two_ test cases _at once_? Isn't this _bad TDD_?
+Подождите, я собираюсь написать _два_ тестовых случая _сразу_? Разве это не _плохой TDD_?
 
-### On TDD Zealotry
+### О фанатизме TDD
 
-Test driven development is not a religion. Some people might act like it is - usually people who don't do TDD but are happy to moan on Twitter or Dev.to that it's only done by zealots and that they're 'being pragmatic' when they don't write tests. But it's not a religion. It's a tool.
+Разработка через тестирование (Test Driven Development) — это не религия. Некоторые люди могут вести себя так, будто это так — обычно это люди, которые не занимаются TDD, но с удовольствием жалуются в Твиттере или Dev.to, что этим занимаются только фанатики, и что они «прагматичны», когда не пишут тесты. Но это не религия. Это инструмент.
 
-I _know_ what the two tests are going to be - I've tested two other clock hands in exactly the same way - and I already know what my implementation is going to be - I wrote a function for the general case of changing an angle into a point in the minute hand iteration.
+Я _знаю_, какими будут два теста – я тестировал две другие стрелки часов точно таким же образом – и я уже знаю, какой будет моя реализация – я написал функцию для общего случая изменения угла в точку в итерации минутной стрелки.
 
-I'm not going to plough through TDD ceremony for the sake of it. TDD is a technique that helps me understand the code I'm writing - and the code that I'm going to write - better. TDD gives me feedback, knowledge and insight. But if I've already got that knowledge, then I'm not going to plough through the ceremony for no reason. Neither tests nor TDD are an end in themselves.
+Я не собираюсь усердно проходить церемонию TDD ради самой церемонии. TDD — это техника, которая помогает мне лучше понять код, который я пишу, и код, который я собираюсь написать. TDD дает мне обратную связь, знания и понимание. Но если у меня уже есть эти знания, то я не буду проходить через церемонию без причины. Ни тесты, ни TDD не являются самоцелью.
 
-My confidence has increased, so I feel I can make larger strides forward. I'm going to 'skip' a few steps, because I know where I am, I know where I'm going and I've been down this road before.
+Моя уверенность возросла, поэтому я чувствую, что могу делать более крупные шаги вперед. Я собираюсь «пропустить» несколько шагов, потому что я знаю, где я нахожусь, я знаю, куда иду, и я уже проходил этот путь.
 
-But also note: I'm not skipping writing the tests entirely - I'm still writing them first. They're just appearing in less granular chunks.
+Но также обратите внимание: я не пропускаю написание тестов полностью – я все еще пишу их сначала. Просто они появляются менее детализированными порциями.
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 ./clockface_test.go:119:11: undefined: hourHandPoint
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
 ```go
 func hourHandPoint(t time.Time) Point {
@@ -1772,16 +1771,16 @@ func hourHandPoint(t time.Time) Point {
 }
 ```
 
-As I said, I know where I am, and I know where I'm going. Why pretend otherwise? The tests will soon tell me if I'm wrong.
+Как я уже сказал, я знаю, где я нахожусь, и куда иду. Зачем притворяться иначе? Тесты скоро подскажут, если я ошибаюсь.
 
 ```
 PASS
 ok  	learn-go-with-tests/math/clockface	0.009s
 ```
 
-## Draw the hour hand
+## Нарисуйте часовую стрелку
 
-And finally we get to draw in the hour hand. We can bring in that acceptance test by uncommenting it:
+И, наконец, мы приступаем к рисованию часовой стрелки. Мы можем вернуть этот приемочный тест, раскомментировав его:
 
 ```go
 func TestSVGWriterHourHand(t *testing.T) {
@@ -1811,16 +1810,16 @@ func TestSVGWriterHourHand(t *testing.T) {
 }
 ```
 
-### Try to run the test
+### Попытайтесь запустить тест
 
 ```
 clockface_acceptance_test.go:113: Expected to find the hour hand line {X1:150 Y1:150 X2:150 Y2:200},
     in the SVG lines [{X1:150 Y1:150 X2:150 Y2:60} {X1:150 Y1:150 X2:150 Y2:70}]
 ```
 
-### Write enough code to make it pass
+### Напишите достаточно кода, чтобы он прошел
 
-And we can now make our final adjustments to the SVG writing constants and functions:
+И теперь мы можем внести наши последние корректировки в константы и функции для записи SVG:
 
 ```go
 const (
@@ -1847,22 +1846,21 @@ func hourHand(w io.Writer, t time.Time) {
 	p := makeHand(hourHandPoint(t), hourHandLength)
 	fmt.Fprintf(w, `<line x1="150" y1="150" x2="%.3f" y2="%.3f" style="fill:none;stroke:#000;stroke-width:3px;"/>`, p.X, p.Y)
 }
-
 ```
 
-And so...
+И так...
 
 ```
 ok  	clockface	0.007s
 ```
 
-Let's just check by compiling and running our `clockface` program.
+Давайте просто проверим, скомпилировав и запустив нашу программу `clockface`.
 
 ![a clock](<.gitbook/assets/clock (2).svg>)
 
-### Refactor
+### Рефакторинг
 
-Looking at `clockface.go`, there are a few 'magic numbers' floating about. They are all based around how many hours/minutes/seconds there are in a half-turn around a clockface. Let's refactor so that we make explicit their meaning.
+Глядя на `clockface.go`, можно заметить несколько «магических чисел». Все они основаны на количестве часов/минут/секунд в половинном обороте циферблата. Давайте сделаем рефакторинг, чтобы явно указать их значение.
 
 ```go
 const (
@@ -1875,42 +1873,42 @@ const (
 )
 ```
 
-Why do this? Well, it makes explicit what each number _means_ in the equation. If - _when_ - we come back to this code, these names will help us to understand what's going on.
+Зачем это делать? Ну, это явно указывает, что _означает_ каждое число в уравнении. Если – _когда_ – мы вернемся к этому коду, эти имена помогут нам понять, что происходит.
 
-Moreover, should we ever want to make some really, really WEIRD clocks - ones with 4 hours for the hour hand, and 20 seconds for the second hand say - these constants could easily become parameters. We're helping to leave that door open (even if we never go through it).
+Более того, если мы когда-либо захотим сделать какие-нибудь действительно, действительно СТРАННЫЕ часы — например, с 4 часами для часовой стрелки и 20 секундами для секундной стрелки — эти константы легко могли бы стать параметрами. Мы помогаем оставить эту дверь открытой (даже если мы никогда через нее не пройдем).
 
-## Wrapping up
+## Завершение
 
-Do we need to do anything else?
+Нужно ли нам что-то еще делать?
 
-First, let's pat ourselves on the back - we've written a program that makes an SVG clockface. It works and it's great. It will only ever make one sort of clockface - but that's fine! Maybe you only _want_ one sort of clockface. There's nothing wrong with a program that solves a specific problem and nothing else.
+Во-первых, давайте похлопаем себя по плечу – мы написали программу, которая создает SVG-циферблат. Она работает, и это здорово. Она будет создавать только один вид циферблата – но это нормально! Возможно, вам нужен только один вид циферблата. Нет ничего плохого в программе, которая решает конкретную проблему и ничего более.
 
-### A Program... and a Library
+### Программа... и библиотека
 
-But the code we've written _does_ solve a more general set of problems to do with drawing a clockface. Because we used tests to think about each small part of the problem in isolation, and because we codified that isolation with functions, we've built a very reasonable little API for clockface calculations.
+Но написанный нами код _действительно_ решает более общий набор проблем, связанных с рисованием циферблата. Поскольку мы использовали тесты для изучения каждой небольшой части проблемы изолированно, и поскольку мы кодифицировали эту изоляцию с помощью функций, мы создали очень разумный небольшой API для вычислений циферблата.
 
-We can work on this project and turn it into something more general - a library for calculating clockface angles and/or vectors.
+Мы можем работать над этим проектом и превратить его в нечто более общее – библиотеку для расчета углов и/или векторов циферблата.
 
-In fact, providing the library along with the program is _a really good idea_. It costs us nothing, while increasing the utility of our program and helping to document how it works.
+На самом деле, предоставление библиотеки вместе с программой – _очень хорошая идея_. Это ничего не стоит, при этом повышая полезность нашей программы и помогая документировать, как она работает.
 
-> APIs should come with programs, and vice versa. An API that you must write C code to use, which cannot be invoked easily from the command line, is harder to learn and use. And contrariwise, it's a royal pain to have interfaces whose only open, documented form is a program, so you cannot invoke them easily from a C program. -- Henry Spencer, in _The Art of Unix Programming_
+> API должны поставляться с программами, и наоборот. API, для использования которого вы должны писать код на C, который нельзя легко вызвать из командной строки, сложнее изучать и использовать. И наоборот, очень утомительно иметь интерфейсы, единственная открытая, документированная форма которых — это программа, так что вы не можете легко вызвать их из программы на C. — Генри Спенсер, в книге «Искусство программирования Unix»
 
-In [my final take on this program](https://github.com/quii/learn-go-with-tests/tree/main/math/vFinal/clockface), I've made the unexported functions within `clockface` into a public API for the library, with functions to calculate the angle and unit vector for each of the clock hands. I've also split the SVG generation part into its own package, `svg`, which is then used by the `clockface` program directly. Naturally I've documented each of the functions and packages.
+В [моем финальном варианте этой программы](https://github.com/quii/learn-go-with-tests/tree/main/math/vFinal/clockface) я сделал неэкспортированные функции в `clockface` публичным API для библиотеки, с функциями для вычисления угла и единичного вектора для каждой из стрелок часов. Я также разделил часть генерации SVG в отдельный пакет `svg`, который затем используется программой `clockface` напрямую. Естественно, я задокументировал каждую из функций и пакетов.
 
-Talking about SVGs...
+Говоря об SVG...
 
-### The Most Valuable Test
+### Самый ценный тест
 
-I'm sure you've noticed that the most sophisticated piece of code for handling SVGs isn't in our application code at all; it's in the test code. Should this make us feel uncomfortable? Shouldn't we do something like
+Я уверен, вы заметили, что самый сложный фрагмент кода для работы с SVG находится вовсе не в нашем приложении; он находится в тестовом коде. Должно ли это вызывать у нас дискомфорт? Не следует ли нам сделать что-то вроде:
 
-* use a template from `text/template`?
-* use an XML library (much as we're doing in our test)?
-* use an SVG library?
+*   использовать шаблон из `text/template`?
+*   использовать XML-библиотеку (примерно так же, как мы делаем в нашем тесте)?
+*   использовать SVG-библиотеку?
 
-We could refactor our code to do any of these things, and we can do so because it doesn't matter _how_ we produce our SVG, what is important is _what_ we produce - _an SVG_. As such, the part of our system that needs to know the most about SVGs - that needs to be the strictest about what constitutes an SVG - is the test for the SVG output: it needs to have enough context and knowledge about what an SVG is for us to be confident that we're outputting an SVG. The _what_ of an SVG lives in our tests; the _how_ in the code.
+Мы могли бы переделать наш код для выполнения любого из этих действий, и мы можем это сделать, потому что неважно, _как_ мы создаем наш SVG, важно _что_ мы производим – _SVG_. В связи с этим, та часть нашей системы, которая должна знать больше всего об SVG – которая должна быть самой строгой в отношении того, что представляет собой SVG – это тест для вывода SVG: он должен обладать достаточным контекстом и знанием о том, что такое SVG, чтобы мы были уверены, что выводим действительный SVG. _Что_ такое SVG, живет в наших тестах; _как_ – в коде.
 
-We may have felt odd that we were pouring a lot of time and effort into those SVG tests - importing an XML library, parsing XML, refactoring the structs - but that test code is a valuable part of our codebase - possibly more valuable than the current production code. It will help guarantee that the output is always a valid SVG, no matter what we choose to use to produce it.
+Возможно, мы чувствовали себя странно, что тратили много времени и усилий на эти SVG-тесты – импортировали XML-библиотеку, парсили XML, рефакторили структуры – но этот тестовый код является ценной частью нашей кодовой базы – возможно, более ценной, чем текущий продакшн-код. Он поможет гарантировать, что вывод всегда является действительным SVG, независимо от того, что мы выберем для его создания.
 
-Tests are not second class citizens - they are not 'throwaway' code. Good tests will last a lot longer than the version of the code they are testing. You should never feel like you're spending 'too much time' writing your tests. It is an investment.
+Тесты не являются гражданами второго сорта – это не «одноразовый» код. Хорошие тесты прослужат гораздо дольше, чем версия кода, которую они тестируют. Вы никогда не должны чувствовать, что тратите «слишком много времени» на написание тестов. Это инвестиция.
 
-1. In short it makes it easier to do calculus with circles as π just keeps coming up as an angle if you use normal degrees, so if you count your angles in πs it makes all the equations simpler.
+1.  Короче говоря, это упрощает дифференциальное исчисление с кругами, поскольку π постоянно появляется как угол, если использовать обычные градусы, поэтому, если вы считаете углы в π, все уравнения становятся проще.

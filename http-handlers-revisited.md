@@ -1,26 +1,27 @@
-# Revisiting HTTP Handlers
+---
+# Переосмысление HTTP-обработчиков
 
-[**You can find all the code here**](https://github.com/quii/learn-go-with-tests/tree/main/q-and-a/http-handlers-revisited)
+[**Весь код можно найти здесь**](https://github.com/quii/learn-go-with-tests/tree/main/q-and-a/http-handlers-revisited)
 
-This book already has a chapter on [testing a HTTP handler](http-server.md) but this will feature a broader discussion on designing them, so they are simple to test.
+В этой книге уже есть глава о [тестировании HTTP-обработчика](http-server.md), но здесь будет более широкое обсуждение их проектирования, чтобы их было просто тестировать.
 
-We'll take a look at a real example and how we can improve how it's designed by applying principles such as single responsibility principle and separation of concerns. These principles can be realised by using [interfaces](structs-methods-and-interfaces.md) and [dependency injection](dependency-injection.md). By doing this we'll show how testing handlers is actually quite trivial.
+Мы рассмотрим реальный пример и то, как мы можем улучшить его проектирование, применяя такие принципы, как принцип единственной ответственности и разделение ответственности. Эти принципы могут быть реализованы с помощью [интерфейсов](structs-methods-and-interfaces.md) и [внедрения зависимостей](dependency-injection.md). Таким образом, мы покажем, насколько тривиальным на самом деле является тестирование обработчиков.
 
 ![Common question in Go community illustrated](.gitbook/assets/amazing-art.png)
 
-Testing HTTP handlers seems to be a recurring question in the Go community, and I think it points to a wider problem of people misunderstanding how to design them.
+Тестирование HTTP-обработчиков, кажется, является повторяющимся вопросом в сообществе Go, и я думаю, что это указывает на более широкую проблему непонимания того, как их проектировать.
 
-So often people's difficulties with testing stems from the design of their code rather than the actual writing of tests. As I stress so often in this book:
+Так часто трудности людей с тестированием проистекают из дизайна их кода, а не из фактического написания тестов. Как я часто подчеркиваю в этой книге:
 
-> If your tests are causing you pain, listen to that signal and think about the design of your code.
+> Если ваши тесты доставляют вам боль, прислушайтесь к этому сигналу и подумайте о дизайне вашего кода.
 
-## An example
+## Пример
 
-[Santosh Kumar tweeted me](https://twitter.com/sntshk/status/1255559003339284481)
+[Сантош Кумар написал мне в Твиттере](https://twitter.com/sntshk/status/1255559003339284481)
 
-> How do I test a http handler which has mongodb dependency?
+> Как мне протестировать http-обработчик, у которого есть зависимость от mongodb?
 
-Here is the code
+Вот код
 
 ```go
 func Registration(w http.ResponseWriter, r *http.Request) {
@@ -91,62 +92,62 @@ func Registration(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-Let's just list all the things this one function has to do:
+Давайте просто перечислим все, что должна делать эта одна функция:
 
-1. Write HTTP responses, send headers, status codes, etc.
-2. Decode the request's body into a `User`
-3. Connect to a database (and all the details around that)
-4. Query the database and applying some business logic depending on the result
-5. Generate a password
-6. Insert a record
+1.  Записывать HTTP-ответы, отправлять заголовки, коды состояния и т.д.
+2.  Декодировать тело запроса в `User`
+3.  Подключаться к базе данных (и все сопутствующие детали)
+4.  Запрашивать базу данных и применять некоторую бизнес-логику в зависимости от результата
+5.  Генерировать пароль
+6.  Вставлять запись
 
-This is too much.
+Это слишком много.
 
-## What is a HTTP Handler and what should it do ?
+## Что такое HTTP-обработчик и что он должен делать?
 
-Forgetting specific Go details for a moment, no matter what language I've worked in what has always served me well is thinking about the [separation of concerns](https://en.wikipedia.org/wiki/Separation_of_concerns) and the [single responsibility principle](https://en.wikipedia.org/wiki/Single-responsibility_principle).
+Забыв на мгновение о специфике Go, независимо от того, на каком языке я работал, мне всегда помогало размышление о [разделении ответственности](https://en.wikipedia.org/wiki/Separation_of_concerns) и [принципе единственной ответственности](https://en.wikipedia.org/wiki/Single-responsibility_principle).
 
-This can be quite tricky to apply depending on the problem you're solving. What exactly _is_ a responsibility?
+Это может быть довольно сложно применить в зависимости от решаемой проблемы. Что именно _является_ ответственностью?
 
-The lines can blur depending on how abstractly you're thinking and sometimes your first guess might not be right.
+Границы могут стираться в зависимости от того, насколько абстрактно вы мыслите, и иногда ваша первая догадка может быть неверной.
 
-Thankfully with HTTP handlers I feel like I have a pretty good idea what they should do, no matter what project I've worked on:
+К счастью, с HTTP-обработчиками у меня довольно хорошее представление о том, что они должны делать, независимо от того, над каким проектом я работал:
 
-1. Accept a HTTP request, parse and validate it.
-2. Call some `ServiceThing` to do `ImportantBusinessLogic` with the data I got from step 1.
-3. Send an appropriate `HTTP` response depending on what `ServiceThing` returns.
+1.  Принимать HTTP-запрос, разбирать и проверять его.
+2.  Вызвать некий `ServiceThing` для выполнения `ImportantBusinessLogic` с данными, полученными на шаге 1.
+3.  Отправить соответствующий `HTTP`-ответ в зависимости от того, что возвращает `ServiceThing`.
 
-I'm not saying every HTTP handler _ever_ should have roughly this shape, but 99 times out of 100 that seems to be the case for me.
+Я не говорю, что каждый HTTP-обработчик _вообще_ должен иметь примерно такую форму, но в 99 случаях из 100 это кажется мне верным.
 
-When you separate these concerns:
+Когда вы разделяете эти ответственности:
 
-* Testing handlers becomes a breeze and is focused a small number of concerns.
-* Importantly testing `ImportantBusinessLogic` no longer has to concern itself with `HTTP`, you can test the business logic cleanly.
-* You can use `ImportantBusinessLogic` in other contexts without having to modify it.
-* If `ImportantBusinessLogic` changes what it does, so long as the interface remains the same you don't have to change your handlers.
+*   Тестирование обработчиков становится легким и сосредоточено на небольшом числе задач.
+*   Важно, что тестирование `ImportantBusinessLogic` больше не должно касаться `HTTP`, вы можете чисто тестировать бизнес-логику.
+*   Вы можете использовать `ImportantBusinessLogic` в других контекстах, не изменяя его.
+*   Если `ImportantBusinessLogic` меняет свое поведение, пока интерфейс остается прежним, вам не придется менять обработчики.
 
-## Go's Handlers
+## Обработчики Go
 
 [`http.HandlerFunc`](https://golang.org/pkg/net/http/#HandlerFunc)
 
-> The HandlerFunc type is an adapter to allow the use of ordinary functions as HTTP handlers.
+> Тип HandlerFunc является адаптером, позволяющим использовать обычные функции в качестве HTTP-обработчиков.
 
 `type HandlerFunc func(ResponseWriter, *Request)`
 
-Reader, take a breath and look at the code above. What do you notice?
+Читатель, передохните и взгляните на код выше. Что вы заметили?
 
-**It is a function that takes some arguments**
+**Это функция, которая принимает некоторые аргументы**
 
-There's no framework magic, no annotations, no magic beans, nothing.
+Здесь нет магии фреймворка, аннотаций, волшебных бобов, ничего.
 
-It's just a function, _and we know how to test functions_.
+Это просто функция, _и мы знаем, как тестировать функции_.
 
-It fits in nicely with the commentary above:
+Это хорошо согласуется с приведенным выше комментарием:
 
-* It takes a [`http.Request`](https://golang.org/pkg/net/http/#Request) which is just a bundle of data for us to inspect, parse and validate.
-* > [A `http.ResponseWriter` interface is used by an HTTP handler to construct an HTTP response.](https://golang.org/pkg/net/http/#ResponseWriter)
+*   Он принимает [`http.Request`](https://golang.org/pkg/net/http/#Request), который представляет собой просто набор данных для проверки, разбора и валидации.
+*   > [Интерфейс `http.ResponseWriter` используется HTTP-обработчиком для построения HTTP-ответа.](https://golang.org/pkg/net/http/#ResponseWriter)
 
-### Super basic example test
+### Супер базовый пример теста
 
 ```go
 func Teapot(res http.ResponseWriter, req *http.Request) {
@@ -165,37 +166,37 @@ func TestTeapotHandler(t *testing.T) {
 }
 ```
 
-To test our function, we _call_ it.
+Чтобы протестировать нашу функцию, мы _вызываем_ ее.
 
-For our test we pass a `httptest.ResponseRecorder` as our `http.ResponseWriter` argument, and our function will use it to write the `HTTP` response. The recorder will record (or _spy_ on) what was sent, and then we can make our assertions.
+Для нашего теста мы передаем `httptest.ResponseRecorder` в качестве аргумента `http.ResponseWriter`, и наша функция будет использовать его для записи `HTTP`-ответа. Рекордер запишет (или _проследит_) то, что было отправлено, а затем мы можем сделать наши утверждения.
 
-## Calling a `ServiceThing` in our handler
+## Вызов `ServiceThing` в нашем обработчике
 
-A common complaint about TDD tutorials is that they're always "too simple" and not "real world enough". My answer to that is:
+Распространенная жалоба на учебники по TDD заключается в том, что они всегда "слишком просты" и недостаточно "реальны". Мой ответ на это:
 
-> Wouldn't it be nice if all your code was simple to read and test like the examples you mention?
+> Разве не было бы прекрасно, если бы весь ваш код был прост для чтения и тестирования, как примеры, которые вы упоминаете?
 
-This is one of the biggest challenges we face but need to keep striving for. It _is possible_ (although not necessarily easy) to design code, so it can be simple to read and test if we practice and apply good software engineering principles.
+Это одна из самых больших проблем, с которыми мы сталкиваемся, но к которой нужно постоянно стремиться. _Возможно_ (хотя и не обязательно легко) спроектировать код таким образом, чтобы его было просто читать и тестировать, если мы практикуем и применяем хорошие принципы разработки программного обеспечения.
 
-Recapping what the handler from earlier does:
+Вспомним, что делал предыдущий обработчик:
 
-1. Write HTTP responses, send headers, status codes, etc.
-2. Decode the request's body into a `User`
-3. Connect to a database (and all the details around that)
-4. Query the database and applying some business logic depending on the result
-5. Generate a password
-6. Insert a record
+1.  Записывать HTTP-ответы, отправлять заголовки, коды состояния и т.д.
+2.  Декодировать тело запроса в `User`
+3.  Подключаться к базе данных (и все сопутствующие детали)
+4.  Запрашивать базу данных и применять некоторую бизнес-логику в зависимости от результата
+5.  Генерировать пароль
+6.  Вставлять запись
 
-Taking the idea of a more ideal separation of concerns I'd want it to be more like:
+Применяя идею более идеального разделения ответственности, я бы хотел, чтобы это выглядело так:
 
-1. Decode the request's body into a `User`
-2. Call a `UserService.Register(user)` (this is our `ServiceThing`)
-3. If there's an error act on it (the example always sends a `400 BadRequest` which I don't think is right), I'll just have a catch-all handler of a `500 Internal Server Error` _for now_. I must stress that returning `500` for all errors makes for a terrible API! Later on we can make the error handling more sophisticated, perhaps with [error types](error-types.md).
-4. If there's no error, `201 Created` with the ID as the response body (again for terseness/laziness)
+1.  Декодировать тело запроса в `User`
+2.  Вызвать `UserService.Register(user)` (это наш `ServiceThing`)
+3.  Если возникает ошибка, отреагировать на нее (пример всегда отправляет `400 BadRequest`, что, по моему мнению, неверно), я пока что буду использовать универсальный обработчик `500 Internal Server Error`. Я должен подчеркнуть, что возврат `500` для всех ошибок делает API ужасным! Позже мы сможем сделать обработку ошибок более сложной, возможно, с помощью [типов ошибок](error-types.md).
+4.  Если ошибок нет, `201 Created` с ID в теле ответа (опять же, для краткости/лени)
 
-For the sake of brevity I won't go over the usual TDD process, check all the other chapters for examples.
+Ради краткости я не буду рассматривать обычный процесс TDD, примеры смотрите во всех других главах.
 
-### New design
+### Новый дизайн
 
 ```go
 type UserService interface {
@@ -237,17 +238,17 @@ func (u *UserServer) RegisterUser(w http.ResponseWriter, r *http.Request) {
 }
 ```
 
-Our `RegisterUser` method matches the shape of `http.HandlerFunc` so we're good to go. We've attached it as a method on a new type `UserServer` which contains a dependency on a `UserService` which is captured as an interface.
+Наш метод `RegisterUser` соответствует форме `http.HandlerFunc`, так что мы готовы к работе. Мы присоединили его как метод к новому типу `UserServer`, который содержит зависимость от `UserService`, представленную в виде интерфейса.
 
-Interfaces are a fantastic way to ensure our `HTTP` concerns are decoupled from any specific implementation; we can just call the method on the dependency, and we don't have to care _how_ a user gets registered.
+Интерфейсы — это фантастический способ обеспечить, чтобы наши `HTTP`-задачи были отделены от любой конкретной реализации; мы можем просто вызвать метод на зависимости, и нам не нужно беспокоиться о том, _как_ регистрируется пользователь.
 
-If you wish to explore this approach in more detail following TDD read the [Dependency Injection](dependency-injection.md) chapter and the [HTTP Server chapter of the "Build an application" section](http-server.md).
+Если вы хотите более подробно изучить этот подход, следуя TDD, прочитайте главу [Внедрение зависимостей](dependency-injection.md) и главу [HTTP-сервер раздела "Создание приложения"](http-server.md).
 
-Now that we've decoupled ourselves from any specific implementation detail around registration writing the code for our handler is straightforward and follows the responsibilities described earlier.
+Теперь, когда мы отделились от любых конкретных деталей реализации, связанных с регистрацией, написание кода для нашего обработчика становится простым и соответствует ранее описанным обязанностям.
 
-### The tests!
+### Тесты!
 
-This simplicity is reflected in our tests.
+Эта простота отражается в наших тестах.
 
 ```go
 type MockUserService struct {
@@ -323,15 +324,15 @@ func TestRegisterUser(t *testing.T) {
 }
 ```
 
-Now our handler isn't coupled to a specific implementation of storage it is trivial for us to write a `MockUserService` to help us write simple, fast unit tests to exercise the specific responsibilities it has.
+Теперь, когда наш обработчик не связан с конкретной реализацией хранилища, нам тривиально написать `MockUserService`, чтобы помочь нам создавать простые, быстрые модульные тесты для проверки его конкретных обязанностей.
 
-### What about the database code? You're cheating!
+### А как насчет кода базы данных? Вы жульничаете!
 
-This is all very deliberate. We don't want HTTP handlers concerned with our business logic, databases, connections, etc.
+Все это очень обдуманно. Мы не хотим, чтобы HTTP-обработчики занимались нашей бизнес-логикой, базами данных, соединениями и т.д.
 
-By doing this we have liberated the handler from messy details, we've _also_ made it easier to test our persistence layer and business logic as it is also no longer coupled to irrelevant HTTP details.
+Таким образом, мы освободили обработчик от беспорядочных деталей, а также _упростили_ тестирование нашего слоя сохранения данных и бизнес-логики, поскольку он также больше не связан с нерелевантными HTTP-деталями.
 
-All we need to do is now implement our `UserService` using whatever database we want to use
+Все, что нам нужно сделать, это реализовать наш `UserService` с использованием любой базы данных, которую мы хотим использовать
 
 ```go
 type MongoUserService struct {
@@ -349,7 +350,7 @@ func (m MongoUserService) Register(user User) (insertedID string, err error) {
 }
 ```
 
-We can test this separately and once we're happy in `main` we can snap these two units together for our working application.
+Мы можем протестировать это отдельно, и как только будем довольны в `main`, мы можем соединить эти два блока вместе для нашего работающего приложения.
 
 ```go
 func main() {
@@ -359,20 +360,21 @@ func main() {
 }
 ```
 
-### A more robust and extensible design with little effort
+### Более надежный и расширяемый дизайн с небольшими усилиями
 
-These principles not only make our lives easier in the short-term they make the system easier to extend in the future.
+Эти принципы не только облегчают нашу жизнь в краткосрочной перспективе, но и облегчают расширение системы в будущем.
 
-It wouldn't be surprising that further iterations of this system we'd want to email the user a confirmation of registration.
+Было бы неудивительно, если бы в дальнейших итерациях этой системы мы захотели отправлять пользователю электронное письмо с подтверждением регистрации.
 
-With the old design we'd have to change the handler _and_ the surrounding tests. This is often how parts of code become unmaintainable, more and more functionality creeps in because it's already _designed_ that way; for the "HTTP handler" to handle... everything!
+При старом дизайне нам пришлось бы менять обработчик _и_ окружающие тесты. Часто именно так части кода становятся неподдерживаемыми: все больше и больше функциональности проникает в них, потому что они уже _спроектированы_ таким образом; чтобы "HTTP-обработчик" обрабатывал... всё!
 
-By separating concerns using an interface we don't have to edit the handler _at all_ because it's not concerned with the business logic around registration.
+Разделяя ответственности с помощью интерфейса, нам не нужно _совсем_ редактировать обработчик, потому что он не занимается бизнес-логикой, связанной с регистрацией.
 
-## Wrapping up
+## Подведение итогов
 
-Testing Go's HTTP handlers is not challenging, but designing good software can be!
+Тестирование HTTP-обработчиков Go не является сложной задачей, но проектирование хорошего программного обеспечения может быть таковым!
 
-People make the mistake of thinking HTTP handlers are special and throw out good software engineering practices when writing them which then makes testing them challenging.
+Люди ошибочно считают HTTP-обработчики чем-то особенным и отбрасывают хорошие практики проектирования программного обеспечения при их написании, что затем делает их тестирование сложным.
 
-Reiterating again; **Go's http handlers are just functions**. If you write them like you would other functions, with clear responsibilities, and a good separation of concerns you will have no trouble testing them, and your codebase will be healthier for it.
+Повторяю еще раз: **HTTP-обработчики Go — это просто функции**. Если вы пишете их так же, как и другие функции, с четкими обязанностями и хорошим разделением ответственности, у вас не возникнет проблем с их тестированием, и ваша кодовая база станет от этого здоровее.
+---
