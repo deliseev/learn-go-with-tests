@@ -1,0 +1,22 @@
+name: Sync Fork with Upstream
+
+on:
+  schedule:
+    # Запуск каждый день в 00:00 UTC (можно настроить любое другое время)
+    - cron: '0 0 * * *'
+  # Позволяет запускать синхронизацию вручную в один клик через сайт GitHub
+  workflow_dispatch:
+
+jobs:
+  sync:
+    name: Sync main branch with original
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write # Дает право обновлять ветку main
+
+    steps:
+      - name: Sync branch from upstream
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh repo sync ${{ github.repository }} --branch main
