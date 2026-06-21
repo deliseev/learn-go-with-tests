@@ -1,38 +1,38 @@
-# Working without mocks, stubs and spies
+# Работа без моков, стабов и спаев
 
-This chapter delves into the world of test doubles and explores how they influence the testing and development process. We'll uncover the limitations of traditional mocks, stubs, and spies and introduce a more efficient and adaptable approach using fakes and contracts.
+Эта глава погружает в мир тестовых дублёров и исследует, как они влияют на процесс тестирования и разработки. Мы раскроем ограничения традиционных моков, стабов и спаев и представим более эффективный и адаптивный подход с использованием фейков и контрактов.
 
-## tl;dr
+## Вкратце
 
-- Mocks, spies and stubs encourage you to encode assumptions of the behaviour of your dependencies ad-hocly in each test.
-- These assumptions are usually not validated beyond manual checking, so they threaten your test suite's usefulness.
-- Fakes and contracts give us a more sustainable method for creating test doubles with validated assumptions and better reuse than the alternatives.
+- Моки, спаи и стабы побуждают вас кодировать предположения о поведении ваших зависимостей в каждом тесте на месте.
+- Эти предположения обычно не проверяются, кроме как вручную, поэтому они ставят под угрозу полезность вашего набора тестов.
+- Фейки и контракты дают нам более устойчивый метод создания тестовых дублёров с проверенными предположениями и лучшей повторной используемостью по сравнению с альтернативами.
 
-This is a longer chapter than normal, so as a palette cleanser, you should explore an [example repo first](https://github.com/quii/go-fakes-and-contracts). In particular, check out the [planner test](https://github.com/quii/go-fakes-and-contracts/blob/main/domain/planner/planner_test.go).
+Это более длинная глава, чем обычно, поэтому для начала ознакомьтесь с [примером репозитория](https://github.com/quii/go-fakes-and-contracts). В частности, обратите внимание на [тест планировщика](https://github.com/quii/go-fakes-and-contracts/blob/main/domain/planner/planner_test.go).
 
 ---
 
-In [Mocking,](https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/mocking) we learned how mocks, stubs and spies are useful tools for controlling and inspecting the behaviour of units of code in conjunction with [Dependency Injection](https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/dependency-injection).
+В главе [Мокирование](https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/mocking) мы узнали, как моки, стабы и спаи являются полезными инструментами для управления и проверки поведения единиц кода в сочетании с [внедрением зависимостей](https://quii.gitbook.io/learn-go-with-tests/go-fundamentals/dependency-injection).
 
-As a project grows, though, these kinds of test doubles *can* become a maintenance burden, and we should instead look to other design ideas to keep our system easy to reason and test.
+Однако по мере роста проекта эти виды тестовых дублёров *могут* стать обузой для поддержки, и вместо этого нам следует обратиться к другим дизайнерским идеям, чтобы наша система оставалась легко осмысленной и тестируемой.
 
-**Fakes** and **contracts** allow developers to test their systems with more realistic scenarios, improve local development experience with faster and more accurate feedback loops, and manage the complexity of evolving dependencies.
+**Фейки** и **контракты** позволяют разработчикам тестировать свои системы в более реалистичных сценариях, улучшать локальный опыт разработки благодаря более быстрым и точным циклам обратной связи, а также управлять сложностью развивающихся зависимостей.
 
-### A primer on test doubles
+### Введение в тестовые дублёры
 
-It's easy to roll your eyes when people like me are pedantic about the nomenclature of test doubles, but the distinctive kinds of test doubles help us talk about this topic and the trade-offs we're making with clarity.
+Легко закатить глаза, когда люди вроде меня придираются к номенклатуре тестовых дублёров, но различные виды тестовых дублёров помогают нам говорить об этой теме и компромиссах, на которые мы идём, с ясностью.
 
-**Test doubles** is the collective noun for the different ways you can construct dependencies that you can control for a **subject under test** **(SUT)**, the thing you're testing. Test doubles are often a better alternative than using the real dependency as it can avoid issues like
+**Тестовые дублёры** — это собирательное название для различных способов конструирования зависимостей, которыми вы можете управлять для **тестируемого объекта (SUT)**, то есть того, что вы тестируете. Тестовые дублёры часто являются лучшей альтернативой использованию реальной зависимости, так как они могут избежать таких проблем, как:
 
-- Needing the internet to use an API
-- Avoid latency and other performance issues
-- Unable to exercise non-happy path cases
-- Decoupling your build from another team's.
-  - You wouldn't want to prevent deployments if an engineer in another team accidentally shipped a bug
+- Необходимость подключения к интернету для использования API
+- Избегание задержек и других проблем с производительностью
+- Невозможность протестировать сценарии, не относящиеся к "счастливому пути"
+- Отвязка вашей сборки от сборки другой команды.
+  - Вы бы не хотели блокировать развёртывание, если инженер из другой команды случайно отправил ошибку
 
-In Go, you'll typically model a dependency with an interface, then implement your version to control the behaviour in a test. **Here are the kinds of test doubles covered in this post**.
+В Go вы обычно моделируете зависимость с помощью интерфейса, а затем реализуете свою версию для управления поведением в тесте. **Вот виды тестовых дублёров, рассмотренные в этом посте**.
 
-Given this interface of a hypothetical recipe API:
+Учитывая этот интерфейс гипотетического API рецептов:
 
 ```go
 type RecipeBook interface {
@@ -41,9 +41,9 @@ type RecipeBook interface {
 }
 ```
 
-We can construct test doubles in various ways, depending on how we're trying to test something that uses a `RecipeBook`.
+Мы можем конструировать тестовые дублёры различными способами, в зависимости от того, как мы пытаемся протестировать что-то, что использует `RecipeBook`.
 
-**Stubs** return the same canned data every time they are called
+**Стабы** возвращают одни и те же заранее определённые данные при каждом вызове.
 
 ```go
 type StubRecipeStore struct {
@@ -65,7 +65,7 @@ stubStore := &StubRecipeStore{
 }
 ```
 
-**Spies** are like stubs but also record how they were called so the test can assert that the SUT calls the dependencies in specific ways.
+**Спаи** похожи на стабы, но также записывают, как они были вызваны, чтобы тест мог утверждать, что SUT вызывает зависимости определённым образом.
 
 ```go
 type SpyRecipeStore struct {
@@ -90,7 +90,7 @@ sut.DoStuff()
 // now we can check the store had the right recipes added by inspectiong spyStore.AddCalls
 ```
 
-**Mocks** are like a superset of the above, but they only respond with specific data to specific invocations. If the SUT calls the dependencies with the wrong arguments, it'll typically panic.
+**Моки** похожи на надмножество вышеперечисленного, но они отвечают только определёнными данными на определённые вызовы. Если SUT вызывает зависимости с неправильными аргументами, он обычно паникует.
 
 ```go
 // set up the mock with expected calls
@@ -100,7 +100,7 @@ mockStore.WhenCalledWith(someRecipes).Return(someError)
 // when the sut uses the dependency, if it doesn't call it with someRecipes, usually mocks will panic
 ```
 
-**Fakes** are like a genuine version of the dependency but implemented in a way more suited to fast running, reliable tests and local development. Often, your system will have some abstraction around persistence, which will be implemented with a database, but in your tests, you could use an in-memory fake instead.
+**Фейки** — это как настоящая версия зависимости, но реализованная таким образом, который больше подходит для быстро работающих, надёжных тестов и локальной разработки. Часто ваша система будет иметь некоторую абстракцию вокруг постоянного хранения данных, которая будет реализована с использованием базы данных, но в ваших тестах вы можете использовать вместо неё фейк, работающий в памяти.
 
 ```go
 type FakeRecipeStore struct {
@@ -117,81 +117,81 @@ func (f *FakeRecipeStore) AddRecipes(r ...Recipe) error {
 }
 ```
 
-Fakes are useful because:
+Фейки полезны, потому что:
 
-- Their statefulness is useful for tests involving multiple subjects and invocations, such as an integration test. Managing state with the other kinds of test doubles is generally discouraged.
-- If they have a sensible API, offer a more natural way of asserting state. Rather than spying on specific calls to a dependency, you can query its final state to see if the real effect you want happened.
-- You can use them to run your application locally without spinning up or depending on real dependencies. This will usually improve developer experience (DX) because the fakes will be faster and more reliable than their real counterparts.
+- Их сохранение состояния полезно для тестов, включающих несколько объектов и вызовов, например, для интеграционного теста. Управление состоянием с другими видами тестовых дублёров обычно не рекомендуется.
+- Если у них есть разумный API, они предлагают более естественный способ проверки состояния. Вместо того чтобы шпионить за конкретными вызовами к зависимости, вы можете запросить её конечное состояние, чтобы увидеть, произошёл ли желаемый эффект.
+- Вы можете использовать их для запуска вашего приложения локально, не разворачивая и не завися от реальных зависимостей. Это обычно улучшает опыт разработчика (DX), потому что фейки будут быстрее и надёжнее своих реальных аналогов.
 
-Spies, Mocks and Stubs can typically be autogenerated from an interface using a tool or using reflection. However, as Fakes encode the behaviour of the dependency you're trying to make a double for, you'll have to write at least most of the implementation yourself
+Спаи, моки и стабы обычно могут быть автоматически сгенерированы из интерфейса с помощью инструмента или с использованием рефлексии. Однако, поскольку фейки кодируют поведение зависимости, для которой вы пытаетесь создать дублёр, вам придётся написать большую часть реализации самостоятельно.
 
-## The problem with stubs and mocks
+## Проблема со стабами и моками
 
-In [Anti-patterns,](https://quii.gitbook.io/learn-go-with-tests/meta/anti-patterns) there are details on how using test doubles must be done carefully. Creating a messy test suite is easy if you don't use them tastefully. As a project grows though, other problems can creep in.
+В [Антипаттернах](https://quii.gitbook.io/learn-go-with-tests/meta/anti-patterns) подробно описано, как следует осторожно использовать тестовые дублёры. Создать беспорядочный набор тестов легко, если вы не используете их со вкусом. Однако по мере роста проекта могут возникнуть другие проблемы.
 
-When you encode behaviour into test doubles, you are adding your assumptions as to how the real dependency works into the test. If there is a discrepancy between the behaviour of the double and the real dependency, or if one happens over time (e.g. the real dependency changes, which *has* to be expected), **you may have passing tests but failing software**.
+Когда вы кодируете поведение в тестовые дублёры, вы добавляете свои предположения о том, как работает реальная зависимость, в тест. Если между поведением дублёра и реальной зависимостью возникает расхождение, или если оно происходит со временем (например, реальная зависимость меняется, что *должно* ожидаться), **у вас могут быть проходящие тесты, но неработающее программное обеспечение**.
 
-Stubs, spies and mocks, in particular, represent other challenges, mainly as a project grows. To illustrate this, I will describe a project I worked on.
+Стабы, спаи и моки, в частности, представляют другие проблемы, главным образом по мере роста проекта. Чтобы проиллюстрировать это, я опишу проект, над которым работал.
 
-### Example case study
+### Пример из практики
 
-*Some details are changed compared to what really happened, and it has been simplified greatly for brevity. **Any resemblance to actual persons, living or dead, is purely coincidental.***
+*Некоторые детали изменены по сравнению с тем, что произошло на самом деле, и значительно упрощены для краткости. **Любое сходство с реальными людьми, живыми или мёртвыми, является чисто случайным.***
 
-I worked on a system that had to call **six** different APIs, written and maintained by other teams across the globe. They were _REST-ish_, and the job of our system was to create and manage resources in them all. When we called all the APIs correctly for each system, _magic_ (business value) would happen.
+Я работал над системой, которая должна была вызывать **шесть** различных API, написанных и поддерживаемых другими командами по всему миру. Они были _REST-подобными_, и задачей нашей системы было создавать и управлять ресурсами во всех из них. Когда мы правильно вызывали все API для каждой системы, происходила _магия_ (бизнес-ценность).
 
-Our application was structured in a hexagonal / ports & adapters architecture. Our domain code was decoupled from the mess of the outside world we had to deal with. Our "adapters" were, in effect, Go clients that encapsulated calling the various APIs.
+Наше приложение было структурировано по гексагональной архитектуре / архитектуре портов и адаптеров. Наш доменный код был отделён от внешнего мира, с которым нам приходилось иметь дело. Наши "адаптеры", по сути, были Go-клиентами, инкапсулирующими вызов различных API.
 
-![the system architecture](https://i.imgur.com/6bqovl8.png)
+![Архитектура системы](https://i.imgur.com/6bqovl8.png)
 
-#### Troubles
+#### Проблемы
 
-Naturally, we took a test-driven approach to building the system. We leveraged stubs to simulate the downstream API responses and had a handful of acceptance tests to reassure ourselves everything should work.
+Естественно, мы применили подход, основанный на тестировании, к построению системы. Мы использовали стабы для симуляции ответов нижестоящих API и имели несколько приёмочных тестов, чтобы убедиться, что всё должно работать.
 
-The APIs we had to call for the most part, though, were:
+Однако API, которые нам приходилось вызывать, по большей части были:
 
-- poorly documented
-- run by teams who had lots of other conflicting priorities and pressures, so it wasn't easy to get time with them
-- often lacking test coverage, so would break in fun and unexpected ways, regress, etc
-- were still being built and evolved
+- плохо документированы
+- управлялись командами, у которых было много других конфликтующих приоритетов и давлений, поэтому было нелегко получить время для общения с ними
+- часто не хватало тестового покрытия, поэтому они ломались забавными и неожиданными способами, регрессировали и т.д.
+- всё ещё разрабатывались и эволюционировали
 
-This led to **a lot of flaky tests** and a lot of headaches. A _significant_ amount of our time was spent pinging lots of busy people on Slack trying to get answers as to:
+Это привело к **множеству нестабильных тестов** и множеству головных болей. _Значительное_ количество нашего времени тратилось на то, чтобы пинговать множество занятых людей в Slack, пытаясь получить ответы на вопросы:
 
-- Why has the API started doing `x`?
-- Why is the API doing something different when we do `y`?
+- Почему API начал делать `x`?
+- Почему API делает что-то другое, когда мы делаем `y`?
 
-Software development is rarely as straightforward as you'd hope; it's a learning exercise. We had to continuously learn how the external APIs worked. As we learned and adapted, we had to update and add to our test suite, in particular, **changing our stubs to match the actual behaviour of the APIs.**
+Разработка программного обеспечения редко бывает такой простой, как хотелось бы; это процесс обучения. Нам приходилось постоянно изучать, как работают внешние API. По мере обучения и адаптации мы должны были обновлять и дополнять наш набор тестов, в частности, **изменяя наши стабы, чтобы они соответствовали фактическому поведению API.**
 
-The trouble is, this took up much of our time and led to more mistakes. When your knowledge of a dependency changes, you must find the **right** test to update to change the stub's behaviour, and there's a real risk of neglecting to update it in other stubs representing the same dependency.
+Проблема в том, что это отнимало много нашего времени и приводило к большему количеству ошибок. Когда ваши знания о зависимости меняются, вы должны найти **правильный** тест для обновления, чтобы изменить поведение стаба, и существует реальный риск того, что вы забудете обновить его в других стабах, представляющих ту же зависимость.
 
-#### Test strategy
+#### Стратегия тестирования
 
-On top of this, as the system was growing and requirements were changing, we realised that our test strategy was unsuitable. We had a handful of acceptance tests that would give us confidence the system as a whole worked and then a large number of unit tests for the various packages we wrote.
+Кроме того, по мере роста системы и изменения требований мы поняли, что наша стратегия тестирования непригодна. У нас было несколько приёмочных тестов, которые давали нам уверенность в работе системы в целом, а затем большое количество модульных тестов для различных пакетов, которые мы написали.
 
-<u>We needed something in between</u>; we often wanted to change the behaviour of various system parts together **but not have to spin up the *entire* system for an acceptance test**. Unit tests alone did not give us confidence that the various components worked as a whole; they couldn't tell (and verify) the story of what we were trying to achieve. **We wanted integration tests**.
+<u>Нам нужно было что-то среднее</u>; мы часто хотели изменить поведение различных частей системы вместе, **но не запускать *всю* систему для приёмочного теста**. Одни только модульные тесты не давали нам уверенности в том, что различные компоненты работают как единое целое; они не могли рассказать (и проверить) историю того, чего мы пытались достичь. **Мы хотели интеграционные тесты**.
 
-#### Integration tests
+#### Интеграционные тесты
 
-Integration tests prove that two or more "units" work correctly when combined (or integrated!). These units can be the code you write or the code you write integrated with someone else's code, such as a database.
+Интеграционные тесты доказывают, что две или более "единицы" работают правильно при объединении (или интеграции!). Этими единицами может быть ваш код или ваш код, интегрированный с чужим кодом, например, с базой данных.
 
-As a project grows, you want to write more integration tests to prove large parts of your system "hang together" - or integrates!
+По мере роста проекта вы захотите писать больше интеграционных тестов, чтобы доказать, что большие части вашей системы "сочетаются" или интегрируются!
 
-You may be tempted to write more black-box acceptance tests, but they quickly become costly regarding your build time and maintenance costs. It can be too expensive to spin up an entire system when you only want to check a *subset* of the system (but not just a single unit) behaves how it should. Writing expensive black-box tests for every bit of functionality you do is not sustainable for larger systems.
+Возможно, вас будет соблазнять написание большего количества приёмочных тестов "чёрного ящика", но они быстро становятся затратными с точки зрения времени сборки и затрат на поддержку. Может быть слишком дорого запускать всю систему, когда вы хотите проверить только *подмножество* системы (но не только одну единицу), работает ли оно так, как должно. Написание дорогих тестов "чёрного ящика" для каждой части функциональности, которую вы выполняете, не является устойчивым для больших систем.
 
-#### Enter: Fakes
+#### Встречайте: Фейки
 
-The problem was the way our units were tested was reliant on stubs, which are, for the most part, *stateless*. We wanted to write tests covering multiple, *stateful* API calls, where we may create a resource at the start and then edit it later.
+Проблема заключалась в том, что наши модули тестировались с использованием стабов, которые по большей части *без сохранения состояния*. Мы хотели писать тесты, охватывающие несколько *сохраняющих состояние* вызовов API, где мы могли бы создать ресурс в начале, а затем отредактировать его позже.
 
-The following is a cut-down version of a test we want to do.
+Ниже приведена сокращённая версия теста, который мы хотим провести.
 
-The SUT is a "service layer" dealing with "use case" requests. We want to prove if a customer is created, when their details change, we successfully update the resources we made in the respective APIs.
+SUT — это "слой сервисов", обрабатывающий запросы "сценариев использования". Мы хотим доказать, что при создании клиента и изменении его данных мы успешно обновляем ресурсы, созданные нами в соответствующих API.
 
-Here are the requirements given to the team as a user story.
+Вот требования, предоставленные команде в виде пользовательской истории.
 
-> ***Given*** a user is registered with API 1, 2 and 3
+> ***Дано*** пользователь зарегистрирован в API 1, 2 и 3
 >
-> ***When*** the customer's social security number is changed
+> ***Когда*** изменяется номер социального страхования клиента
 >
-> ***Then**,* the change is propagated into APIs 1, 2 and 3
+> ***Тогда*** изменение распространяется на API 1, 2 и 3
 
 ```mermaid
 sequenceDiagram
@@ -208,15 +208,15 @@ sequenceDiagram
 	SUT->>API2: Update resource
 ```
 
-Tests that cut across multiple units are usually incompatible with stubs **because they're not suited to maintaining state**. We _could_ write a black-box acceptance test, but the costs of these tests would quickly spiral out of control.
+Тесты, которые охватывают несколько модулей, обычно несовместимы со стабами, **потому что они не подходят для поддержания состояния**. Мы _могли бы_ написать приёмочный тест "чёрного ящика", но затраты на такие тесты быстро вышли бы из-под контроля.
 
-In addition, it is complicated to test edge cases with a black-box test because you cannot control the dependencies. For instance, we wanted to prove that a rollback mechanism would be fired if one API call failed.
+Кроме того, сложно тестировать граничные случаи с помощью теста "чёрного ящика", потому что вы не можете контролировать зависимости. Например, мы хотели доказать, что механизм отката будет запущен, если один вызов API завершится неудачей.
 
-We needed to use **fakes**. By modelling our dependencies as stateful APIs with in-memory fakes, we were able to write integration tests with a much broader scope, **to allow us to test real use cases worked**, again *without* having to spin up the whole system, and instead have almost the same speed as unit tests.
+Нам нужно было использовать **фейки**. Моделируя наши зависимости как сохраняющие состояние API с помощью фейков в памяти, мы смогли писать интеграционные тесты с гораздо более широким охватом, **чтобы позволить нам проверять работу реальных сценариев использования**, опять же *без* необходимости разворачивать всю систему, и вместо этого иметь почти ту же скорость, что и модульные тесты.
 
-![integration tests with fakes](https://i.imgur.com/9Q6FMpw.png)
+![Интеграционные тесты с фейками](https://i.imgur.com/9Q6FMpw.png)
 
-Using fakes, **we can make assertions based on the final states of the respective systems rather than relying on complicated spying**. We'd ask each fake what records it held for the customer and assert they were updated. This feels more natural; if we manually checked our system, we would query those APIs to check their state, not inspect our request logs to see if we sent particular JSON payloads.
+Используя фейки, **мы можем делать утверждения на основе конечных состояний соответствующих систем, а не полагаться на сложное шпионящее поведение**. Мы бы спрашивали у каждого фейка, какие записи о клиенте он хранит, и утверждали, что они были обновлены. Это кажется более естественным; если бы мы вручную проверяли нашу систему, мы бы запрашивали эти API для проверки их состояния, а не просматривали наши логи запросов, чтобы увидеть, отправили ли мы определённые JSON-запросы.
 
 ```go
 // take our lego-bricks and assemble the system for the test
@@ -246,33 +246,33 @@ updatedFakeAPICustomer := fakeAPI1.Get(createdCustomer.FakeAPI1Details.ID)
 assert.Equal(t, updatedFakeAPICustomer.SocialSecurityNumber, updatedCustomerRequest.SocialSecurityNumber)
 ```
 
-This is simpler to write and easier to read than checking various function call arguments made via spies.
+Это проще писать и легче читать, чем проверять различные аргументы вызовов функций, сделанные через спаи.
 
-This approach lets us have tests that cut across broad parts of our system, letting us write more **meaningful** tests about the use cases we'd be discussing at stand-up whilst still executing exceptionally quickly.
+Этот подход позволяет нам иметь тесты, охватывающие обширные части нашей системы, позволяя писать более **осмысленные** тесты о сценариях использования, которые мы обсуждали бы на стендапе, при этом выполняясь исключительно быстро.
 
-#### Fakes bring more of the benefits of encapsulation
+#### Фейки приносят больше преимуществ инкапсуляции
 
-In the example above, the tests were not concerned with how the dependencies behaved beyond verifying their end state. We created the fake versions of the dependencies and injected them into the part of the system we're testing.
+В приведённом выше примере тесты не заботились о том, как вели себя зависимости, помимо проверки их конечного состояния. Мы создали фейковые версии зависимостей и внедрили их в ту часть системы, которую тестируем.
 
-With mocks/stubs, we'd have to set up each dependency to handle certain scenarios, return certain data, etc. This brings behaviour and implementation detail into your tests, weakening the benefits of encapsulation. 
+С моками/стабами нам пришлось бы настраивать каждую зависимость для обработки определённых сценариев, возвращения определённых данных и т.д. Это привносит поведение и детали реализации в ваши тесты, ослабляя преимущества инкапсуляции.
 
-We model dependencies behind interfaces so that, as clients, _we don't have to care how it works_, but with a "mockist" approach, _we do have to care **in every test**_. 
+Мы моделируем зависимости за интерфейсами так, чтобы как клиенты, _мы не должны были заботиться о том, как это работает_, но с "мок-ориентированным" подходом, _мы **должны** заботиться об этом **в каждом тесте**_.
 
-#### The maintenance costs of fakes
+#### Затраты на поддержку фейков
 
-Fakes are costlier than other test doubles, at least in terms of code written; they must carry state and simulate the behaviour of whatever they're faking. Any discrepancies in behaviour between your fake and the real thing **carry a risk** that your tests aren't in line with reality. This leads to the scenario where you have passing tests but broken software.
+Фейки дороже других тестовых дублёров, по крайней мере, с точки зрения написанного кода; они должны сохранять состояние и имитировать поведение того, что они подделывают. Любые расхождения в поведении между вашим фейком и реальной вещью **несут риск** того, что ваши тесты не соответствуют реальности. Это приводит к сценарию, когда у вас есть проходящие тесты, но сломанное программное обеспечение.
 
-Whenever you integrate with another system, be it another team's API or a database, you'll make assumptions based on its behaviour. These could be captured from API docs, in-person conversations, emails, Slack threads, etc.
+Всякий раз, когда вы интегрируетесь с другой системой, будь то API другой команды или база данных, вы будете делать предположения, основанные на её поведении. Они могут быть получены из документации API, личных бесед, электронных писем, переписок в Slack и т.д.
 
-Wouldn't it be helpful if we could **codify our assumptions** to run them against both our fake *and* the actual system to see if our knowledge is correct in a repeatable and documented way?
+Разве не было бы полезно, если бы мы могли **кодифицировать наши предположения**, чтобы проверять их как на нашем фейке, *так и* на реальной системе, чтобы увидеть, верны ли наши знания, повторяемым и задокументированным способом?
 
-**Contracts** are the means to this end. They helped us manage the assumptions we made on the other team's systems and make them explicit. Way more explicit and useful than email exchanges or endless Slack threads!
+**Контракты** — это средство для достижения этой цели. Они помогли нам управлять предположениями, которые мы делали относительно систем других команд, и делать их явными. Гораздо более явными и полезными, чем переписка по электронной почте или бесконечные ветки в Slack!
 
-![fakes and contracts illustrated](https://i.imgur.com/l9aTe2x.png)
+![Фейки и контракты в иллюстрациях](https://i.imgur.com/l9aTe2x.png)
 
-By having a contract, we can assume that we can use a fake and an actual dependency interchangeably. This is not only useful for constructing tests but also for local development.
+Имея контракт, мы можем предположить, что можем использовать фейк и фактическую зависимость взаимозаменяемо. Это полезно не только для построения тестов, но и для локальной разработки.
 
-Here is an example of a contract for one of the APIs the system depends on
+Вот пример контракта для одного из API, от которого зависит система:
 
 ```go
 type API1Customer struct {
@@ -327,14 +327,14 @@ func (c API1Contract) Test(t *testing.T) {
 }
 ```
 
-As discussed in [Scaling Acceptance Tests](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/scaling-acceptance-tests), by testing against an interface rather than a concrete type, the test becomes:
+Как обсуждалось в [Масштабировании приёмочных тестов](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/scaling-acceptance-tests), при тестировании на основе интерфейса, а не конкретного типа, тест становится:
 
-- Decoupled from implementation detail
-- Can be re-used in different contexts.
+- Отделённым от деталей реализации
+- Может быть повторно использован в различных контекстах.
 
-Which are the requirements for a contract. It allows us to verify and develop our fake _and_ test it against the actual implementation.
+Что является требованиями к контракту. Это позволяет нам проверять и разрабатывать наш фейк _и_ тестировать его на реальной реализации.
 
-To create our in-memory fake, we can use the contract in a test.
+Для создания нашего фейка в памяти мы можем использовать контракт в тесте.
 
 ```go
 func TestInMemoryAPI1(t *testing.T) {
@@ -344,7 +344,7 @@ func TestInMemoryAPI1(t *testing.T) {
 }
 ```
 
-And here is the fake's code
+А вот код фейка:
 
 ```go
 func NewAPI1() *API1 {
@@ -382,44 +382,44 @@ func (a *API1) UpdateCustomer(ctx context.Context, id string, name string) error
 }
 ```
 
-### Evolving software
+### Развитие программного обеспечения
 
-Most software is not built and "finished" forever, in one release.
+Большинство программного обеспечения не создаётся и не "завершается" навсегда за один выпуск.
 
-It's an incremental learning exercise, adapting to customer demands and other external changes. In the example, the APIs we were calling were also evolving and changing; plus, as we developed _our_ software, we learned more about what system we _really_ needed to make. Assumptions we made in our contracts turned out to be wrong or _became_ wrong.
+Это постепенный процесс обучения, адаптации к требованиям клиентов и другим внешним изменениям. В примере API, которые мы вызывали, также развивались и менялись; кроме того, по мере разработки _нашего_ программного обеспечения мы узнавали больше о том, какую систему нам _действительно_ нужно было создать. Предположения, сделанные нами в наших контрактах, оказались неверными или _стали_ неверными.
 
-Thankfully, once the setup for the contracts was made, we had a simple way to deal with change. Once we learned something new, as a result of a bug being fixed or a colleague informing us that the API was changing, we'd:
+К счастью, после настройки контрактов у нас появился простой способ справляться с изменениями. Как только мы узнавали что-то новое, будь то исправление ошибки или сообщение коллеги об изменении API, мы делали следующее:
 
-1. Write a test to exercise the new scenario. A part of this will involve changing the contract to **drive** you to simulate the behaviour in the fake
-2. Running the test should fail, but before anything else, run the contract against the real dependency to ensure the change to the contract is valid.
-3. Update the fake so it conforms to the contract.
-4. Make the test pass.
-5. Refactor.
-6. Run all the tests and ship.
+1. Написать тест для проверки нового сценария. Часть этого будет включать изменение контракта, чтобы **направить** вас на симуляцию поведения в фейке.
+2. Выполнение теста должно завершиться неудачей, но прежде чем что-либо ещё, запустите контракт против реальной зависимости, чтобы убедиться, что изменение контракта является действительным.
+3. Обновите фейк так, чтобы он соответствовал контракту.
+4. Добиться прохождения теста.
+5. Рефакторинг.
+6. Запустить все тесты и выпустить.
 
-Running the _full_ test suite before checking in _may_ result in other tests failing due to the fake having a different behaviour. This is a **good thing**!  You can now fix all the other areas of the system depending on the changed system; confident they will also handle this scenario in production. Without this approach, you'd have to *remember* to find all the relevant tests and update the stubs. Error-prone, labourious and boring.
+Запуск _полного_ набора тестов перед проверкой _может_ привести к сбою других тестов из-за того, что фейк ведёт себя иначе. Это **хорошо**! Теперь вы можете исправить все другие области системы, зависящие от изменённой системы; будучи уверенными, что они также обработают этот сценарий в продакшене. Без этого подхода вам пришлось бы *помнить* о поиске всех соответствующих тестов и обновлении стабов. Это подвержено ошибкам, трудоёмко и скучно.
 
-### Superior developer experience
+### Превосходный опыт разработчика
 
-Having the suite of fakes with corresponding contracts felt like a superpower. We could finally tame the complexity of the APIs we had to deal with.
+Наличие набора фейков с соответствующими контрактами ощущалось как суперсила. Мы наконец-то смогли укротить сложность API, с которыми нам приходилось иметь дело.
 
-Writing tests for various scenarios became much simpler. We no longer had to assemble a series of stubs and spies for every test; we could take our set of units or modules (the fakes, our own "services") and assemble them very easily to exercise the various weird and wonderful scenarios we needed.
+Написание тестов для различных сценариев стало намного проще. Нам больше не нужно было собирать серию стабов и спаев для каждого теста; мы могли взять наш набор модулей (фейки, наши собственные "сервисы") и очень легко собирать их для отработки различных странных и замечательных сценариев, которые нам требовались.
 
-Every test with a stub, spy or mock has to _care_ about how the external system behaves, due to the ad-hoc setup. On the other hand, fakes can be treated like any other well-encapsulated unit of code, where the details are hidden away from you, and you can just use them.
+Каждый тест со стабом, спаем или моком должен _заботиться_ о том, как ведёт себя внешняя система, из-за одноразовой настройки. С другой стороны, фейки можно рассматривать как любую другую хорошо инкапсулированную единицу кода, где детали скрыты от вас, и вы можете просто их использовать.
 
-We could run a very realistic version of the system locally, and as it was all in memory, it would start and run extremely quickly. This meant our test times were extremely fast, which felt very impressive, given how comprehensive the suite was.
+Мы могли запускать очень реалистичную версию системы локально, и поскольку она вся находилась в памяти, она запускалась и работала чрезвычайно быстро. Это означало, что время наших тестов было чрезвычайно быстрым, что ощущалось очень впечатляюще, учитывая, насколько исчерпывающим был набор тестов.
 
-If our acceptance tests failed in our staging environment, our first step was to run our contracts against the APIs we depended on. We often identified issues **before the other systems' developers did**.
+Если наши приёмочные тесты падали в тестовой среде, первым шагом было запустить наши контракты против API, от которых мы зависели. Мы часто выявляли проблемы **раньше, чем разработчики других систем**.
 
-### Off the happy path with decorators
+### Сход с "счастливого пути" с помощью декораторов
 
-For error scenarios, stubs are more convenient because you have direct access to *how* it behaves in the test, whereas fakes tend to be fairly black-box. This is a deliberate design choice, as we want the users of them (e.g. tests) not to be concerned with how they work; they should trust they do the right thing due to the backing of the contract.
+Для сценариев с ошибками стабы более удобны, потому что у вас есть прямой доступ к тому, *как* они ведут себя в тесте, тогда как фейки, как правило, являются довольно "чёрными ящиками". Это преднамеренный выбор дизайна, поскольку мы хотим, чтобы пользователи (например, тесты) не беспокоились о том, как они работают; они должны доверять, что они делают правильные вещи благодаря поддержке контракта.
 
-How do we make the fakes fail, to exercise non-happy path concerns?
+Как заставить фейки работать с ошибками, чтобы проверить сценарии, не относящиеся к "счастливому пути"?
 
-There are plenty of scenarios where, as a developer, you need to modify the behaviour of some code without changing its source. The **decorator pattern** is often a way to take a unit of code and add things like logging, telemetry, retries and more. We can use it to wrap our fakes to override behaviours when necessary.
+Существует множество сценариев, когда как разработчику вам необходимо изменить поведение некоторого кода, не меняя его исходный код. **Паттерн "декоратор"** часто является способом взять единицу кода и добавить такие вещи, как логирование, телеметрию, повторные попытки и многое другое. Мы можем использовать его для обёртывания наших фейков, чтобы переопределить поведение при необходимости.
 
-Returning to the `API1` example, we can create a type that implements the needed interface and wraps around the fake.
+Возвращаясь к примеру `API1`, мы можем создать тип, который реализует необходимый интерфейс и оборачивает фейк.
 
 ```go
 type API1Decorator struct {
@@ -458,7 +458,7 @@ func (a *API1Decorator) UpdateCustomer(ctx context.Context, id string, name stri
 }
 ```
 
-In our tests, we can then use the `XXXFunc` field to modify the behaviour of the test-double, just like you would with stubs, spies or mocks.
+В наших тестах мы можем затем использовать поле `XXXFunc` для изменения поведения тестового дублёра, точно так же, как вы делали бы со стабами, спаями или моками.
 
 ```go
 failingAPI1 = NewAPI1Decorator(inmemory.NewAPI1())
@@ -467,48 +467,48 @@ failingAPI1.UpdateCustomerFunc = func(ctx context.Context, id string, name strin
 }
 ```
 
-However, this _is_ awkward and requires you to exercise some judgement. With this approach, you are losing the guarantees from your contract as you are introducing ad-hoc behaviour to your fake in tests.
+Однако это _неудобно_ и требует от вас определённого суждения. При таком подходе вы теряете гарантии, предоставляемые вашим контрактом, поскольку вы вводите одноразовое поведение в ваш фейк в тестах.
 
-It would be best to examine your context, you may conclude it would be simpler to test specific unhappy paths at the unit test level using a stub.
+Было бы лучше изучить ваш контекст, возможно, вы придёте к выводу, что проще тестировать конкретные "несчастливые пути" на уровне модульных тестов с использованием стаба.
 
-### Isn't this extra code waste?
+### Разве это не лишняя трата кода?
 
-It is wishful thinking to believe we should only ever write code that serves customers and expect a system we can build on efficiently. People have a very warped opinion of what waste is (see my post: [The ghost of Henry Ford is ruining your development team](https://quii.dev/The_ghost_of_Henry_Ford_is_ruining_your_development_team)).
+Это принятие желаемого за действительное — полагать, что мы всегда должны писать только тот код, который служит клиентам, и ожидать систему, на которой мы можем эффективно строить. У людей очень искажённое представление о том, что такое отходы (см. мой пост: [Призрак Генри Форда губит вашу команду разработки](https://quii.dev/The_ghost_of_Henry_Ford_is_ruining_your_development_team)).
 
-Automated tests do not directly benefit customers, but we write them to make ourselves more efficient with our work (you don't write tests to chase coverage scores, right?).
+Автоматизированные тесты не приносят прямой пользы клиентам, но мы пишем их, чтобы сделать свою работу более эффективной (вы ведь не пишете тесты ради показателей покрытия, верно?).
 
-Engineers must easily simulate scenarios (in a repeatable fashion, not ad-hocly) to debug, test, and fix issues. **In-memory fakes and good modular design allow us to isolate the relevant actors for a scenario to write fast, appropriate tests extremely cheaply**. This flexibility enables developers to iterate on a system far more manageably than a tangled mess, tested via expensive to-write and run black-box tests or, worse, manual testing on a shared environment.
+Инженеры должны легко имитировать сценарии (повторяемым образом, а не на месте) для отладки, тестирования и исправления проблем. **Фейки в памяти и хороший модульный дизайн позволяют нам изолировать соответствующие акторы для сценария, чтобы писать быстрые, подходящие тесты чрезвычайно дёшево**. Эта гибкость позволяет разработчикам итерировать систему гораздо более управляемым способом, чем запутанный беспорядок, тестируемый с помощью дорогостоящих в написании и запуске тестов "чёрного ящика" или, что ещё хуже, ручного тестирования в общей среде.
 
-This is an example of [simple vs. easy](https://www.youtube.com/watch?v=SxdOUGdseq4). Of course, fakes and contracts will result in more code being written than stubs and spies in the short term, but the result is a more straightforward and cheaper-to-maintain system in the longer run. Updating spies, stubs and mocks piecemeal is labour-intensive and error-prone, as you won't have corresponding contracts to check your test doubles behave correctly.
+Это пример [простого против лёгкого](https://www.youtube.com/watch?v=SxdOUGdseq4). Конечно, фейки и контракты приведут к написанию большего количества кода, чем стабы и спаи, в краткосрочной перспективе, но в долгосрочной перспективе результатом будет более простая и дешёвая в поддержке система. Обновление спаев, стабов и моков по частям является трудоёмким и подверженным ошибкам, так как у вас не будет соответствующих контрактов для проверки правильности поведения ваших тестовых дублёров.
 
-This approach represents a _slightly_ increased upfront cost but with far lower costs once the contracts and fakes are set up. Fakes are more reusable and reliable than ad-hoc test doubles like stubs.
+Этот подход представляет собой _незначительно_ увеличенные первоначальные затраты, но с гораздо более низкими затратами после того, как контракты и фейки настроены. Фейки более многоразовые и надёжные, чем временные тестовые дублёры, такие как стабы.
 
-It feels *very* liberating and gives you **confidence** when using an existing, battle-tested fake rather than setting up a stub when writing a new test.
+Использование существующего, проверенного в бою фейка вместо настройки стаба при написании нового теста ощущается *очень* раскрепощающим и даёт вам **уверенность**.
 
-### How does this fit into TDD?
+### Как это вписывается в TDD?
 
-I wouldn't recommend _starting_ with a contract; that's bottom-up design, which, in general, I find I need to be more clever for, and there's a danger I'll overthink hypothetical requirements.
+Я бы не рекомендовал _начинать_ с контракта; это нисходящее проектирование, для которого, как я обычно считаю, мне нужно быть более изобретательным, и есть опасность, что я переосмыслю гипотетические требования.
 
-This technique is compatible with the "acceptance test driven approach" as discussed in earlier chapters, [The Why of TDD](https://quii.dev/The_Why_of_TDD) and in [GOOS](http://www.growing-object-oriented-software.com)
+Эта техника совместима с "подходом, управляемым приёмочными тестами", как обсуждалось в предыдущих главах, [The Why of TDD](https://quii.dev/The_Why_of_TDD) и в [GOOS](http://www.growing-object-oriented-software.com).
 
-- Write a failing [acceptance test](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/scaling-acceptance-tests).
-- Drive out enough code to make it pass, which usually will result in some "service layer" that'll depend on an API, a database, or whatever. Usually, you will have business logic code decoupled from external concerns (such as persistence, calling a database, etc.) via an interface.
-- Implement the interface with an in-memory fake at first to make all the tests pass locally and validate the initial design.
-- To push to production, you can't use in-memory! Encode the assumptions you made against the fake into a contract.
-- Use the contract to create the actual dependency, such as a MySQL version of a store.
-- Ship.
+- Напишите не проходящий [приёмочный тест](https://quii.gitbook.io/learn-go-with-tests/testing-fundamentals/scaling-acceptance-tests).
+- Создайте достаточно кода, чтобы он прошёл, что обычно приведёт к созданию "слоя сервисов", который будет зависеть от API, базы данных или чего-то ещё. Обычно код бизнес-логики отделяется от внешних concerns (таких как постоянное хранение данных, вызов базы данных и т.д.) через интерфейс.
+- Сначала реализуйте интерфейс с помощью фейка в памяти, чтобы все тесты проходили локально и подтверждали первоначальный дизайн.
+- Чтобы отправить в продакшен, вы не можете использовать фейк в памяти! Закодируйте предположения, сделанные вами относительно фейка, в контракт.
+- Используйте контракт для создания реальной зависимости, такой как версия хранилища для MySQL.
+- Выпускайте.
 
-##  Where's the chapter on testing databases?
+## Где глава о тестировании баз данных?
 
-This has been a common request that I have put off for over five years. The reason is this chapter will always be my answer.
+Это был частый запрос, который я откладывал более пяти лет. Причина в том, что эта глава всегда будет моим ответом.
 
-<u>Don't mock the database driver and spy on calls</u>. These tests are difficult to write and potentially bring very little value. You shouldn't assert whether a particular `SQL` statement was sent to the database, that is, implementation detail; **your tests should only care about behaviour**. Proving a specific SQL statement was compiled _does not_ prove your code _behaves_ how you need it to.
+<u>Не мокируйте драйвер базы данных и не шпионьте за вызовами</u>. Эти тесты сложно писать, и они потенциально приносят очень мало пользы. Вы не должны утверждать, был ли отправлен в базу данных определённый `SQL` оператор — это деталь реализации; **ваши тесты должны заботиться только о поведении**. Доказательство того, что конкретный SQL-оператор был скомпилирован, _не_ доказывает, что ваш код _ведёт себя_ так, как вам нужно.
 
-**Contracts** force you to decouple your tests from implementation details and focus on behaviour.
+**Контракты** заставляют вас отделить ваши тесты от деталей реализации и сосредоточиться на поведении.
 
-Follow the TDD approach described above to drive out your persistence needs.
+Следуйте описанному выше подходу TDD, чтобы определить ваши потребности в постоянном хранении данных.
 
-[The example repository](https://github.com/quii/go-fakes-and-contracts) has some examples of contracts, and how they're used to test in-memory and SQLite implementations of some persistence needs.
+[Пример репозитория](https://github.com/quii/go-fakes-and-contracts) содержит несколько примеров контрактов и того, как они используются для тестирования реализаций в памяти и SQLite некоторых потребностей в постоянном хранении данных.
 
 ```go
 package inmemory_test
@@ -553,47 +553,47 @@ func TestSQLitePantry(t *testing.T) {
 }
 ```
 
-Whilst Docker et al. _do_ make running databases locally easier, they can still carry a significant performance overhead. Fakes with contracts allow you to use restrict the need to use the "heavier" dependency to only when you're validating the contract, and not needed for other kinds of tests.
+Хотя Docker и т.д. _действительно_ упрощают локальный запуск баз данных, они всё ещё могут нести значительные накладные расходы на производительность. Фейки с контрактами позволяют ограничить необходимость использования "более тяжёлой" зависимости только для проверки контракта, и они не требуются для других видов тестов.
 
-Using in-memory fakes for acceptance and integration tests for *the rest* of the system provides a much faster and simpler developer experience.
+Использование фейков в памяти для приёмочных и интеграционных тестов для *остальной* части системы обеспечивает гораздо более быстрый и простой опыт разработчика.
 
-## Wrapping up
+## Подведём итоги
 
-It’s common for software projects to be organised with various teams building systems concurrently to try to reach a common goal.
+Обычная практика для программных проектов — организация работы с несколькими командами, которые одновременно создают системы, пытаясь достичь общей цели.
 
-This method of work requires a high degree of collaboration and communication. Many feel with an "API first" approach, we can define some API contracts (often on a wiki page!) and then work independently for six months and stick it all together. This rarely works well in practice because as we start writing code, we understand the domain and the problem better, which challenges our assumptions. We have to react to these changes in knowledge, which often require cross-team changes.
+Этот метод работы требует высокой степени сотрудничества и коммуникации. Многие считают, что при подходе "сначала API" мы можем определить некоторые контракты API (часто на вики-странице!) и затем работать независимо в течение шести месяцев, а затем всё это собрать воедино. На практике это редко работает хорошо, потому что, когда мы начинаем писать код, мы лучше понимаем предметную область и проблему, что оспаривает наши предположения. Мы должны реагировать на эти изменения в знаниях, что часто требует межкомандных изменений.
 
-So, if you're in this situation, you need to structure and test your system optimally to deal with unpredictable changes, both inside and outside of the system you're working on.
+Поэтому, если вы находитесь в такой ситуации, вам необходимо оптимально структурировать и тестировать вашу систему, чтобы справляться с непредсказуемыми изменениями как внутри, так и вне системы, над которой вы работаете.
 
-> “One of the defining characteristics of high-performing teams in software development is their ability to make progress and to change their minds, without asking for permission from any person or group outside of their small team.”
+> «Одна из определяющих характеристик высокопроизводительных команд в разработке программного обеспечения — это их способность продвигаться вперёд и менять свои решения, не спрашивая разрешения ни у кого извне своей небольшой команды».
 >
 > Modern Software Engineering
-> David Farley
+> Дэвид Фарли
 
-Don't rely on weekly meetings or Slack threads to flesh out changes. **Codify your assumptions in contracts**. Run those contracts against the systems in your build pipelines so you get fast feedback if new information comes to light. These contracts, in conjunction with **fakes,** mean you can work independently and manage external changes sustainably.
+Не полагайтесь на еженедельные встречи или ветки в Slack для проработки изменений. **Кодифицируйте свои предположения в контрактах**. Запускайте эти контракты против систем в ваших сборочных конвейерах, чтобы получать быструю обратную связь, если появляется новая информация. Эти контракты, в сочетании с **фейками**, означают, что вы можете работать независимо и устойчиво управлять внешними изменениями.
 
-### Your system as a collection of modules
+### Ваша система как набор модулей
 
-Referring back to Farley's book, I'm describing the idea of **incrementalism**. Building software is a *constant learning exercise*. Understanding the requirements we must solve for a given system to deliver value up-front is unrealistic. So, we have to optimise our systems and ways of work to **gather feedback quickly and experiment**.
+Возвращаясь к книге Фарли, я описываю идею **инкрементализма**. Создание программного обеспечения — это *постоянный процесс обучения*. Понимание требований, которые мы должны решить для данной системы, чтобы обеспечить ценность заранее, нереалистично. Поэтому мы должны оптимизировать наши системы и методы работы для **быстрого сбора обратной связи и экспериментов**.
 
-You need a **modular system** to take advantage of the ideas discussed in this chapter. If you have modular code with reliable fakes, it allows you to experiment with your system via automated tests cheaply.
+Вам нужна **модульная система**, чтобы воспользоваться идеями, обсуждаемыми в этой главе. Если у вас есть модульный код с надёжными фейками, это позволяет вам дёшево экспериментировать с вашей системой с помощью автоматизированных тестов.
 
-We found it extremely easy to translate weird, hypothetical (but possible) scenarios into self-contained tests to help us understand the problem and drive out more robust software by composing our modules together and trying out different data in different order, with some APIs failing, etc.
+Нам было чрезвычайно легко переводить странные, гипотетические (но возможные) сценарии в самодостаточные тесты, чтобы помочь нам понять проблему и разработать более надёжное программное обеспечение, компонуя наши модули вместе и пробуя различные данные в разном порядке, с некоторыми неработающими API и т. д.
 
-Well-defined, well-tested modules allow you to increment your system without changing and understanding _everything_ at once.
+Хорошо определённые, хорошо протестированные модули позволяют вам развивать вашу систему, не меняя и не понимая _всё_ сразу.
 
-### But I'm working on something small with stable APIs
+### Но я работаю над чем-то небольшим со стабильными API
 
-Even with stable APIs, you do not want your developer experience, builds and so on to be tightly coupled to other people’s code. When you get this approach right, you end up with a composable set of modules to piece together your system for production, running locally and writing different kinds of tests with doubles you trust.
+Даже со стабильными API вы не хотите, чтобы ваш опыт разработчика, сборки и так далее были тесно связаны с чужим кодом. Когда вы правильно используете этот подход, вы получаете компонуемый набор модулей для сборки вашей системы для продакшена, локального запуска и написания различных видов тестов с дублёрами, которым вы доверяете.
 
-It allows you to isolate the parts of your system you're concerned about and write meaningful tests about the real problem you're trying to solve.
+Это позволяет вам изолировать части вашей системы, которые вас беспокоят, и писать осмысленные тесты о реальной проблеме, которую вы пытаетесь решить.
 
-### Make your dependencies first-class citizens.
+### Сделайте ваши зависимости первоклассными сущностями.
 
-Of course, stubs and spies have their place. Simulating different behaviours of your dependencies ad-hocly in tests will always have its use, but be careful not to let the costs go out of control.
+Конечно, стабы и спаи имеют своё место. Симуляция различного поведения ваших зависимостей на лету в тестах всегда будет иметь применение, но будьте осторожны, чтобы затраты не вышли из-под контроля.
 
-So many times in my career, I have seen carefully written software written by talented devs fall apart due to integration problems. Integration is challenging for engineers _because_ it's hard to reproduce the exact behaviours of a system written by other engineers, who also change it simultaneously.
+Столько раз в своей карьере я видел, как тщательно написанное программное обеспечение талантливыми разработчиками разваливалось из-за проблем с интеграцией. Интеграция сложна для инженеров _потому что_ трудно воспроизвести точное поведение системы, написанной другими инженерами, которые также меняют её одновременно.
 
-Some teams rely on everyone deploying to a shared environment and testing there. The problem is this doesn't give you **isolated** feedback, and the **feedback is slow**. You still won't be able to construct different experiments with how your system works with other dependencies, at least not efficiently.
+Некоторые команды полагаются на то, что все развёртывают свои изменения в общей среде и тестируют там. Проблема в том, что это не даёт вам **изолированной** обратной связи, а **обратная связь медленная**. Вы всё равно не сможете эффективно строить различные эксперименты с тем, как ваша система работает с другими зависимостями.
 
-**We have to tame this complexity by adopting more sophisticated ways of modelling our dependencies** to quickly test/experiment on our dev machines before it gets to production. Create realistic and manageable fakes of your dependencies, verified by contracts. Then, you can start writing more meaningful tests and experimenting with your system, making you more likely to succeed.
+**Мы должны укротить эту сложность, применяя более сложные способы моделирования наших зависимостей**, чтобы быстро тестировать/экспериментировать на наших машинах разработки, прежде чем это попадёт в продакшн. Создавайте реалистичные и управляемые фейки ваших зависимостей, проверенные контрактами. Тогда вы сможете начать писать более осмысленные тесты и экспериментировать с вашей системой, что повысит ваши шансы на успех.

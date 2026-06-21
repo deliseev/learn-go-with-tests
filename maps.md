@@ -1,16 +1,16 @@
-# Maps
+# Отображения
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/maps)**
+**[Весь код для этой главы вы можете найти здесь](https://github.com/quii/learn-go-with-tests/tree/main/maps)**
 
-In [arrays & slices](arrays-and-slices.md), you saw how to store values in order. Now, we will look at a way to store items by a `key` and look them up quickly.
+В [массивах и срезах](arrays-and-slices.md) вы узнали, как хранить значения по порядку. Теперь мы рассмотрим способ хранения элементов по `key` (ключу) и быстрого их поиска.
 
-Maps allow you to store items in a manner similar to a dictionary. You can think of the `key` as the word and the `value` as the definition. And what better way is there to learn about Maps than to build our own dictionary?
+Отображения (Maps) позволяют хранить элементы подобно словарю. Вы можете представлять `key` как слово, а `value` как определение. И какой лучший способ изучить отображения, чем создать свой собственный словарь?
 
-First, assuming we already have some words with their definitions in the dictionary, if we search for a word, it should return the definition of it.
+Во-первых, если предположить, что у нас уже есть слова с их определениями в словаре, то при поиске слова оно должно возвращать его определение.
 
-## Write the test first
+## Сначала напишите тест
 
-In `dictionary_test.go`
+В `dictionary_test.go`
 
 ```go
 package main
@@ -29,21 +29,21 @@ func TestSearch(t *testing.T) {
 }
 ```
 
-Declaring a Map is somewhat similar to an array. Except, it starts with the `map` keyword and requires two types. The first is the key type, which is written inside the `[]`. The second is the value type, which goes right after the `[]`.
+Объявление отображения (Map) чем-то похоже на объявление массива. За исключением того, что оно начинается с ключевого слова `map` и требует два типа. Первый — это тип ключа, который пишется внутри `[]`. Второй — это тип значения, который идёт сразу после `[]`.
 
-The key type is special. It can only be a comparable type because without the ability to tell if 2 keys are equal, we have no way to ensure that we are getting the correct value. Comparable types are explained in depth in the [language spec](https://golang.org/ref/spec#Comparison_operators).
+Тип ключа является особенным. Он может быть только сравнимым типом, потому что без возможности определить, равны ли 2 ключа, у нас нет способа убедиться, что мы получаем правильное значение. Сравнимые типы подробно объяснены в [спецификации языка](https://golang.org/ref/spec#Comparison_operators).
 
-The value type, on the other hand, can be any type you want. It can even be another map.
+Тип значения, с другой стороны, может быть любым типом, который вы хотите. Это может быть даже другое отображение (map).
 
-Everything else in this test should be familiar.
+Всё остальное в этом тесте должно быть вам знакомо.
 
-## Try to run the test
+## Попробуйте запустить тест
 
-By running `go test` the compiler will fail with `./dictionary_test.go:8:9: undefined: Search`.
+Запуск `go test` приведёт к ошибке компилятора: `./dictionary_test.go:8:9: undefined: Search`.
 
-## Write the minimal amount of code for the test to run and check the output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод
 
-In `dictionary.go`
+В `dictionary.go`
 
 ```go
 package main
@@ -53,11 +53,11 @@ func Search(dictionary map[string]string, word string) string {
 }
 ```
 
-Your test should now fail with a *clear error message*
+Теперь ваш тест должен завершиться сбоем с *понятным сообщением об ошибке*:
 
 `dictionary_test.go:12: got '' want 'this is just a test' given, 'test'`.
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
 ```go
 func Search(dictionary map[string]string, word string) string {
@@ -65,9 +65,9 @@ func Search(dictionary map[string]string, word string) string {
 }
 ```
 
-Getting a value out of a Map is the same as getting a value out of Array `map[key]`.
+Получение значения из отображения (Map) такое же, как получение значения из массива: `map[key]`.
 
-## Refactor
+## Рефакторинг
 
 ```go
 func TestSearch(t *testing.T) {
@@ -88,13 +88,13 @@ func assertStrings(t testing.TB, got, want string) {
 }
 ```
 
-I decided to create an `assertStrings` helper to make the implementation more general.
+Я решил создать вспомогательную функцию `assertStrings`, чтобы сделать реализацию более общей.
 
-### Using a custom type
+### Использование пользовательского типа
 
-We can improve our dictionary's usage by creating a new type around map and making `Search` a method.
+Мы можем улучшить использование нашего словаря, создав новый тип на основе `map` и сделав `Search` методом.
 
-In `dictionary_test.go`:
+В `dictionary_test.go`:
 
 ```go
 func TestSearch(t *testing.T) {
@@ -107,11 +107,11 @@ func TestSearch(t *testing.T) {
 }
 ```
 
-We started using the `Dictionary` type, which we have not defined yet. Then called `Search` on the `Dictionary` instance.
+Мы начали использовать тип `Dictionary`, который ещё не определили. Затем вызвали `Search` для экземпляра `Dictionary`.
 
-We did not need to change `assertStrings`.
+Нам не нужно было изменять `assertStrings`.
 
-In `dictionary.go`:
+В `dictionary.go`:
 
 ```go
 type Dictionary map[string]string
@@ -121,13 +121,13 @@ func (d Dictionary) Search(word string) string {
 }
 ```
 
-Here we created a `Dictionary` type which acts as a thin wrapper around `map`. With the custom type defined, we can create the `Search` method.
+Здесь мы создали тип `Dictionary`, который действует как тонкая обёртка вокруг `map`. После определения пользовательского типа мы можем создать метод `Search`.
 
-## Write the test first
+## Сначала напишите тест
 
-The basic search was very easy to implement, but what will happen if we supply a word that's not in our dictionary?
+Базовый поиск было очень легко реализовать, но что произойдёт, если мы введём слово, которого нет в нашем словаре?
 
-We actually get nothing back. This is good because the program can continue to run, but there is a better approach. The function can report that the word is not in the dictionary. This way, the user isn't left wondering if the word doesn't exist or if there is just no definition (this might not seem very useful for a dictionary. However, it's a scenario that could be key in other usecases).
+На самом деле мы ничего не получаем в ответ. Это хорошо, потому что программа может продолжать работать, но есть и лучший подход. Функция может сообщить, что слова нет в словаре. Таким образом, пользователь не остаётся в неведении, не существует ли слова или просто нет его определения (это может показаться не очень полезным для словаря. Однако это сценарий, который может быть ключевым в других случаях использования).
 
 ```go
 func TestSearch(t *testing.T) {
@@ -153,20 +153,19 @@ func TestSearch(t *testing.T) {
 }
 ```
 
-The way to handle this scenario in Go is to return a second argument which is an `Error` type.
+Способ обработки этого сценария в Go — это возврат второго аргумента, который является типом `Error`.
 
-Notice that as we've seen in the [pointers and error section](./pointers-and-errors.md) here in order to assert the error message
-we first check that the error is not `nil` and then use `.Error()` method to get the string which we can then pass to the assertion.
+Обратите внимание, что, как мы видели в [разделе об указателях и ошибках](./pointers-and-errors.md), здесь, чтобы проверить сообщение об ошибке, мы сначала проверяем, что ошибка не `nil`, а затем используем метод `.Error()` для получения строки, которую затем можем передать в утверждение.
 
-## Try and run the test
+## Попробуйте запустить тест
 
-This does not compile
+Это не компилируется
 
 ```
 ./dictionary_test.go:18:10: assignment mismatch: 2 variables but 1 values
 ```
 
-## Write the minimal amount of code for the test to run and check the output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод
 
 ```go
 func (d Dictionary) Search(word string) (string, error) {
@@ -174,11 +173,11 @@ func (d Dictionary) Search(word string) (string, error) {
 }
 ```
 
-Your test should now fail with a much clearer error message.
+Теперь ваш тест должен завершиться сбоем с гораздо более понятным сообщением об ошибке.
 
 `dictionary_test.go:22: expected to get an error.`
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
 ```go
 func (d Dictionary) Search(word string) (string, error) {
@@ -191,11 +190,11 @@ func (d Dictionary) Search(word string) (string, error) {
 }
 ```
 
-In order to make this pass, we are using an interesting property of the map lookup. It can return 2 values. The second value is a boolean which indicates if the key was found successfully.
+Чтобы это прошло, мы используем интересное свойство поиска в отображении. Оно может возвращать 2 значения. Второе значение — это логическое (`boolean`) значение, которое указывает, был ли ключ успешно найден.
 
-This property allows us to differentiate between a word that doesn't exist and a word that just doesn't have a definition.
+Это свойство позволяет нам различать слово, которое не существует, и слово, которое просто не имеет определения.
 
-## Refactor
+## Рефакторинг
 
 ```go
 var ErrNotFound = errors.New("could not find the word you were looking for")
@@ -210,7 +209,7 @@ func (d Dictionary) Search(word string) (string, error) {
 }
 ```
 
-We can get rid of the magic error in our `Search` function by extracting it into a variable. This will also allow us to have a better test.
+Мы можем избавиться от "магической" ошибки в нашей функции `Search`, выделив её в переменную. Это также позволит нам написать лучший тест.
 
 ```go
 t.Run("unknown word", func(t *testing.T) {
@@ -231,11 +230,11 @@ func assertError(t testing.TB, got, want error) {
 }
 ```
 
-By creating a new helper we were able to simplify our test, and start using our `ErrNotFound` variable so our test doesn't fail if we change the error text in the future.
+Создав новую вспомогательную функцию, мы смогли упростить наш тест и начать использовать переменную `ErrNotFound`, чтобы наш тест не завершался сбоем, если мы изменим текст ошибки в будущем.
 
-## Write the test first
+## Сначала напишите тест
 
-We have a great way to search the dictionary. However, we have no way to add new words to our dictionary.
+У нас есть отличный способ поиска по словарю. Однако у нас нет способа добавлять новые слова в наш словарь.
 
 ```go
 func TestAdd(t *testing.T) {
@@ -252,24 +251,24 @@ func TestAdd(t *testing.T) {
 }
 ```
 
-In this test, we are utilizing our `Search` function to make the validation of the dictionary a little easier.
+В этом тесте мы используем нашу функцию `Search`, чтобы немного упростить проверку словаря.
 
-## Write the minimal amount of code for the test to run and check output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод
 
-In `dictionary.go`
+В `dictionary.go`
 
 ```go
 func (d Dictionary) Add(word, definition string) {
 }
 ```
 
-Your test should now fail
+Теперь ваш тест должен завершиться сбоем
 
 ```
 dictionary_test.go:31: should find added word: could not find the word you were looking for
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
 ```go
 func (d Dictionary) Add(word, definition string) {
@@ -277,27 +276,27 @@ func (d Dictionary) Add(word, definition string) {
 }
 ```
 
-Adding to a map is also similar to an array. You just need to specify a key and set it equal to a value.
+Добавление в отображение также похоже на массив. Вам просто нужно указать ключ и присвоить ему значение.
 
-### Pointers, copies, et al
+### Указатели, копии и т.д.
 
-An interesting property of maps is that you can modify them without passing as an address to it (e.g `&myMap`)
+Интересное свойство отображений заключается в том, что вы можете изменять их, не передавая адрес (например, `&myMap`).
 
-This may make them _feel_ like a "reference type", [but as Dave Cheney describes](https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it) they are not.
+Это может заставить их *чувствовать себя* как "ссылочный тип", [но, как описывает Дэйв Чейни](https://dave.cheney.net/2017/04/30/if-a-map-isnt-a-reference-variable-what-is-it), это не так.
 
-> A map value is a pointer to a runtime.hmap structure.
+> Значение отображения — это указатель на структуру `runtime.hmap`.
 
-So when you pass a map to a function/method, you are indeed copying it, but just the pointer part, not the underlying data structure that contains the data.
+Таким образом, когда вы передаёте отображение в функцию/метод, вы действительно копируете его, но только часть-указатель, а не базовую структуру данных, которая содержит данные.
 
-A gotcha with maps is that they can be a `nil` value. A `nil` map behaves like an empty map when reading, but attempts to write to a `nil` map will cause a runtime panic. You can read more about maps [here](https://blog.golang.org/go-maps-in-action).
+Ловушка с отображениями заключается в том, что они могут иметь значение `nil`. `nil`-отображение ведёт себя как пустое отображение при чтении, но попытки записи в `nil`-отображение вызовут панику во время выполнения (runtime panic). Вы можете прочитать больше об отображениях [здесь](https://blog.golang.org/go-maps-in-action).
 
-Therefore, you should never initialize a nil map variable:
+Поэтому вы никогда не должны инициализировать `nil`-переменную отображения:
 
 ```go
 var m map[string]string
 ```
 
-Instead, you can initialize an empty map or use the `make` keyword to create a map for you:
+Вместо этого вы можете инициализировать пустое отображение или использовать ключевое слово `make` для создания отображения:
 
 ```go
 var dictionary = map[string]string{}
@@ -307,11 +306,11 @@ var dictionary = map[string]string{}
 var dictionary = make(map[string]string)
 ```
 
-Both approaches create an empty `hash map` and point `dictionary` at it. Which ensures that you will never get a runtime panic.
+Оба подхода создают пустое `hash map` и указывают `dictionary` на него. Это гарантирует, что вы никогда не получите панику во время выполнения.
 
-## Refactor
+## Рефакторинг
 
-There isn't much to refactor in our implementation but the test could use a little simplification.
+В нашей реализации не так много для рефакторинга, но тест можно немного упростить.
 
 ```go
 func TestAdd(t *testing.T) {
@@ -335,13 +334,13 @@ func assertDefinition(t testing.TB, dictionary Dictionary, word, definition stri
 }
 ```
 
-We made variables for word and definition, and moved the definition assertion into its own helper function.
+Мы создали переменные для `word` и `definition` и перенесли проверку определения в отдельную вспомогательную функцию.
 
-Our `Add` is looking good. Except, we didn't consider what happens when the value we are trying to add already exists!
+Наша функция `Add` выглядит хорошо. За исключением того, что мы не учли, что произойдёт, когда значение, которое мы пытаемся `Add` (добавить), уже существует!
 
-Map will not throw an error if the value already exists. Instead, they will go ahead and overwrite the value with the newly provided value. This can be convenient in practice, but makes our function name less than accurate. `Add` should not modify existing values. It should only add new words to our dictionary.
+Отображение не выдаст ошибку, если значение уже существует. Вместо этого оно просто перезапишет значение новым предоставленным. Это может быть удобно на практике, но делает имя нашей функции менее точным. `Add` не должна изменять существующие значения. Она должна только добавлять новые слова в наш словарь.
 
-## Write the test first
+## Сначала напишите тест
 
 ```go
 func TestAdd(t *testing.T) {
@@ -368,20 +367,20 @@ func TestAdd(t *testing.T) {
 }
 ```
 
-For this test, we modified `Add` to return an error, which we are validating against a new error variable, `ErrWordExists`. We also modified the previous test to check for a `nil` error.
+Для этого теста мы изменили `Add` так, чтобы она возвращала ошибку, которую мы проверяем по новой переменной ошибки `ErrWordExists`. Мы также изменили предыдущий тест, чтобы проверять на `nil`-ошибку.
 
-## Try to run test
+## Попробуйте запустить тест
 
-The compiler will fail because we are not returning a value for `Add`.
+Компилятор выдаст ошибку, потому что мы не возвращаем значение для `Add`.
 
 ```
 ./dictionary_test.go:30:13: dictionary.Add(word, definition) used as value
 ./dictionary_test.go:41:13: dictionary.Add(word, "new test") used as value
 ```
 
-## Write the minimal amount of code for the test to run and check the output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод
 
-In `dictionary.go`
+В `dictionary.go`
 
 ```go
 var (
@@ -395,14 +394,14 @@ func (d Dictionary) Add(word, definition string) error {
 }
 ```
 
-Now we get two more errors. We are still modifying the value, and returning a `nil` error.
+Теперь мы получаем ещё две ошибки. Мы всё ещё изменяем значение и возвращаем `nil`-ошибку.
 
 ```
 dictionary_test.go:43: got error '%!q(<nil>)' want 'cannot add word because it already exists'
 dictionary_test.go:44: got 'new test' want 'this is just a test'
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
 ```go
 func (d Dictionary) Add(word, definition string) error {
@@ -421,11 +420,11 @@ func (d Dictionary) Add(word, definition string) error {
 }
 ```
 
-Here we are using a `switch` statement to match on the error. Having a `switch` like this provides an extra safety net, in case `Search` returns an error other than `ErrNotFound`.
+Здесь мы используем оператор `switch` для сопоставления с ошибкой. Такой `switch` обеспечивает дополнительную страховку, на случай если `Search` вернёт ошибку, отличную от `ErrNotFound`.
 
-## Refactor
+## Рефакторинг
 
-We don't have too much to refactor, but as our error usage grows we can make a few modifications.
+У нас не так много для рефакторинга, но по мере роста использования ошибок мы можем внести несколько изменений.
 
 ```go
 const (
@@ -440,11 +439,11 @@ func (e DictionaryErr) Error() string {
 }
 ```
 
-We made the errors constant; this required us to create our own `DictionaryErr` type which implements the `error` interface. You can read more about the details in [this excellent article by Dave Cheney](https://dave.cheney.net/2016/04/07/constant-errors). Simply put, it makes the errors more reusable and immutable.
+Мы сделали ошибки константами; это потребовало от нас создания собственного типа `DictionaryErr`, который реализует интерфейс `error`. Вы можете прочитать больше о деталях в [этой отличной статье Дэйва Чейни](https://dave.cheney.net/2016/04/07/constant-errors). Проще говоря, это делает ошибки более переиспользуемыми и неизменяемыми.
 
-Next, let's create a function to `Update` the definition of a word.
+Далее давайте создадим функцию для `Update` (обновления) определения слова.
 
-## Write the test first
+## Сначала напишите тест
 
 ```go
 func TestUpdate(t *testing.T) {
@@ -459,31 +458,31 @@ func TestUpdate(t *testing.T) {
 }
 ```
 
-`Update` is very closely related to `Add` and will be our next implementation.
+`Update` очень тесно связана с `Add` и будет нашей следующей реализацией.
 
-## Try and run the test
+## Попробуйте запустить тест
 
 ```
 ./dictionary_test.go:53:2: dictionary.Update undefined (type Dictionary has no field or method Update)
 ```
 
-## Write minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод неудачного теста
 
-We already know how to deal with an error like this. We need to define our function.
+Мы уже знаем, как бороться с подобной ошибкой. Нам нужно определить нашу функцию.
 
 ```go
 func (d Dictionary) Update(word, definition string) {}
 ```
 
-With that in place, we are able to see that we need to change the definition of the word.
+С этим на месте, мы можем увидеть, что нам нужно изменить определение слова.
 
 ```
 dictionary_test.go:55: got 'this is just a test' want 'new definition'
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
-We already saw how to do this when we fixed the issue with `Add`. So let's implement something really similar to `Add`.
+Мы уже видели, как это сделать, когда исправляли проблему с `Add`. Поэтому давайте реализуем что-то очень похожее на `Add`.
 
 ```go
 func (d Dictionary) Update(word, definition string) {
@@ -491,9 +490,9 @@ func (d Dictionary) Update(word, definition string) {
 }
 ```
 
-There is no refactoring we need to do on this since it was a simple change. However, we now have the same issue as with `Add`. If we pass in a new word, `Update` will add it to the dictionary.
+Нам не нужно проводить рефакторинг, так как это было простое изменение. Однако теперь у нас та же проблема, что и с `Add`. Если мы передадим новое слово, `Update` добавит его в словарь.
 
-## Write the test first
+## Сначала напишите тест
 
 ```go
 t.Run("existing word", func(t *testing.T) {
@@ -519,9 +518,9 @@ t.Run("new word", func(t *testing.T) {
 })
 ```
 
-We added yet another error type for when the word does not exist. We also modified `Update` to return an `error` value.
+Мы добавили ещё один тип ошибки для случая, когда слово не существует. Мы также изменили `Update`, чтобы она возвращала значение `error`.
 
-## Try and run the test
+## Попробуйте запустить тест
 
 ```
 ./dictionary_test.go:53:16: dictionary.Update(word, newDefinition) used as value
@@ -529,9 +528,9 @@ We added yet another error type for when the word does not exist. We also modifi
 ./dictionary_test.go:66:23: undefined: ErrWordDoesNotExist
 ```
 
-We get 3 errors this time, but we know how to deal with these.
+На этот раз мы получили 3 ошибки, но мы знаем, как с ними справиться.
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод неудачного теста
 
 ```go
 const (
@@ -546,15 +545,15 @@ func (d Dictionary) Update(word, definition string) error {
 }
 ```
 
-We added our own error type and are returning a `nil` error.
+Мы добавили наш собственный тип ошибки и возвращаем `nil`-ошибку.
 
-With these changes, we now get a very clear error:
+С этими изменениями мы теперь получаем очень чёткую ошибку:
 
 ```
 dictionary_test.go:66: got error '%!q(<nil>)' want 'cannot update word because it does not exist'
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
 ```go
 func (d Dictionary) Update(word, definition string) error {
@@ -573,19 +572,19 @@ func (d Dictionary) Update(word, definition string) error {
 }
 ```
 
-This function looks almost identical to `Add` except we switched when we update the `dictionary` and when we return an error.
+Эта функция выглядит почти идентично `Add`, за исключением того, что мы поменяли местами обновление `dictionary` и возврат ошибки.
 
-### Note on declaring a new error for Update
+### Заметка об объявлении новой ошибки для Update
 
-We could reuse `ErrNotFound` and not add a new error. However, it is often better to have a precise error for when an update fails.
+Мы могли бы повторно использовать `ErrNotFound` и не добавлять новую ошибку. Однако часто лучше иметь точную ошибку для случая, когда обновление не удалось.
 
-Having specific errors gives you more information about what went wrong. Here is an example in a web app:
+Наличие специфических ошибок даёт вам больше информации о том, что пошло не так. Вот пример в веб-приложении:
 
-> You can redirect the user when `ErrNotFound` is encountered, but display an error message when `ErrWordDoesNotExist` is encountered.
+> Вы можете перенаправить пользователя, когда встречается `ErrNotFound`, но отобразить сообщение об ошибке, когда встречается `ErrWordDoesNotExist`.
 
-Next, let's create a function to `Delete` a word in the dictionary.
+Далее давайте создадим функцию для `Delete` (удаления) слова из словаря.
 
-## Write the test first
+## Сначала напишите тест
 
 ```go
 func TestDelete(t *testing.T) {
@@ -599,17 +598,17 @@ func TestDelete(t *testing.T) {
 }
 ```
 
-Our test creates a `Dictionary` with a word and then checks if the word has been removed.
+Наш тест создаёт `Dictionary` со словом, а затем проверяет, было ли слово удалено.
 
-## Try to run the test
+## Попробуйте запустить тест
 
-By running `go test` we get:
+Запуск `go test` даёт нам:
 
 ```
 ./dictionary_test.go:74:6: dictionary.Delete undefined (type Dictionary has no field or method Delete)
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился и проверьте вывод неудачного теста
 
 ```go
 func (d Dictionary) Delete(word string) {
@@ -617,13 +616,13 @@ func (d Dictionary) Delete(word string) {
 }
 ```
 
-After we add this, the test tells us we are not deleting the word.
+После добавления этого, тест сообщает нам, что мы не удаляем слово.
 
 ```
 dictionary_test.go:78: got error '%!q(<nil>)' want 'could not find the word you were looking for'
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
 ```go
 func (d Dictionary) Delete(word string) {
@@ -631,10 +630,10 @@ func (d Dictionary) Delete(word string) {
 }
 ```
 
-Go has a built-in function `delete` that works on maps. It takes two arguments and returns nothing. The first argument is the map and the second is the key to be removed.
+Go имеет встроенную функцию `delete`, которая работает с отображениями. Она принимает два аргумента и ничего не возвращает. Первый аргумент — это отображение, а второй — ключ, который нужно удалить.
 
-## Refactor
-There isn't much to refactor, but we can implement the same logic from `Update` to handle cases where word doesn't exist.
+## Рефакторинг
+Здесь не так много для рефакторинга, но мы можем реализовать ту же логику, что и в `Update`, для обработки случаев, когда слово не существует.
 
 ```go
 func TestDelete(t *testing.T) {
@@ -662,16 +661,16 @@ func TestDelete(t *testing.T) {
 }
 ```
 
-## Try to run test
+## Попробуйте запустить тест
 
-The compiler will fail because we are not returning a value for `Delete`.
+Компилятор выдаст ошибку, потому что мы не возвращаем значение для `Delete`.
 
 ```
 ./dictionary_test.go:77:10: dictionary.Delete(word) (no value) used as value
 ./dictionary_test.go:90:10: dictionary.Delete(word) (no value) used as value
 ```
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошёл
 
 ```go
 func (d Dictionary) Delete(word string) error {
@@ -690,17 +689,17 @@ func (d Dictionary) Delete(word string) error {
 }
 ```
 
-We are again using a switch statement to match on the error when we attempt to delete a word that doesn't exist. 
+Мы снова используем оператор `switch` для сопоставления с ошибкой, когда пытаемся удалить слово, которого не существует.
 
-## Wrapping up
+## Подведение итогов
 
-In this section, we covered a lot. We made a full CRUD (Create, Read, Update and Delete) API for our dictionary. Throughout the process we learned how to:
+В этом разделе мы рассмотрели многое. Мы создали полный CRUD API (Create, Read, Update и Delete) для нашего словаря. В процессе мы научились:
 
-* Create maps
-* Search for items in maps
-* Add new items to maps
-* Update items in maps
-* Delete items from a map
-* Learned more about errors
-  * How to create errors that are constants
-  * Writing error wrappers
+*   Создавать отображения
+*   Искать элементы в отображениях
+*   Добавлять новые элементы в отображения
+*   Обновлять элементы в отображениях
+*   Удалять элементы из отображения
+*   Узнали больше об ошибках
+    *   Как создавать ошибки, которые являются константами
+    *   Написание обёрток для ошибок

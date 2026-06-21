@@ -1,54 +1,54 @@
-# TDD Anti-patterns
+# Антипаттерны TDD
 
-From time to time it's necessary to review your TDD techniques and remind yourself of behaviours to avoid.
+Время от времени необходимо пересматривать свои методы TDD и напоминать себе о поведении, которого следует избегать.
 
-The TDD process is conceptually simple to follow, but as you do it you'll find it challenging your design skills. **Don't mistake this for TDD being hard, it's design that's hard!**
+Процесс TDD концептуально прост, но, следуя ему, вы обнаружите, что он бросает вызов вашим навыкам проектирования. **Не заблуждайтесь, думая, что TDD сложен — сложен дизайн!**
 
-This chapter lists a number of TDD and testing anti-patterns, and how to remedy them.
+В этой главе перечислены некоторые антипаттерны TDD и тестирования, а также способы их устранения.
 
-## Not doing TDD at all
+## Полное отсутствие TDD
 
-Of course, it is possible to write great software without TDD but, a lot of problems I've seen with the design of code and the quality of tests would be very difficult to arrive at if a disciplined approach to TDD had been used.
+Конечно, можно писать отличное программное обеспечение без TDD, но многие проблемы, которые я наблюдал с дизайном кода и качеством тестов, было бы очень трудно получить, если бы использовался дисциплинированный подход к TDD.
 
-One of the strengths of TDD is that it gives you a formal process to break down problems, understand what you're trying to achieve (red), get it done (green), then have a good think about how to make it right (blue/refactor).
+Одна из сильных сторон TDD заключается в том, что он предоставляет формальный процесс для разбиения проблем, понимания того, что вы пытаетесь достичь (красный), выполнения задачи (зеленый), а затем тщательного обдумывания, как это исправить (синий/рефакторинг).
 
-Without this, the process is often ad-hoc and loose, which _can_ make engineering more difficult than it _could_ be.
+Без этого процесс часто является неформальным и свободным, что _может_ сделать разработку более сложной, чем она _могла бы_ быть.
 
-## Misunderstanding the constraints of the refactoring step
+## Непонимание ограничений шага рефакторинга
 
-I have been in a number of workshops, mobbing or pairing sessions where someone has made a test pass and is in the refactoring stage. After some thought, they think it would be good to abstract away some code into a new struct; a budding pedant yells:
+Я бывал на множестве воркшопов, сессий моббинга или парного программирования, где кто-то заставлял тест проходить и находился на стадии рефакторинга. После некоторых размышлений они решали, что было бы хорошо абстрагировать часть кода в новую структуру; начинающий педант кричит:
 
-> You're not allowed to do this! You should write a test for this first, we're doing TDD!
+> Вам нельзя этого делать! Сначала вы должны написать для этого тест, мы же делаем TDD!
 
-This seems to be a common misunderstanding. **You can do whatever you like to the code when the tests are green**, the only thing you're not allowed to do is **add or change behaviour**.
+Это кажется распространенным заблуждением. **Вы можете делать с кодом все, что угодно, когда тесты проходят**, единственное, что вам не разрешается, это **добавлять или изменять поведение**.
 
-The point of these tests are to give you the _freedom to refactor_, find the right abstractions and make the code easier to change and understand.
+Смысл этих тестов в том, чтобы дать вам _свободу рефакторинга_, находить правильные абстракции и делать код более простым для изменения и понимания.
 
-## Having tests that won't fail (or, evergreen tests)
+## Тесты, которые никогда не падают (или вечнозеленые тесты)
 
-It's astonishing how often this comes up. You start debugging or changing some tests and realise: there are no scenarios where this test can fail. Or at least, it won't fail in the way the test is _supposed_ to be protecting against.
+Удивительно, как часто это встречается. Вы начинаете отлаживать или изменять некоторые тесты и понимаете: нет сценариев, при которых этот тест может провалиться. Или, по крайней мере, он не провалится так, как тест _должен_ был защищать.
 
-This is _next to impossible_ with TDD if you're following **the first step**,
+Это _практически невозможно_ при использовании TDD, если вы следуете **первому шагу**:
 
-> Write a test, see it fail
+> Напишите тест, увидьте его провал
 
-This is almost always done when developers write tests _after_ code is written, and/or chasing test coverage rather than creating a useful test suite.
+Это почти всегда происходит, когда разработчики пишут тесты _после_ написания кода и/или гонятся за покрытием тестов, вместо того чтобы создавать полезный набор тестов.
 
-## Useless assertions
+## Бесполезные утверждения (assertions)
 
-Ever worked on a system, and you've broken a test, then you see this?
+Работали ли вы когда-нибудь над системой, ломали тест, а затем видели это?
 
 > `false was not equal to true`
 
-I know that false is not equal to true. This is not a helpful message; it doesn't tell me what I've broken. This is a symptom of not following the TDD process and not reading the failure error message.
+Я знаю, что false не равно true. Это не информативное сообщение; оно не говорит мне, что я сломал. Это симптом несоблюдения процесса TDD и нечтения сообщения об ошибке.
 
-Going back to the drawing board,
+Возвращаясь к истокам:
 
-> Write a test, see it fail (and don't be ashamed of the error message)
+> Напишите тест, увидьте его провал (и не стесняйтесь сообщения об ошибке)
 
-## Asserting on irrelevant detail
+## Утверждения о несущественных деталях
 
-An example of this is making an assertion on a complex object, when in practice all you care about in the test is the value of one of the fields.
+Примером этого является утверждение о сложном объекте, когда на практике в тесте вас интересует только значение одного из полей.
 
 ```go
 // not this, now your test is tightly coupled to the whole object
@@ -63,67 +63,67 @@ if got != want {
 }
 ```
 
-Additional assertions not only make your test more difficult to read by creating 'noise' in your documentation, but also needlessly couples the test with data it doesn't care about. This means if you happen to change the fields for your object, or the way they behave you may get unexpected compilation problems or failures with your tests.
+Дополнительные утверждения не только затрудняют чтение теста, создавая «шум» в вашей документации, но и излишне связывают тест с данными, которые его не интересуют. Это означает, что если вы случайно измените поля вашего объекта или их поведение, вы можете получить неожиданные проблемы с компиляцией или сбои в ваших тестах.
 
-This is an example of not following the red stage strictly enough.
+Это пример недостаточного строгого соблюдения красного этапа.
 
-- Letting an existing design influence how you write your test **rather than thinking of the desired behaviour**
-- Not giving enough consideration to the failing test's error message
+- Позволять существующему дизайну влиять на то, как вы пишете тест, **вместо того чтобы думать о желаемом поведении**
+- Не уделять достаточного внимания сообщению об ошибке провалившегося теста
 
-## Lots of assertions within a single scenario for unit tests
+## Множество утверждений в одном сценарии юнит-тестов
 
-Many assertions can make tests difficult to read and challenging to debug when they fail.
+Множество утверждений может сделать тесты трудными для чтения и сложными для отладки, когда они проваливаются.
 
-They often creep in gradually, especially if test setup is complicated because you're reluctant to replicate the same horrible setup to assert on something else. Instead of this you should fix the problems in your design which are making it difficult to assert on new things.
+Они часто появляются постепенно, особенно если настройка теста сложна, потому что вы не хотите повторять ту же ужасную настройку для утверждения чего-то другого. Вместо этого вы должны исправить проблемы в вашем дизайне, которые затрудняют утверждение новых вещей.
 
-A helpful rule of thumb is to aim to make one assertion per test. In Go, take advantage of subtests to clearly delineate between assertions on the occasions where you need to. This is also a handy technique to separate assertions on behaviour vs implementation detail.
+Полезное практическое правило — стремиться к одному утверждению на тест. В Go используйте подтесты (`subtests`), чтобы четко разграничивать утверждения в тех случаях, когда это необходимо. Это также удобный метод для разделения утверждений о поведении и деталях реализации.
 
-For other tests where setup or execution time may be a constraint (e.g an acceptance test driving a web browser), you need to weigh up the pros and cons of slightly trickier to debug tests against test execution time.
+Для других тестов, где настройка или время выполнения могут быть ограничением (например, приемочный тест, управляющий веб-браузером), вам нужно взвесить все за и против немного более сложных для отладки тестов по сравнению со временем выполнения теста.
 
-## Not listening to your tests
+## Не прислушиваться к своим тестам
 
-[Dave Farley in his video "When TDD goes wrong"](https://www.youtube.com/watch?v=UWtEVKVPBQ0&feature=youtu.be) points out,
+[Дэйв Фарли в своем видео "Когда TDD идет не так"](https://www.youtube.com/watch?v=UWtEVKVPBQ0&feature=youtu.be) отмечает:
 
-> TDD gives you the fastest feedback possible on your design
+> TDD дает вам максимально быструю обратную связь по вашему дизайну
 
-From my own experience, a lot of developers are trying to practice TDD but frequently ignore the signals coming back to them from the TDD process. So they're still stuck with fragile, annoying systems, with a poor test suite.
+По моему собственному опыту, многие разработчики пытаются практиковать TDD, но часто игнорируют сигналы, поступающие к ним от процесса TDD. Поэтому они все еще застряли с хрупкими, раздражающими системами и плохим набором тестов.
 
-Simply put, if testing your code is difficult, then _using_ your code is difficult too. Treat your tests as the first user of your code and then you'll see if your code is pleasant to work with or not.
+Проще говоря, если тестировать ваш код сложно, то _использовать_ ваш код тоже сложно. Относитесь к своим тестам как к первому пользователю вашего кода, и тогда вы увидите, приятно ли с ним работать или нет.
 
-I've emphasised this a lot in the book, and I'll say it again **listen to your tests**.
+Я много раз подчеркивал это в книге, и скажу еще раз: **прислушивайтесь к своим тестам**.
 
-### Excessive setup, too many test doubles, etc.
+### Избыточная настройка, слишком много тестовых дублеров и т.д.
 
-Ever looked at a test with 20, 50, 100, 200 lines of setup code before anything interesting in the test happens? Do you then have to change the code and revisit the mess and wish you had a different career?
+Вы когда-нибудь видели тест с 20, 50, 100, 200 строками кода настройки, прежде чем в тесте произойдет что-то интересное? Приходилось ли вам потом менять код, возвращаться к этому беспорядку и жалеть, что вы не выбрали другую карьеру?
 
-What are the signals here? _Listen_, complicated tests `==` complicated code. Why is your code complicated? Does it have to be?
+Какие здесь сигналы? _Прислушайтесь_: сложные тесты `==` сложный код. Почему ваш код сложен? Должен ли он быть таким?
 
-- When you have lots of test doubles in your tests, that means the code you're testing has lots of dependencies - which means your design needs work.
-- If your test is reliant on setting up various interactions with mocks, that means your code is making lots of interactions with its dependencies. Ask yourself whether these interactions could be simpler.
+- Когда в ваших тестах много тестовых дублеров (`test doubles`), это означает, что тестируемый вами код имеет много зависимостей, а это значит, что ваш дизайн нуждается в доработке.
+- Если ваш тест зависит от настройки различных взаимодействий с моками (`mocks`), это означает, что ваш код осуществляет множество взаимодействий со своими зависимостями. Спросите себя, могут ли эти взаимодействия быть проще.
 
-#### Leaky interfaces
+#### "Протекающие" интерфейсы
 
-If you have declared an `interface` that has many methods, that points to a leaky abstraction. Think about how you could define that collaboration with a more consolidated set of methods, ideally one.
+Если вы объявили `interface` с множеством методов, это указывает на "протекающую" абстракцию. Подумайте, как вы могли бы определить это взаимодействие с более консолидированным набором методов, в идеале — с одним.
 
-#### Interface pollution
+#### Загрязнение интерфейса
 
-As a Go proverb says, *the bigger the interface, the weaker the abstraction*. If you expose a huge interface to the users of your package, you force them to create in their tests a stub/mock that matches the entire API, providing an implementation also for methods they do not use (sometimes, they just panic to make clear that they should not be used). This situation is an anti-pattern known as [interface pollution](https://rakyll.org/interface-pollution/) and this is the reason why the standard library offers you just tiny little interfaces. 
+Как гласит поговорка Go: _чем больше интерфейс, тем слабее абстракция_. Если вы предоставляете пользователям вашего пакета огромный `interface`, вы вынуждаете их создавать в своих тестах заглушку/мок, которая соответствует всему API, предоставляя реализацию также для методов, которые они не используют (иногда они просто `panic`, чтобы дать понять, что эти методы не должны использоваться). Эта ситуация является антипаттерном, известным как [загрязнение интерфейса](https://rakyll.org/interface-pollution/), и именно по этой причине стандартная библиотека предлагает вам лишь крошечные `интерфейсы`.
 
-Instead, you should expose from your package a bare struct with all relevant methods exported, leaving to the clients of your API the freedom to declare their own interfaces abstracting over the subset of the methods they need: e.g [go-redis](https://github.com/redis/go-redis) exposes a struct (`redis.Client`) to the API clients.
+Вместо этого вам следует предоставить из вашего пакета простую `структуру` со всеми экспортируемыми релевантными методами, оставляя клиентам вашего API свободу объявлять свои собственные `интерфейсы`, абстрагируясь от подмножества необходимых им методов: например, [go-redis](https://github.com/redis/go-redis) предоставляет `структуру` (`redis.Client`) клиентам API.
 
-Generally speaking, you should expose an interface to the clients only when:
-- the interface consists of a small and coherent set of functions.
-- the interface and its implementation need to be decoupled (e.g. because users can choose among multiple implementations or they need to mock an external dependency).
+В общем, вы должны предоставлять `интерфейс` клиентам только тогда, когда:
+- `интерфейс` состоит из небольшого и согласованного набора функций.
+- `интерфейс` и его реализация должны быть разделены (например, потому что пользователи могут выбирать из нескольких реализаций или им нужно мокать внешнюю зависимость).
 
-#### Think about the types of test doubles you use
+#### Подумайте о типах используемых тестовых дублеров
 
-- Mocks are sometimes helpful, but they're extremely powerful and therefore easy to misuse. Try giving yourself the constraint of using stubs instead.
-- Verifying implementation detail with spies is sometimes helpful, but try to avoid it. Remember your implementation detail is usually not important, and you don't want your tests coupled to them if possible. Look to couple your tests to **useful behaviour rather than incidental details**.
-- [Read my posts on naming test doubles](https://quii.dev/Start_naming_your_test_doubles_correctly) if the taxonomy of test doubles is a little unclear
+- Моки (`mocks`) иногда полезны, но они чрезвычайно мощны и потому легко могут быть использованы неправильно. Попробуйте поставить себе ограничение на использование стабов (`stubs`) вместо них.
+- Проверка деталей реализации с помощью спаев (`spies`) иногда полезна, но старайтесь избегать ее. Помните, что детали вашей реализации обычно не важны, и вы не хотите, чтобы ваши тесты были связаны с ними, если это возможно. Стремитесь связывать ваши тесты с **полезным поведением, а не со случайными деталями**.
+- [Прочитайте мои посты о наименовании тестовых дублеров](https://quii.dev/Start_naming_your_test_doubles_correctly), если таксономия тестовых дублеров (`test doubles`) немного неясна.
 
-#### Consolidate dependencies
+#### Консолидация зависимостей
 
-Here is some code for a `http.HandlerFunc` to handle new user registrations for a website.
+Вот код для `http.HandlerFunc` для обработки новых регистраций пользователей на веб-сайте.
 
 ```go
 type User struct {
@@ -150,26 +150,26 @@ func NewRegistrationHandler(userStore UserStore, emailer Emailer) http.HandlerFu
 }
 ```
 
-At first pass it's reasonable to say the design isn't so bad. It only has 2 dependencies!
+На первый взгляд, разумно сказать, что дизайн не так уж плох. У него всего 2 зависимости!
 
-Re-evaluate the design by considering the handler's responsibilities:
+Пересмотрите дизайн, учитывая обязанности обработчика:
 
-- Parse the request body into a `User` :white_check_mark:
-- Use `UserStore` to check if the user exists :question:
-- Use `UserStore` to store the user :question:
-- Compose an email :question:
-- Use `Emailer` to send the email :question:
-- Return an appropriate http response, depending on success, errors, etc :white_check_mark:
+- Разобрать тело запроса в `User` :white_check_mark:
+- Использовать `UserStore` для проверки существования пользователя :question:
+- Использовать `UserStore` для сохранения пользователя :question:
+- Сформировать электронное письмо :question:
+- Использовать `Emailer` для отправки электронного письма :question:
+- Вернуть соответствующий `http` ответ, в зависимости от успеха, ошибок и т.д. :white_check_mark:
 
-To exercise this code, you're going to have to write many tests with varying degrees of test double setups, spies, etc
+Чтобы протестировать этот код, вам придется написать множество тестов с различными настройками тестовых дублеров (`test double setups`), спаев (`spies`) и т.д.
 
-- What if the requirements expand? Translations for the emails? Sending an SMS confirmation too? Does it make sense to you that you have to change a HTTP handler to accommodate this change?
-- Does it feel right that the important rule of "we should send an email" resides within a HTTP handler?
-    - Why do you have to go through the ceremony of creating HTTP requests and reading responses to verify that rule?
+- Что, если требования расширятся? Переводы для электронных писем? Отправка SMS-подтверждения тоже? Кажется ли вам разумным, что вам придется менять `HTTP` обработчик, чтобы учесть это изменение?
+- Кажется ли вам правильным, что важное правило "мы должны отправить электронное письмо" находится внутри `HTTP` обработчика?
+    - Почему вы должны проходить через церемонию создания `HTTP` запросов и чтения ответов, чтобы проверить это правило?
 
-**Listen to your tests**. Writing tests for this code in a TDD fashion should quickly make you feel uncomfortable (or at least, make the lazy developer in you be annoyed). If it feels painful, stop and think.
+**Прислушивайтесь к своим тестам**. Написание тестов для этого кода в стиле TDD должно быстро вызвать у вас дискомфорт (или, по крайней мере, раздражить ленивого разработчика внутри вас). Если это кажется болезненным, остановитесь и подумайте.
 
-What if the design was like this instead?
+Что, если бы дизайн был таким?
 
 ```go
 type UserService interface {
@@ -185,24 +185,24 @@ func NewRegistrationHandler(userService UserService) http.HandlerFunc {
 }
 ```
 
-- Simple to test the handler ✅
-- Changes to the rules around registration are isolated away from HTTP, so they are also simpler to test ✅
+- Обработчик легко тестировать ✅
+- Изменения в правилах регистрации изолированы от `HTTP`, поэтому их также проще тестировать ✅
 
-## Violating encapsulation
+## Нарушение инкапсуляции
 
-Encapsulation is very important. There's a reason we don't make everything in a package exported (or public). We want coherent APIs with a small surface area to avoid tight coupling.
+Инкапсуляция очень важна. Есть причина, по которой мы не делаем все в пакете экспортируемым (или публичным). Мы хотим связные API с небольшой площадью поверхности, чтобы избежать сильной связанности.
 
-People will sometimes be tempted to make a function or method public in order to test something. By doing this you make your design worse and send confusing messages to maintainers and users of your code.
+Иногда люди поддаются искушению сделать функцию или метод публичным для тестирования чего-либо. Делая это, вы ухудшаете свой дизайн и посылаете сбивающие с толку сообщения сопровождающим и пользователям вашего кода.
 
-A result of this can be developers trying to debug a test and then eventually realising the function being tested is _only called from tests_. Which is obviously **a terrible outcome, and a waste of time**.
+В результате этого разработчики могут пытаться отладить тест, а затем в конечном итоге осознать, что тестируемая функция _вызывается только из тестов_. Что, очевидно, является **ужасным результатом и пустой тратой времени**.
 
-In Go, consider your default position for writing tests as _from the perspective of a consumer of your package_. You can make this a compile-time constraint by having your tests live in a test package e.g `package gocoin_test`. If you do this, you'll only have access to the exported members of the package so it won't be possible to couple yourself to implementation detail.
+В Go, рассматривайте свою позицию по умолчанию для написания тестов как _с точки зрения потребителя вашего пакета_. Вы можете сделать это ограничением времени компиляции, разместив свои тесты в тестовом пакете, например, `package gocoin_test`. Если вы это сделаете, у вас будет доступ только к экспортируемым членам пакета, поэтому будет невозможно связать себя с деталями реализации.
 
-## Complicated table tests
+## Сложные табличные тесты
 
-Table tests are a great way of exercising a number of different scenarios when the test setup is the same, and you only wish to vary the inputs.
+Табличные тесты (`table tests`) — отличный способ проработать ряд различных сценариев, когда настройка теста одинакова, и вы хотите варьировать только входные данные.
 
-_But_ they can be messy to read and understand when you try to shoehorn other kinds of tests under the name of having one, glorious table.
+_Но_ их может быть сложно читать и понимать, когда вы пытаетесь втиснуть другие виды тестов под видом одной, великолепной таблицы.
 
 ```go
 cases := []struct {
@@ -216,25 +216,26 @@ cases := []struct {
 }{}
 ```
 
-**Don't be afraid to break out of your table and write new tests** rather than adding new fields and booleans to the table `struct`.
+**Не бойтесь выходить за рамки вашей таблицы и писать новые тесты**, вместо того чтобы добавлять новые поля и булевы значения в `структуру` таблицы.
 
-A thing to bear in mind when writing software is,
+При написании программного обеспечения следует помнить:
 
-> [Simple is not easy](https://www.infoq.com/presentations/Simple-Made-Easy/)
+> [Простое — это не легкое](https://www.infoq.com/presentations/Simple-Made-Easy/)
 
-"Just" adding a field to a table might be easy, but it can make things far from simple.
+«Простое» добавление поля в таблицу может быть легким, но это может сделать вещи далекими от простоты.
 
-## Summary
+## Итог
 
-Most problems with unit tests can normally be traced to:
+Большинство проблем с юнит-тестами обычно можно свести к:
 
-- Developers not following the TDD process
-- Poor design
+- Разработчики не следуют процессу TDD
+- Плохой дизайн
 
-So, learn about good software design!
+Итак, изучайте хороший дизайн программного обеспечения!
 
-The good news is TDD can help you _improve your design skills_ because as stated in the beginning:
+Хорошая новость заключается в том, что TDD может помочь вам _улучшить ваши навыки дизайна_, потому что, как было сказано в начале:
 
-**TDD's main purpose is to provide feedback on your design.** For the millionth time, listen to your tests, they are reflecting your design back at you.
+**Основная цель TDD — предоставить обратную связь по вашему дизайну.** В миллионный раз говорю: прислушивайтесь к своим тестам, они отражают ваш дизайн обратно вам.
 
-Be honest about the quality of your tests by listening to the feedback they give you, and you'll become a better developer for it.
+Будьте честны в отношении качества своих тестов, прислушиваясь к обратной связи, которую они дают вам, и вы станете лучшим разработчиком.
+---
