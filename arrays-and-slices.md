@@ -1,4 +1,3 @@
----
 # Массивы и срезы
 
 **[Весь код для этой главы вы найдете здесь](https://github.com/quii/learn-go-with-tests/tree/main/arrays)**

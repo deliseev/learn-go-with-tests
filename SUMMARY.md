@@ -1,4 +1,3 @@
----
 # Оглавление
 
 * [Изучаем Go с тестами](gb-readme.md)
@@ -16,9 +15,9 @@
 * [Внедрение зависимостей](dependency-injection.md)
 * [Мокирование](mocking.md)
 * [Параллелизм](concurrency.md)
-* [Select](select.md)
+* [Оператор Select](select.md)
 * [Рефлексия](reflection.md)
-* [Sync](sync.md)
+* [Синхронизация](sync.md)
 * [Контекст](context.md)
 * [Введение в тестирование на основе свойств](roman-numerals.md)
 * [Математика](math.md)

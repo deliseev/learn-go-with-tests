@@ -1,4 +1,3 @@
----
 # Внедрение зависимостей
 
 **[Весь код для этой главы вы можете найти здесь](https://github.com/quii/learn-go-with-tests/tree/main/di)**

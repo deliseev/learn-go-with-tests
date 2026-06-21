@@ -1,4 +1,4 @@
-# Select
+# Оператор Select
 
 **[Весь код для этой главы можно найти здесь](https://github.com/quii/learn-go-with-tests/tree/main/select)**
 

@@ -1,4 +1,3 @@
----
 # Переосмысление HTTP-обработчиков
 
 [**Весь код можно найти здесь**](https://github.com/quii/learn-go-with-tests/tree/main/q-and-a/http-handlers-revisited)

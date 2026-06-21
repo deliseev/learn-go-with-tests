@@ -1,4 +1,4 @@
-# Hello, World
+# Привет мир!
 
 **[Весь код для этой главы можно найти здесь](https://github.com/quii/learn-go-with-tests/tree/main/hello-world)**
 
