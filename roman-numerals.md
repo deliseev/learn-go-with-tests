@@ -1,26 +1,26 @@
-# Roman Numerals
+# Римские цифры
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/roman-numerals)**
+**[Весь код для этой главы вы найдете здесь](https://github.com/quii/learn-go-with-tests/tree/main/roman-numerals)**
 
-Some companies will ask you to do the [Roman Numeral Kata](http://codingdojo.org/kata/RomanNumerals/) as part of the interview process. This chapter will show how you can tackle it with TDD.
+Некоторые компании могут попросить вас выполнить [ката "Римские цифры"](http://codingdojo.org/kata/RomanNumerals/) в рамках собеседования. Эта глава покажет, как вы можете подойти к ней с использованием TDD.
 
-We are going to write a function which converts an [Arabic number](https://en.wikipedia.org/wiki/Arabic_numerals) (numbers 0 to 9) to a Roman Numeral.
+Мы собираемся написать функцию, которая преобразует [арабское число](https://en.wikipedia.org/wiki/Arabic_numerals) (цифры от 0 до 9) в римскую цифру.
 
-If you haven't heard of [Roman Numerals](https://en.wikipedia.org/wiki/Roman_numerals) they are how the Romans wrote down numbers.
+Если вы не слышали о [римских цифрах](https://en.wikipedia.org/wiki/Roman_numerals), то это способ, которым римляне записывали числа.
 
-You build them by sticking symbols together and those symbols represent numbers
+Вы строите их, соединяя символы, и эти символы представляют числа
 
-So `I` is "one". `III` is three.
+Так `I` — это "один". `III` — это три.
 
-Seems easy but there's a few interesting rules. `V` means five, but `IV` is 4 (not `IIII`).
+Кажется легко, но есть несколько интересных правил. `V` означает пять, но `IV` — это 4 (а не `IIII`).
 
-`MCMLXXXIV` is 1984. That looks complicated and it's hard to imagine how we can write code to figure this out right from the start.
+`MCMLXXXIV` — это 1984. Это выглядит сложно, и трудно представить, как мы можем написать код, чтобы понять это с самого начала.
 
-As this book stresses, a key skill for software developers is to try and identify "thin vertical slices" of _useful_ functionality and then **iterating**. The TDD workflow helps facilitate iterative development.
+Как подчеркивает эта книга, ключевым навыком для разработчиков программного обеспечения является попытка определить "тонкие вертикальные срезы" _полезной_ функциональности, а затем **итерация**. Рабочий процесс TDD помогает облегчить итеративную разработку.
 
-So rather than 1984, let's start with 1.
+Поэтому вместо 1984, давайте начнем с 1.
 
-## Write the test first
+## Сначала пишем тест
 
 ```go
 func TestRomanNumerals(t *testing.T) {
@@ -33,19 +33,19 @@ func TestRomanNumerals(t *testing.T) {
 }
 ```
 
-If you've got this far in the book this is hopefully feeling very boring and routine to you. That's a good thing.
+Если вы зашли так далеко в книге, то это, надеюсь, кажется вам очень скучным и обыденным. Это хорошо.
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```console
 ./numeral_test.go:6:9: undefined: ConvertToRoman
 ```
 
-Let the compiler guide the way
+Позвольте компилятору указать путь
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Пишем минимальный код, чтобы тест запустился, и проверяем вывод упавшего теста
 
-Create our function but don't make the test pass yet, always make sure the tests fails how you expect
+Создаем нашу функцию, но пока не заставляем тест проходить, всегда убеждайтесь, что тесты падают так, как вы ожидаете.
 
 ```go
 func ConvertToRoman(arabic int) string {
@@ -53,7 +53,7 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-It should run now
+Теперь он должен запуститься
 
 ```console
 === RUN   TestRomanNumerals
@@ -62,7 +62,7 @@ It should run now
 FAIL
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
 ```go
 func ConvertToRoman(arabic int) string {
@@ -70,17 +70,17 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-Not much to refactor yet.
+Пока особо нечего рефакторить.
 
-_I know_ it feels weird just to hard-code the result but with TDD we want to stay out of "red" for as long as possible. It may _feel_ like we haven't accomplished much but we've defined our API and got a test capturing one of our rules; even if the "real" code is pretty dumb.
+_Я знаю_, это кажется странным просто жестко кодировать результат, но с TDD мы хотим как можно дольше оставаться вне "красной зоны". Возможно, _кажется_, что мы не добились многого, но мы определили наш API и получили тест, фиксирующий одно из наших правил; даже если "настоящий" код довольно глуп.
 
-Now use that uneasy feeling to write a new test to force us to write slightly less dumb code.
+Теперь используйте это неприятное чувство, чтобы написать новый тест, который заставит нас написать чуть менее глупый код.
 
-## Write the test first
+## Сначала пишем тест
 
-We can use subtests to nicely group our tests
+Мы можем использовать подтесты, чтобы аккуратно сгруппировать наши тесты.
 
 ```go
 func TestRomanNumerals(t *testing.T) {
@@ -104,7 +104,7 @@ func TestRomanNumerals(t *testing.T) {
 }
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```console
 === RUN   TestRomanNumerals/2_gets_converted_to_II
@@ -112,9 +112,9 @@ func TestRomanNumerals(t *testing.T) {
         numeral_test.go:20: got 'I', want 'II'
 ```
 
-Not much surprise there
+Здесь нет ничего удивительного.
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
 ```go
 func ConvertToRoman(arabic int) string {
@@ -125,11 +125,11 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-Yup, it still feels like we're not actually tackling the problem. So we need to write more tests to drive us forward.
+Да, все еще кажется, что мы не решаем проблему на самом деле. Поэтому нам нужно написать больше тестов, чтобы двигаться вперед.
 
-## Refactor
+## Рефакторинг
 
-We have some repetition in our tests. When you're testing something which feels like it's a matter of "given input X, we expect Y" you should probably use table based tests.
+У нас есть некоторое повторение в наших тестах. Когда вы тестируете что-то, что кажется вопросом "для заданного ввода X мы ожидаем Y", вам, вероятно, следует использовать табличные тесты.
 
 ```go
 func TestRomanNumerals(t *testing.T) {
@@ -153,19 +153,19 @@ func TestRomanNumerals(t *testing.T) {
 }
 ```
 
-We can now easily add more cases without having to write any more test boilerplate.
+Теперь мы можем легко добавлять больше кейсов, не написав при этом больше шаблонного кода для тестов.
 
-Let's push on and go for 3
+Давайте продолжим и перейдем к 3
 
-## Write the test first
+## Сначала пишем тест
 
-Add the following to our cases
+Добавьте следующее в наши кейсы
 
 ```
 {"3 gets converted to III", 3, "III"},
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```console
 === RUN   TestRomanNumerals/3_gets_converted_to_III
@@ -173,7 +173,7 @@ Add the following to our cases
         numeral_test.go:20: got 'I', want 'III'
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
 ```go
 func ConvertToRoman(arabic int) string {
@@ -187,13 +187,13 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-OK so I'm starting to not enjoy these if statements and if you look at the code hard enough you can see that we're building a string of `I` based on the size of `arabic`.
+Хорошо, мне начинают не нравиться эти операторы if, и если вы достаточно внимательно посмотрите на код, вы увидите, что мы строим строку из `I` в зависимости от размера `arabic`.
 
-We "know" that for more complicated numbers we will be doing some kind of arithmetic and string concatenation.
+Мы "знаем", что для более сложных чисел мы будем выполнять какие-то арифметические операции и конкатенацию строк.
 
-Let's try a refactor with these thoughts in mind, it _might not_ be suitable for the end solution but that's OK. We can always throw our code away and start afresh with the tests we have to guide us.
+Давайте попробуем рефакторинг с этими мыслями, это _может быть_ не подходящим для конечного решения, но это нормально. Мы всегда можем выбросить наш код и начать заново с тестами, которые будут нас направлять.
 
 ```go
 func ConvertToRoman(arabic int) string {
@@ -208,30 +208,29 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-You might remember [`strings.Builder`](https://golang.org/pkg/strings/#Builder) from our discussion
-about [benchmarking](iteration.md#benchmarking)
+Вы, возможно, помните [`strings.Builder`](https://golang.org/pkg/strings/#Builder) из нашего обсуждения [бенчмаркинга](iteration.md#benchmarking)
 
-> A Builder is used to efficiently build a string using Write methods. It minimizes memory copying.
+> Builder используется для эффективного построения строки с помощью методов Write. Он минимизирует копирование памяти.
 
-Normally I wouldn't bother with such optimisations until I have an actual performance problem but the amount of code is not much larger than a "manual" appending on a string so we may as well use the faster approach.
+Обычно я бы не заморачивался с такими оптимизациями, пока не столкнулся бы с реальной проблемой производительности, но объем кода не намного больше, чем "ручное" добавление к строке, так что мы можем использовать более быстрый подход.
 
-The code looks better to me and describes the domain _as we know it right now_.
+Код выглядит для меня лучше и описывает домен _настолько, насколько мы его знаем сейчас_.
 
-### The Romans were into DRY too...
+### Римляне тоже любили DRY...
 
-Things start getting more complicated now. The Romans in their wisdom thought repeating characters would become hard to read and count. So a rule with Roman Numerals is you can't have the same character repeated more than 3 times in a row.
+Теперь все становится сложнее. Римляне в своей мудрости считали, что повторяющиеся символы станет трудно читать и считать. Поэтому одно из правил римских цифр заключается в том, что нельзя повторять один и тот же символ более 3 раз подряд.
 
-Instead you take the next highest symbol and then "subtract" by putting a symbol to the left of it. Not all symbols can be used as subtractors; only I (1), X (10) and C (100).
+Вместо этого вы берете следующий по величине символ, а затем "вычитаете", помещая символ слева от него. Не все символы могут использоваться как вычитающие; только I (1), X (10) и C (100).
 
-For example `5` in Roman Numerals is `V`. To create 4 you do not do `IIII`, instead you do `IV`.
+Например, `5` в римских цифрах — это `V`. Чтобы получить 4, вы не пишете `IIII`, а пишете `IV`.
 
-## Write the test first
+## Сначала пишем тест
 
 ```
 {"4 gets converted to IV (can't repeat more than 3 times)", 4, "IV"},
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```console
 === RUN   TestRomanNumerals/4_gets_converted_to_IV_(cant_repeat_more_than_3_times)
@@ -239,7 +238,7 @@ For example `5` in Roman Numerals is `V`. To create 4 you do not do `IIII`, inst
         numeral_test.go:24: got 'IIII', want 'IV'
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
 ```go
 func ConvertToRoman(arabic int) string {
@@ -258,9 +257,9 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-I don't "like" that we have broken our string building pattern and I want to carry on with it.
+Мне не "нравится", что мы нарушили наш шаблон построения строк, и я хочу продолжать его использовать.
 
 ```go
 func ConvertToRoman(arabic int) string {
@@ -279,17 +278,17 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-In order for 4 to "fit" with my current thinking I now count down from the Arabic number, adding symbols to our string as we progress. Not sure if this will work in the long run but let's see!
+Чтобы 4 "вписалось" в мое текущее мышление, я теперь отсчитываю в обратном порядке от арабского числа, добавляя символы к нашей строке по мере продвижения. Не уверен, что это сработает в долгосрочной перспективе, но давайте посмотрим!
 
-Let's make 5 work
+Давайте заставим работать 5
 
-## Write the test first
+## Сначала пишем тест
 
 ```
 {"5 gets converted to V", 5, "V"},
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```console
 === RUN   TestRomanNumerals/5_gets_converted_to_V
@@ -297,9 +296,9 @@ Let's make 5 work
         numeral_test.go:25: got 'IIV', want 'V'
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
-Just copy the approach we did for 4
+Просто скопируйте подход, который мы использовали для 4
 
 ```go
 func ConvertToRoman(arabic int) string {
@@ -322,11 +321,11 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-Repetition in loops like this are usually a sign of an abstraction waiting to be called out. Short-circuiting loops can be an effective tool for readability but it could also be telling you something else.
+Повторение в таких циклах обычно является признаком того, что абстракция ждет своего часа. Прерывание циклов может быть эффективным инструментом для читаемости, но также может говорить о чем-то другом.
 
-We are looping over our Arabic number and if we hit certain symbols we are calling `break` but what we are _really_ doing is subtracting over `i` in a ham-fisted manner.
+Мы перебираем наше арабское число, и если мы встречаем определенные символы, мы вызываем `break`, но на самом деле мы _неуклюже_ вычитаем из `i`.
 
 ```go
 func ConvertToRoman(arabic int) string {
@@ -351,19 +350,19 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-- Given the signals I'm reading from our code, driven from our tests of some very basic scenarios I can see that to build a Roman Numeral I need to subtract from `arabic` as I apply symbols
-- The `for` loop no longer relies on an `i` and instead we will keep building our string until we have subtracted enough symbols away from `arabic`.
+-   Учитывая сигналы, которые я получаю из нашего кода, основанные на наших тестах очень базовых сценариев, я вижу, что для построения римской цифры мне нужно вычитать из `arabic` по мере применения символов.
+-   Цикл `for` больше не зависит от `i`, и вместо этого мы будем продолжать строить нашу строку, пока не вычтем достаточно символов из `arabic`.
 
-I'm pretty sure this approach will be valid for 6 (VI), 7 (VII) and 8 (VIII) too. Nonetheless add the cases in to our test suite and check (I won't include the code for brevity, check the github for samples if you're unsure).
+Я почти уверен, что этот подход будет верен и для 6 (VI), 7 (VII), и 8 (VIII). Тем не менее, добавьте эти кейсы в наш набор тестов и проверьте (я не буду включать код для краткости, проверьте github для примеров, если не уверены).
 
-9 follows the same rule as 4 in that we should subtract `I` from the representation of the following number. 10 is represented in Roman Numerals with `X`; so therefore 9 should be `IX`.
+9 следует тому же правилу, что и 4: мы должны вычитать `I` из представления следующего числа. 10 в римских цифрах обозначается как `X`; следовательно, 9 должно быть `IX`.
 
-## Write the test first
+## Сначала пишем тест
 
 ```
 {"9 gets converted to IX", 9, "IX"},
 ```
-## Try to run the test
+## Попробуем запустить тест
 
 ```console
 === RUN   TestRomanNumerals/9_gets_converted_to_IX
@@ -371,9 +370,9 @@ I'm pretty sure this approach will be valid for 6 (VI), 7 (VII) and 8 (VIII) too
         numeral_test.go:29: got 'VIV', want 'IX'
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
-We should be able to adopt the same approach as before
+Мы должны быть в состоянии применить тот же подход, что и раньше.
 
 ```
 case arabic > 8:
@@ -381,13 +380,13 @@ case arabic > 8:
     arabic -= 9
 ```
 
-## Refactor
+## Рефакторинг
 
-It _feels_ like the code is still telling us there's a refactor somewhere but it's not totally obvious to me, so let's keep going.
+_Чувствуется_, что код все еще намекает на необходимость рефакторинга где-то, но это мне не совсем очевидно, поэтому давайте продолжим.
 
-I'll skip the code for this too, but add to your test cases a test for `10` which should be `X` and make it pass before reading on.
+Я также пропущу код для этого, но добавьте в ваши тестовые кейсы тест для `10`, который должен быть `X`, и заставьте его пройти, прежде чем читать дальше.
 
-Here are a few tests I added as I'm confident up to 39 our code should work
+Вот несколько тестов, которые я добавил, поскольку я уверен, что наш код должен работать до 39:
 
 ```
 {"10 gets converted to X", 10, "X"},
@@ -397,13 +396,13 @@ Here are a few tests I added as I'm confident up to 39 our code should work
 {"39 gets converted to XXXIX", 39, "XXXIX"},
 ```
 
-If you've ever done OO programming, you'll know that you should view `switch` statements with a bit of suspicion. Usually you are capturing a concept or data inside some imperative code when in fact it could be captured in a class structure instead.
+Если вы когда-либо занимались ООП, то знаете, что к операторам `switch` следует относиться с долей подозрения. Обычно вы захватываете концепцию или данные внутри некоторого императивного кода, хотя на самом деле их можно было бы инкапсулировать в структуру класса.
 
-Go isn't strictly OO but that doesn't mean we ignore the lessons OO offers entirely (as much as some would like to tell you).
+Go не является строго ООП, но это не означает, что мы полностью игнорируем уроки, которые предлагает ООП (как бы некоторые ни хотели вам сказать).
 
-Our switch statement is describing some truths about Roman Numerals along with behaviour.
+Наш оператор switch описывает некоторые истины о римских цифрах наряду с поведением.
 
-We can refactor this by decoupling the data from the behaviour.
+Мы можем провести рефакторинг, отделив данные от поведения.
 
 ```go
 type RomanNumeral struct {
@@ -434,11 +433,11 @@ func ConvertToRoman(arabic int) string {
 }
 ```
 
-This feels much better. We've declared some rules around the numerals as data rather than hidden in an algorithm and we can see how we just work through the Arabic number, trying to add symbols to our result if they fit.
+Это гораздо лучше. Мы объявили некоторые правила, касающиеся чисел, как данные, а не скрытые в алгоритме, и мы видим, как мы просто перебираем арабское число, пытаясь добавить символы к нашему результату, если они подходят.
 
-Does this abstraction work for bigger numbers? Extend the test suite so it works for the Roman number for 50 which is `L`.
+Работает ли эта абстракция для больших чисел? Расширьте набор тестов, чтобы он работал для римской цифры 50, которая является `L`.
 
-Here are some test cases, try and make them pass.
+Вот несколько тестовых кейсов, попробуйте заставить их пройти.
 
 ```
 {"40 gets converted to XL", 40, "XL"},
@@ -447,11 +446,11 @@ Here are some test cases, try and make them pass.
 {"50 gets converted to L", 50, "L"},
 ```
 
-Need help? You can see what symbols to add in [this gist](https://gist.github.com/pamelafox/6c7b948213ba55332d86efd0f0b037de).
+Нужна помощь? Вы можете увидеть, какие символы добавить, в [этом gist'е](https://gist.github.com/pamelafox/6c7b948213ba55332d86efd0f0b037de).
 
-## And the rest!
+## И остальные!
 
-Here are the remaining symbols
+Вот остальные символы
 
 | Arabic | Roman |
 | ------ | :---: |
@@ -459,11 +458,11 @@ Here are the remaining symbols
 | 500    |   D   |
 | 1000   |   M   |
 
-Take the same approach for the remaining symbols, it should just be a matter of adding data to both the tests and our array of symbols.
+Примените тот же подход для оставшихся символов, это должно быть просто вопросом добавления данных как в тесты, так и в наш срез символов.
 
-Does your code work for `1984`: `MCMLXXXIV` ?
+Работает ли ваш код для `1984`: `MCMLXXXIV` ?
 
-Here is my final test suite
+Вот мой окончательный набор тестов
 
 ```go
 func TestRomanNumerals(t *testing.T) {
@@ -475,7 +474,7 @@ func TestRomanNumerals(t *testing.T) {
 		{Arabic: 2, Roman: "II"},
 		{Arabic: 3, Roman: "III"},
 		{Arabic: 4, Roman: "IV"},
-		{Arabic: 5, Roman: "V"},
+		{Arabic: 5, "V"},
 		{Arabic: 6, Roman: "VI"},
 		{Arabic: 7, Roman: "VII"},
 		{Arabic: 8, Roman: "VIII"},
@@ -512,10 +511,10 @@ func TestRomanNumerals(t *testing.T) {
 }
 ```
 
-- I removed `description` as I felt the _data_ described enough of the information.
-- I added a few other edge cases I found just to give me a little more confidence. With table based tests this is very cheap to do.
+-   Я удалил `description`, так как посчитал, что _данные_ достаточно описывают информацию.
+-   Я добавил несколько других граничных случаев, которые нашел, просто чтобы придать себе немного больше уверенности. С табличными тестами это очень дешево сделать.
 
-I didn't change the algorithm, all I had to do was update the `allRomanNumerals` array.
+Я не менял алгоритм, все, что мне нужно было сделать, это обновить срез `allRomanNumerals`.
 
 ```go
 var allRomanNumerals = []RomanNumeral{
@@ -535,15 +534,15 @@ var allRomanNumerals = []RomanNumeral{
 }
 ```
 
-## Parsing Roman Numerals
+## Разбор римских цифр
 
-We're not done yet. Next we're going to write a function that converts _from_ a Roman Numeral to an `int`
+Мы еще не закончили. Далее мы напишем функцию, которая преобразует _из_ римской цифры в `int`.
 
-## Write the test first
+## Сначала пишем тест
 
-We can re-use our test cases here with a little refactoring
+Мы можем повторно использовать наши тестовые кейсы здесь с небольшим рефакторингом.
 
-Move the `cases` variable outside of the test as a package variable in a `var` block.
+Переместите переменную `cases` за пределы теста как переменную пакета в блоке `var`.
 
 ```go
 func TestConvertingToArabic(t *testing.T) {
@@ -558,17 +557,17 @@ func TestConvertingToArabic(t *testing.T) {
 }
 ```
 
-Notice I am using the slice functionality to just run one of the tests for now (`cases[:1]`) as trying to make all of those tests pass all at once is too big a leap
+Обратите внимание, что я использую функциональность среза, чтобы пока что запустить только один из тестов (`cases[:1]`), так как попытка заставить все эти тесты пройти одновременно — слишком большой скачок.
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```console
 ./numeral_test.go:60:11: undefined: ConvertToArabic
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Пишем минимальный код, чтобы тест запустился, и проверяем вывод упавшего теста
 
-Add our new function definition
+Добавляем определение нашей новой функции
 
 ```go
 func ConvertToArabic(roman string) int {
@@ -576,7 +575,7 @@ func ConvertToArabic(roman string) int {
 }
 ```
 
-The test should now run and fail
+Теперь тест должен запуститься и упасть
 
 ```console
 --- FAIL: TestConvertingToArabic (0.00s)
@@ -584,9 +583,9 @@ The test should now run and fail
         numeral_test.go:62: got 0, want 1
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
-You know what to do
+Вы знаете, что делать
 
 ```go
 func ConvertToArabic(roman string) int {
@@ -594,7 +593,7 @@ func ConvertToArabic(roman string) int {
 }
 ```
 
-Next, change the slice index in our test to move to the next test case (e.g. `cases[:2]`). Make it pass yourself with the dumbest code you can think of, continue writing dumb code (best book ever right?) for the third case too. Here's my dumb code.
+Далее измените индекс среза в нашем тесте, чтобы перейти к следующему тестовому кейсу (например, `cases[:2]`). Заставьте его пройти с помощью самого глупого кода, который вы можете придумать, продолжайте писать глупый код (лучшая книга, правда?) и для третьего кейса. Вот мой глупый код.
 
 ```go
 func ConvertToArabic(roman string) int {
@@ -608,7 +607,7 @@ func ConvertToArabic(roman string) int {
 }
 ```
 
-Through the dumbness of _real code that works_ we can start to see a pattern like before. We need to iterate through the input and build _something_, in this case a total.
+Через глупость _реального рабочего кода_ мы можем начать видеть паттерн, как и раньше. Нам нужно пройтись по вводу и построить _что-то_, в данном случае общую сумму.
 
 ```go
 func ConvertToArabic(roman string) int {
@@ -620,11 +619,11 @@ func ConvertToArabic(roman string) int {
 }
 ```
 
-## Write the test first
+## Сначала пишем тест
 
-Next we move to `cases[:4]` (`IV`) which now fails because it gets 2 back as that's the length of the string.
+Далее мы переходим к `cases[:4]` (`IV`), который теперь падает, потому что возвращает 2, так как это длина строки.
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
 ```go
 // earlier..
@@ -659,42 +658,42 @@ func ConvertToArabic(roman string) int {
 }
 ```
 
-It is basically the algorithm of `ConvertToRoman(int)` implemented backwards. Here, we loop over the given roman numeral string:
-- We look for roman numeral symbols taken from `allRomanNumerals`, highest to lowest, at the beginning of the string.
-- If we find the prefix, we add its value to  `arabic` and trim the prefix.
+Это, по сути, алгоритм `ConvertToRoman(int)`, реализованный в обратном порядке. Здесь мы перебираем заданную строку римских цифр:
+-   Мы ищем символы римских цифр из `allRomanNumerals`, от наибольшего к наименьшему, в начале строки.
+-   Если мы находим префикс, мы добавляем его значение к `arabic` и отрезаем префикс.
 
-At the end, we return the sum as the arabic number.
+В конце мы возвращаем сумму как арабское число.
 
-The `HasPrefix(s, prefix)` checks whether string `s` starts with `prefix` and `TrimPrefix(s, prefix)` removes the `prefix` from `s`, so we can proceed with the remaining roman numeral symbols. It works with `IV` and all other test cases.
+Функция `HasPrefix(s, prefix)` проверяет, начинается ли строка `s` с `prefix`, а `TrimPrefix(s, prefix)` удаляет `prefix` из `s`, поэтому мы можем продолжить работу с оставшимися символами римских цифр. Это работает с `IV` и всеми другими тестовыми кейсами.
 
-You can implement this as a recursive function, which is more elegant (in my opinion) but might be slower. I'll leave this up to you and some `Benchmark...` tests.
+Вы можете реализовать это как рекурсивную функцию, которая более элегантна (на мой взгляд), но может быть медленнее. Я оставляю это на ваше усмотрение и на некоторые тесты `Benchmark...`.
 
-Now that we have our functions to convert an arabic number into a roman numeral and back, we can take our tests a step further:
+Теперь, когда у нас есть функции для преобразования арабского числа в римскую цифру и обратно, мы можем продвинуть наши тесты на шаг дальше:
 
-## An intro to property based tests
+## Введение в тестирование на основе свойств
 
-There have been a few rules in the domain of Roman Numerals that we have worked with in this chapter
+В этой главе мы работали с несколькими правилами в области римских цифр:
 
-- Can't have more than 3 consecutive symbols
-- Only I (1), X (10) and C (100) can be "subtractors"
-- Taking the result of `ConvertToRoman(N)` and passing it to `ConvertToArabic` should return us `N`
+-   Не может быть более 3 последовательных символов
+-   Только I (1), X (10) и C (100) могут быть "вычитающими"
+-   Взятие результата `ConvertToRoman(N)` и передача его в `ConvertToArabic` должно вернуть нам `N`
 
-The tests we have written so far can be described as "example" based tests where we provide _examples_ for the tooling to verify.
+Написанные нами тесты до сих пор можно описать как "примерные" тесты, где мы предоставляем _примеры_ для проверки инструментам.
 
-What if we could take these rules that we know about our domain and somehow exercise them against our code?
+Что если бы мы могли взять эти правила, которые мы знаем о нашем домене, и каким-то образом применить их к нашему коду?
 
-Property based tests help you do this by throwing random data at your code and verifying the rules you describe always hold true. A lot of people think property based tests are mainly about random data but they would be mistaken. The real challenge about property based tests is having a _good_ understanding of your domain so you can write these properties.
+Тесты на основе свойств помогают вам в этом, подбрасывая случайные данные в ваш код и проверяя, что описанные вами правила всегда верны. Многие люди думают, что тесты на основе свойств в основном связаны со случайными данными, но они ошибаются. Настоящая сложность тестов на основе свойств заключается в _хорошем_ понимании вашего домена, чтобы вы могли написать эти свойства.
 
-Enough words, let's see some code
+Хватит слов, давайте посмотрим на код
 
-> **⚠️ Linux Users:** Please **DO NOT** run the test below immediately. It will likely freeze your system (requiring a hard reboot).
+> **⚠️ Пользователи Linux:** Пожалуйста, **НЕ** запускайте тест ниже немедленно. Это, вероятно, приведет к зависанию вашей системы (потребуется жесткая перезагрузка).
 >
 > <details>
-> <summary>Click here to see why (Technical Explanation)</summary>
+> <summary>Нажмите здесь, чтобы узнать почему (Техническое объяснение)</summary>
 >
-> The `testing/quick` package generates random integers up to `int64` max. Our current naive implementation attempts to build a string of that length in memory (quadrillions of characters).
+> Пакет `testing/quick` генерирует случайные целые числа до максимального значения `int64`. Наша текущая наивная реализация пытается построить строку такой длины в памяти (квадриллионы символов).
 >
-> While macOS and Windows often handle this gracefully (UI remains responsive), Linux kernels usually encounter "swap thrashing," causing the entire system to freeze before the process can be killed.
+> В то время как macOS и Windows часто справляются с этим изящно (интерфейс остается отзывчивым), ядра Linux обычно сталкиваются с "swap thrashing", что приводит к зависанию всей системы до того, как процесс может быть завершен.
 > </details>
 
 ```go
@@ -711,32 +710,32 @@ func TestPropertiesOfConversion(t *testing.T) {
 }
 ```
 
-### Rationale of property
+### Обоснование свойства
 
-Our first test will check that if we transform a number into Roman, when we use our other function to convert it back to a number that we get what we originally had.
+Наш первый тест проверит, что если мы преобразуем число в римское, а затем используем другую нашу функцию для обратного преобразования в число, то мы получим исходное значение.
 
-- Given random number (e.g `4`).
-- Call `ConvertToRoman` with random number (should return `IV` if `4`).
-- Take the result of above and pass it to `ConvertToArabic`.
-- The above should give us our original input (`4`).
+-   Дано случайное число (например, `4`).
+-   Вызываем `ConvertToRoman` со случайным числом (должно вернуть `IV`, если `4`).
+-   Берем результат выше и передаем его в `ConvertToArabic`.
+-   Вышеизложенное должно дать нам наш исходный ввод (`4`).
 
-This feels like a good test to build us confidence because it should break if there's a bug in either. The only way it could pass is if they have the same kind of bug; which isn't impossible but feels unlikely.
+Это кажется хорошим тестом для повышения нашей уверенности, потому что он должен сломаться, если в одном из них есть ошибка. Единственный способ, которым он мог бы пройти, это если бы у них был один и тот же вид ошибки; что не невозможно, но кажется маловероятным.
 
-### Technical explanation
+### Техническое объяснение
 
- We're using the [testing/quick](https://golang.org/pkg/testing/quick/) package from the standard library
+Мы используем пакет [testing/quick](https://golang.org/pkg/testing/quick/) из стандартной библиотеки.
 
- Reading from the bottom, we provide `quick.Check` a function that it will run against a number of random inputs, if the function returns `false` it will be seen as failing the check.
+Читая снизу вверх, мы предоставляем `quick.Check` функцию, которую он будет запускать для ряда случайных входных данных; если функция возвращает `false`, это будет считаться провалом проверки.
 
- Our `assertion` function above takes a random number and runs our functions to test the property.
+Наша функция `assertion` выше принимает случайное число и запускает наши функции для проверки свойства.
 
-### Run our test
+### Запускаем наш тест
 
- Try running it; your computer may hang for a while, so kill it when you're bored :)
+Попробуйте запустить его; ваш компьютер может зависнуть на некоторое время, так что убейте его, когда вам надоест :)
 
- What's going on? Try adding the following to the assertion code.
+Что происходит? Попробуйте добавить следующее в код утверждения.
 
- ```go
+```go
 assertion := func(arabic int) bool {
 	if arabic < 0 || arabic > 3999 {
 		log.Println(arabic)
@@ -748,7 +747,7 @@ assertion := func(arabic int) bool {
 }
 ```
 
-You should see something like this:
+Вы должны увидеть что-то вроде этого:
 
 ```console
 === RUN   TestPropertiesOfConversion
@@ -761,19 +760,19 @@ You should see something like this:
 2019/07/09 14:41:27 562755830018219185
 ```
 
-Just running this very simple property has exposed a flaw in our implementation. We used `int` as our input but:
-- You can't do negative numbers with Roman Numerals
-- Given our rule of a max of 3 consecutive symbols we can't represent a value greater than 3999 ([well, kinda](https://www.quora.com/Which-is-the-maximum-number-in-Roman-numerals)) and `int` has a much higher maximum value than 3999.
+Всего лишь запуск этого очень простого свойства выявил недостаток в нашей реализации. Мы использовали `int` в качестве входного типа, но:
+-   Вы не можете использовать отрицательные числа с римскими цифрами
+-   Учитывая наше правило о максимуме в 3 последовательных символа, мы не можем представить значение больше 3999 ([ну, как бы](https://www.quora.com/Which-is-the-maximum-number-in-Roman-numerals)), а `int` имеет гораздо более высокое максимальное значение, чем 3999.
 
-This is great! We've been forced to think more deeply about our domain which is a real strength of property based tests.
+Это отлично! Мы были вынуждены глубже задуматься о нашем домене, что является настоящей сильной стороной тестирования на основе свойств.
 
-Clearly `int` is not a great type. What if we tried something a little more appropriate?
+Очевидно, что `int` — не самый подходящий тип. Что если мы попробуем что-то более подходящее?
 
 ### [`uint16`](https://golang.org/pkg/builtin/#uint16)
 
-Go has types for _unsigned integers_, which means they cannot be negative; so that rules out one class of bug in our code immediately. By adding 16, it means it is a 16 bit integer which can store a max of `65535`, which is still too big but gets us closer to what we need.
+В Go есть типы для _беззнаковых целых чисел_, что означает, что они не могут быть отрицательными; это сразу же исключает один класс ошибок в нашем коде. Добавление 16 означает, что это 16-битное целое число, которое может хранить максимум `65535`, что все еще слишком много, но приближает нас к тому, что нам нужно.
 
-Try updating the code to use `uint16` rather than `int`. I updated `assertion` in the test to give a bit more visibility.
+Попробуйте обновить код, чтобы использовать `uint16` вместо `int`. Я обновил `assertion` в тесте, чтобы обеспечить немного большую видимость.
 
 ```go
 assertion := func(arabic uint16) bool {
@@ -786,11 +785,11 @@ assertion := func(arabic uint16) bool {
 	return fromRoman == arabic
 }
 ```
-Notice that now we are logging the input using the `log` method from the testing framework. Make sure you run the `go test` command with the flag `-v` to print the additional output (`go test -v`).
+Обратите внимание, что теперь мы логируем ввод, используя метод `log` из фреймворка тестирования. Убедитесь, что вы запускаете команду `go test` с флагом `-v` для вывода дополнительной информации (`go test -v`).
 
-If you run the test they now actually run and you can see what is being tested. You can run multiple times to see our code stands up well to the various values! This gives me a lot of confidence that our code is working how we want.
+Если вы запустите тест, то теперь он действительно будет выполняться, и вы сможете увидеть, что тестируется. Вы можете запустить его несколько раз, чтобы убедиться, что наш код хорошо справляется с различными значениями! Это дает мне большую уверенность в том, что наш код работает так, как мы хотим.
 
-The default number of runs `quick.Check` performs is 100 but you can change that with a config.
+По умолчанию `quick.Check` выполняет 100 запусков, но вы можете изменить это с помощью конфигурации.
 
 ```go
 if err := quick.Check(assertion, &quick.Config{
@@ -800,73 +799,63 @@ if err := quick.Check(assertion, &quick.Config{
 }
 ```
 
-### Further work
+### Дальнейшая работа
 
-- Can you write property tests that check the other properties we described?
-- Can you think of a way of making it so it's impossible for someone to call our code with a number greater than 3999?
-    - You could return an error
-    - Or create a new type that cannot represent > 3999
-        - What do you think is best?
+-   Можете ли вы написать property-тесты, которые проверяют другие описанные нами свойства?
+-   Можете ли вы придумать способ сделать так, чтобы кто-то не мог вызвать наш код с числом, большим 3999?
+    -   Вы могли бы вернуть ошибку
+    -   Или создать новый тип, который не может представлять числа > 3999
+        -   Что, по вашему мнению, лучше?
 
-## Wrapping up
+## Заключение
 
-### More TDD practice with iterative development
+### Больше практики TDD с итеративной разработкой
 
-Did the thought of writing code that converts 1984 into MCMLXXXIV feel intimidating to you at first? It did to me and I've been writing software for quite a long time.
+Показалась ли вам сначала пугающей мысль о написании кода, который преобразует 1984 в MCMLXXXIV? Мне — да, и я пишу программное обеспечение довольно давно.
 
-The trick, as always, is to **get started with something simple** and take **small steps**.
+Хитрость, как всегда, заключается в том, чтобы **начать с чего-то простого** и делать **маленькие шаги**.
 
-At no point in this process did we make any large leaps, do any huge refactorings, or get in a mess.
+Ни на одном этапе этого процесса мы не делали больших скачков, не проводили огромных рефакторингов и не попадали в беспорядок.
 
-I can hear someone cynically saying "this is just a kata". I can't argue with that, but I still take this same approach for every project I work on. I never ship a big distributed system in my first step, I find the simplest thing the team could ship (usually a "Hello world" website) and then iterate on small bits of functionality in manageable chunks, just like how we did here.
+Я слышу, как кто-то цинично говорит: "это просто ката". Я не могу с этим спорить, но я все равно использую тот же подход для каждого проекта, над которым работаю. Я никогда не выпускаю большую распределенную систему на первом шаге, я нахожу самое простое, что команда могла бы выпустить (обычно веб-сайт "Hello world"), а затем итерирую по небольшим частям функциональности управляемыми фрагментами, точно так же, как мы делали здесь.
 
-The skill is knowing _how_ to split work up, and that comes with practice and with some lovely TDD to help you on your way.
+Навык заключается в знании того, _как_ разделять работу, и это приходит с практикой и с помощью прекрасного TDD.
 
-### Property based tests
+### Тесты на основе свойств
 
-- Built into the standard library
-- If you can think of ways to describe your domain rules in code, they are an excellent tool for giving you more confidence
-- Force you to think about your domain deeply
-- Potentially a nice complement to your test suite
+-   Встроены в стандартную библиотеку
+-   Если вы можете придумать способы описания правил вашего домена в коде, они являются отличным инструментом для повышения вашей уверенности.
+-   Заставляют вас глубоко задуматься о вашем домене
+-   Потенциально хорошее дополнение к вашему набору тестов
 
-## Postscript
+## Постскриптум
 
-This book is reliant on valuable feedback from the community.
-[Dave](http://github.com/gypsydave5) is an enormous help in practically every
-chapter. But he had a real rant about my use of 'Arabic numerals' in this
-chapter so, in the interests of full disclosure, here's what he said.
+Эта книга зависит от ценных отзывов сообщества.
+[Дэйв](http://github.com/gypsydave5) оказывает огромную помощь практически в каждой
+главе. Но он по-настоящему возмущался моим использованием "арабских цифр" в этой
+главе, поэтому, в интересах полного раскрытия информации, вот что он сказал.
 
-> Just going to write up why a value of type `int` isn't really an 'arabic
-> numeral'. This might be me being way too precise so I'll completely understand
-> if you tell me to f off.
+> Просто напишу, почему значение типа `int` на самом деле не является "арабской цифрой". Возможно, я слишком точен, поэтому я полностью пойму, если вы скажете мне отстать.
 >
-> A _digit_ is a character used in the representation of numbers - from the Latin
-> for 'finger', as we usually have ten of them. In the Arabic (also called
-> Hindu-Arabic) number system there are ten of them. These Arabic digits are:
+> _Цифра_ — это символ, используемый для представления чисел — от латинского слова "палец", поскольку их у нас обычно десять. В арабской (также называемой индо-арабской) системе счисления их десять.
+>
+> Эти арабские цифры:
 >
 > ```console
 >   0 1 2 3 4 5 6 7 8 9
 > ```
 >
-> A _numeral_ is the representation of a number using a collection of digits.
-> An Arabic numeral is a number represented by Arabic digits in a base 10
-> positional number system. We say 'positional' because each digit has
-> a different value based upon its position in the numeral. So
+> _Число_ (numeral) — это представление числа с использованием набора цифр. Арабское число — это число, представленное арабскими цифрами в позиционной системе счисления по основанию 10. Мы говорим "позиционная", потому что каждая цифра имеет различное значение в зависимости от ее позиции в числе. Так
 >
 > ```console
 >   1337
 > ```
 >
-> The `1` has a value of one thousand because its the first digit in a four
-> digit numeral.
+> `1` имеет значение одна тысяча, потому что это первая цифра в четырехзначном числе.
 >
-> Roman are built using a reduced number of digits (`I`, `V` etc...) mainly as
-> values to produce the numeral. There's a bit of positional stuff but it's
-> mostly `I` always representing 'one'.
+> Римские цифры строятся с использованием уменьшенного количества символов (`I`, `V` и т.д.) в основном как значения для получения числа. Есть немного позиционного подхода, но в основном `I` всегда представляет "один".
 >
-> So, given this, is `int` an 'Arabic number'? The idea of a number is not at
-> all tied to its representation - we can see this if we ask ourselves what the
-> correct representation of this number is:
+> Итак, учитывая это, является ли `int` "арабским числом"? Идея числа вообще не связана с его представлением — мы можем убедиться в этом, если спросим себя, каково правильное представление этого числа:
 >
 > ```console
 > 255
@@ -876,18 +865,15 @@ chapter so, in the interests of full disclosure, here's what he said.
 > 377
 > ```
 >
-> Yes, this is a trick question. They're all correct. They're the representation
-> of the same number in the decimal,  binary, English, hexadecimal and octal
-> number systems respectively.
+> Да, это вопрос с подвохом. Все они верны. Это представление одного и того же числа в десятичной, двоичной, английской, шестнадцатеричной и восьмеричной системах счисления соответственно.
 >
-> The representation of a number as a numeral is _independent_ of its properties
-> as a number - and we can see this when we look at integer literals in Go:
+> Представление числа в виде цифры _независимо_ от его свойств как числа — и мы можем видеть это, когда смотрим на целочисленные литералы в Go:
 >
 > ```go
 > 	0xFF == 255 // true
 > ```
 >
-> And how we can print integers in a format string:
+> И как мы можем выводить целые числа в форматированной строке:
 >
 > ```go
 > n := 255
@@ -895,27 +881,21 @@ chapter so, in the interests of full disclosure, here's what he said.
 > // 11111111 ÿ 255 377 'ÿ' ff FF U+00FF
 > ```
 >
-> We can write the same integer both as a hexadecimal and an Arabic (decimal)
-> numeral.
+> Мы можем записать одно и то же целое число как в шестнадцатеричной, так и в арабской (десятичной) системах счисления.
 >
-> So when the function signature looks like `ConvertToRoman(arabic int) string`
-> it's making a bit of an assumption about how it's being called. Because
-> sometimes `arabic` will be written as a decimal integer literal
+> Поэтому, когда сигнатура функции выглядит как `ConvertToRoman(arabic int) string`, это делает некоторое предположение о том, как она будет вызываться. Потому что иногда `arabic` будет записано как десятичный целочисленный литерал
 >
 > ```go
 > 	ConvertToRoman(255)
 > ```
 >
-> But it could just as well be written
+> Но оно вполне могло бы быть записано и так
 >
 > ```go
 > 	ConvertToRoman(0xFF)
 > ```
 >
-> Really, we're not 'converting' from an Arabic numeral at all, we're 'printing'  -
-> representing - an `int` as a Roman numeral - and `int`s are not numerals,
-> Arabic or otherwise; they're just numbers. The `ConvertToRoman` function is
-> more like `strconv.Itoa` in that it's turning an `int` into a `string`.
+> На самом деле, мы вовсе не "конвертируем" из арабского числа, мы "печатаем" — представляем — `int` как римское число — а `int`'ы не являются числами, арабскими или какими-либо еще; это просто числа. Функция `ConvertToRoman` больше похожа на `strconv.Itoa` в том смысле, что она превращает `int` в `string`.
 >
-> But every other version of the kata doesn't care about this distinction so
-> :shrug:
+> Но всем остальным версиям ката на это различие все равно, так что :shrug:
+---

@@ -1,25 +1,25 @@
-# Learn Go with Tests
+# Изучаем Go с помощью тестов
 
 ![](.gitbook/assets/red-green-blue-gophers-smaller.png)
 
-[Art by Denise](https://deniseyu.io/)
+[Иллюстрация Денизы](https://deniseyu.io/)
 
-## Support me
+## Поддержите меня
 
-I am proud to offer this resource for free, but if you wish to give some appreciation
+Я с гордостью предлагаю этот ресурс бесплатно, но если вы хотите выразить свою признательность:
 
-* [Tweet me @quii](https://twitter.com/quii)
+* [Напишите мне в Твиттере @quii](https://twitter.com/quii)
 * [Mastodon](https://mastodon.cloud/@quii)
-* [Buy me a coffee](https://www.buymeacoffee.com/quii)
-* [Sponsor me on GitHub](https://github.com/sponsors/quii)
+* [Купите мне кофе](https://www.buymeacoffee.com/quii)
+* [Спонсируйте меня на GitHub](https://github.com/sponsors/quii)
 
-## Learn test-driven development with Go
+## Изучаем разработку через тестирование (TDD) с Go
 
-* Explore the Go language by writing tests
-* **Get a grounding with TDD**. Go is a good language for learning TDD because it is a simple language to learn and testing is built-in
-* Be confident that you'll be able to start writing robust, well-tested systems in Go
+* Изучайте язык Go, **пиша тесты**
+* **Получите основы TDD**. Go — хороший язык для изучения TDD, потому что он прост в освоении, а тестирование встроено в него.
+* Будьте уверены, что сможете начать писать надёжные, хорошо протестированные системы на Go.
 
-Translations:
+Переводы:
 
 * [中文](https://studygolang.gitbook.io/learn-go-with-tests)
 * [Português](https://larien.gitbook.io/aprenda-go-com-testes/)
@@ -29,61 +29,61 @@ Translations:
 * [Türkçe](https://halilkocaoz.gitbook.io/go-programlama-dilini-ogren/)
 * [Nederlands](https://bobkosse.gitbook.io/leer-go-met-tests)
 
-## Background
+## Предыстория
 
-I have some experience introducing Go to development teams and have tried different approaches as to how to grow a team from some people curious about Go into highly effective writers of Go systems.
+У меня есть опыт внедрения Go в команды разработки, и я пробовал различные подходы к тому, как вырастить команду из нескольких человек, интересующихся Go, в высокоэффективных разработчиков систем на Go.
 
-### What didn't work
+### Что не сработало
 
-#### Read _the_ book
+#### Прочитать _ту самую_ книгу
 
-An approach we tried was to take [the blue book](https://www.amazon.co.uk/Programming-Language-Addison-Wesley-Professional-Computing/dp/0134190440) and every week discuss the next chapter along with the exercises.
+Один из подходов, который мы пробовали, заключался в том, чтобы взять [«синюю книгу»](https://www.amazon.co.uk/Programming-Language-Addison-Wesley-Professional-Computing/dp/0134190440) и каждую неделю обсуждать следующую главу вместе с упражнениями.
 
-I love this book but it requires a high level of commitment. The book is very detailed in explaining concepts, which is obviously great but it means that the progress is slow and steady - this is not for everyone.
+Я люблю эту книгу, но она требует высокого уровня приверженности. Книга очень подробно объясняет концепции, что, конечно, отлично, но это означает, что прогресс медленный и постепенный — это подходит не всем.
 
-I found that whilst a small number of people would read chapter X and do the exercises, many people didn't.
+Я обнаружил, что, хотя небольшое число людей читало главу X и выполняло упражнения, многие этого не делали.
 
-#### Solve some problems
+#### Решить несколько задач
 
-Katas are fun but they are usually limited in their scope for learning a language; you're unlikely to use goroutines to solve a kata.
+Каты — это весело, но их возможности для изучения языка обычно ограничены; вы вряд ли будете использовать goroutines для решения каты.
 
-Another problem is when you have varying levels of enthusiasm. Some people just learn way more of the language than others and when demonstrating what they have done end up confusing people with features the others are not familiar with.
+Ещё одна проблема возникает, когда у людей разный уровень энтузиазма. Некоторые люди изучают язык гораздо глубже, чем другие, и, демонстрируя свои достижения, в итоге сбивают с толку остальных функциями, с которыми они не знакомы.
 
-This ends up making the learning feel quite _unstructured_ and _ad hoc_.
+В конечном итоге это делает обучение довольно _неструктурированным_ и _бессистемным_.
 
-### What did work
+### Что сработало
 
-By far the most effective way was by slowly introducing the fundamentals of the language by reading through [go by example](https://gobyexample.com/), exploring them with examples and discussing them as a group. This was a more interactive approach than "read chapter x for homework".
+Безусловно, самым эффективным способом было постепенное знакомство с основами языка путём прочтения [go by example](https://gobyexample.com/), изучения их на примерах и обсуждения в группе. Это был более интерактивный подход, чем «прочитать главу X в качестве домашнего задания».
 
-Over time the team gained a solid foundation of the _grammar_ of the language so we could then start to build systems.
+Со временем команда получила прочную основу _грамматики_ языка, так что мы смогли начать создавать системы.
 
-This to me seems analogous to practicing scales when trying to learn guitar.
+Мне это кажется аналогичным практике гамм при обучении игре на гитаре.
 
-It doesn't matter how artistic you think you are, you are unlikely to write good music without understanding the fundamentals and practicing the mechanics.
+Неважно, насколько артистичным вы себя считаете, вы вряд ли напишете хорошую музыку без понимания основ и отработки механики.
 
-### What works for me
+### Что работает для меня
 
-When _I_ learn a new programming language I usually start by messing around in a REPL but eventually, I need more structure.
+Когда _я_ изучаю новый язык программирования, я обычно начинаю с экспериментов в REPL, но в конечном итоге мне нужна более структурированная подача.
 
-What I like to do is explore concepts and then solidify the ideas with tests. Tests verify the code I write is correct and documents the feature I have learned.
+Мне нравится исследовать концепции, а затем закреплять идеи с помощью тестов. Тесты проверяют правильность написанного мной кода и документируют изученную мной функцию.
 
-Taking my experience of learning with a group and my own personal way I am going to try and create something that hopefully proves useful to other teams. Learning the fundamentals by writing small tests so that you can then take your existing software design skills and ship some great systems.
+Опираясь на свой опыт обучения в группе и на свой личный подход, я собираюсь попытаться создать нечто, что, надеюсь, окажется полезным для других команд. Изучение основ путём написания небольших тестов, чтобы затем вы могли применить свои существующие навыки проектирования программного обеспечения и выпускать отличные системы.
 
-## Who this is for
+## Для кого это
 
-* People who are interested in picking up Go
-* People who already know some Go, but want to explore testing more
+* Для тех, кто заинтересован в изучении Go
+* Для тех, кто уже немного знаком с Go, но хочет глубже изучить тестирование
 
-## What you'll need
+## Что вам понадобится
 
-* A computer!
-* [Installed Go](https://golang.org/)
-* A text editor
-* Some experience with programming. Understanding of concepts like `if`, variables, functions etc.
-* Comfortable using the terminal
+* Компьютер!
+* [Установленный Go](https://golang.org/)
+* Текстовый редактор
+* Некоторый опыт программирования. Понимание концепций, таких как `if`, переменных, функций и т. д.
+* Умение работать в терминале
 
-## Feedback
+## Обратная связь
 
-* Add issues/submit PRs [here](https://github.com/quii/learn-go-with-tests) or [tweet me @quii](https://twitter.com/quii)
+* Добавляйте issues/отправляйте PR [здесь](https://github.com/quii/learn-go-with-tests) или [напишите мне в Твиттере @quii](https://twitter.com/quii)
 
-[MIT license](LICENSE.md)
+[Лицензия MIT](LICENSE.md)

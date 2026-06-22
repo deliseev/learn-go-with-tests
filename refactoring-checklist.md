@@ -1,32 +1,32 @@
-# Refactoring step, starting checklist
+# Шаг рефакторинга, начальный чек-лист
 
-Refactoring is a skill that, once practised enough, becomes, in most cases, second nature reasonably easy.
+Рефакторинг — это навык, который, будучи достаточно отработанным, в большинстве случаев довольно легко становится второй натурой.
 
-The activity often gets conflated with more significant design changes, but they are separate. Delineating between refactoring and other programming activities is helpful because it allows me to work with clarity and discipline.
+Эта деятельность часто смешивается с более значительными изменениями дизайна, но они отличаются. Разграничение рефакторинга и других видов программирования помогает мне работать с ясностью и дисциплиной.
 
-## Refactoring vs other activities
+## Рефакторинг против других видов деятельности
 
-Refactoring is just improving existing code and <u>not changing behaviour</u>; therefore, tests shouldn't have to change.
+Рефакторинг — это просто улучшение существующего кода, а **не изменение поведения**; поэтому тесты не должны меняться.
 
-This is why it's the 3rd step of the TDD cycle. Once you have added a behaviour and a test to back it up, refactoring should be an activity which requires no change to your test code. **You're doing something else** if you are "refactoring" some code and having to change tests at the same time.
+Именно поэтому это 3-й шаг цикла TDD. Как только вы добавили поведение и тест для его поддержки, рефакторинг должен быть действием, которое не требует изменения вашего тестового кода. **Вы занимаетесь чем-то другим**, если "рефакторите" код и при этом вынуждены менять тесты.
 
-Many very helpful refactorings are simple to learn and easy to do (your IDE almost entirely automates many) but, over time, become hugely impactful to the quality of our system.
+Многие очень полезные рефакторинги просты в освоении и легко выполняются (ваша IDE практически полностью автоматизирует многие из них), но со временем они оказывают огромное влияние на качество нашей системы.
 
-### Other activities, such as "big" design
+### Другие виды деятельности, например "большой" дизайн
 
-> So I'm not changing the "real" behaviour, but I must change my tests? What is that?
+> Итак, я не меняю "реальное" поведение, но должен изменить свои тесты? Что это?
 
-Let's say you're working on a type and want to improve its code's quality. *Refactoring shouldn't require you to change the tests*, so you can't:
+Предположим, вы работаете над типом и хотите улучшить качество его кода. *Рефакторинг не должен требовать от вас изменения тестов*, поэтому вы не можете:
 
-- Change behaviour
-- Change method signatures
+- Менять поведение
+- Менять сигнатуры методов
 
-...as your tests are coupled to those two things, but you can:
+...поскольку ваши тесты связаны с этими двумя вещами, но вы можете:
 
-- Introduce private methods, fields and even new types & interfaces
-- Change the internals of public methods
+- Вводить приватные методы, поля и даже новые типы и интерфейсы
+- Изменять внутренности публичных методов
 
-What if you want to change the signature of a method?
+Что, если вы хотите изменить сигнатуру метода?
 
 ```go
 func (b BirthdayGreeter) WishHappyBirthday(age int, firstname, lastname string, email Email) {
@@ -34,90 +34,90 @@ func (b BirthdayGreeter) WishHappyBirthday(age int, firstname, lastname string, 
 }
 ```
 
-You may feel its argument list is too long and want to bring more cohesion and meaning to the code.
+Вы можете почувствовать, что список аргументов слишком длинный, и захотите придать коду больше согласованности и смысла.
 
 ```go
 func (b BirthdayGreeter) WishHappyBirthday(person Person)
 ```
 
-Well, you're **designing** now and must ensure you tread carefully. If you don't do this with discipline, you can make a mess of your code, the test behind it, *and* probably the things that depend on it - remember, it's not just your tests using `WishHappyBirthday`. Hopefully, it's used by "real" code too!
+Что ж, вы сейчас **проектируете** и должны действовать осторожно. Если вы не сделаете это дисциплинированно, вы можете испортить свой код, стоящие за ним тесты *и*, вероятно, то, что от него зависит — помните, `WishHappyBirthday` используют не только ваши тесты. Надеемся, что его использует и "реальный" код!
 
-**You should still be able to drive this change with a test first**. You can split hairs over whether this is a "behaviour" change, but you want your method to behave differently.
+**Вы всё равно должны иметь возможность управлять этим изменением, сначала написав тест**. Можно спорить, является ли это изменением "поведения", но вы хотите, чтобы ваш метод вёл себя по-другому.
 
-As this is a behaviour change, apply the TDD process here too. One benefit of TDD is that it gives you a simple, safe, repeatable way of driving behaviour change in your system; why abandon it in these situations just because it *feels* different?
+Поскольку это изменение поведения, применяйте здесь и процесс TDD. Одно из преимуществ TDD заключается в том, что оно дает вам простой, безопасный, повторяемый способ управления изменениями поведения в вашей системе; почему бы не использовать его в таких ситуациях только потому, что это *чувствуется* по-другому?
 
-In this case, you'll change your existing tests to use the new type. The iterative, small steps you usually do with TDD to reduce risk and bring discipline & clarity will help you in these situations, too.
+В этом случае вы измените существующие тесты для использования нового типа. Итеративные, небольшие шаги, которые вы обычно выполняете с TDD для снижения риска и обеспечения дисциплины и ясности, помогут вам и в этих ситуациях.
 
-Chances are you'll have several tests that call `WishHappyBirthday`; in these scenarios, I'd suggest commenting out all but one of the tests, driving out the change, and then working through the rest of the tests as you see fit.
+Вероятно, у вас будет несколько тестов, вызывающих `WishHappyBirthday`; в таких сценариях я бы предложил закомментировать все тесты, кроме одного, выполнить изменение, а затем проработать остальные тесты по своему усмотрению.
 
-### Big design
+### Большой дизайн
 
-Design can require more significant changes and more extensive conversations and usually has a level of subjectivity to it. Changing the design of parts of your system is usually a longer process than refactoring; nonetheless, you should still endeavour to reduce risk by thinking about how to do it in small steps.
+Дизайн может требовать более значительных изменений и более обширных обсуждений, и обычно содержит определенную долю субъективности. Изменение дизайна частей вашей системы обычно является более длительным процессом, чем рефакторинг; тем не менее, вы всё равно должны стремиться снизить риск, думая о том, как сделать это небольшими шагами.
 
-### Seeing the wood for the trees
+### За деревьями леса не видать
 
-> [If someone can't **see the wood for the trees** in British English, or can't see the forest for the trees in American English, they are very involved in the details of something and so they do not notice what is important about the thing as a whole.](https://www.collinsdictionary.com/dictionary/english/cant-see-the-wood-for-the-trees)
+> [Если кто-то не может **увидеть за деревьями лес** (в британском английском: "can't see the wood for the trees", в американском английском: "can't see the forest for the trees"), то он слишком сильно погружен в детали чего-либо и поэтому не замечает главного в целом.](https://www.collinsdictionary.com/dictionary/english/cant-see-the-wood-for-the-trees)
 
-Talking about the "big" design issues is more accessible when the **underlying code is well-factored**. If you and your colleagues have to spend a significant amount of time mentally parsing a mess of code every time they open a file, what chance do you have to think about the design of the code?
+Говорить о "больших" проблемах дизайна легче, когда **лежащий в основе код хорошо факторизован**. Если вы и ваши коллеги вынуждены тратить значительное количество времени на мысленное осмысление беспорядка в коде каждый раз, когда открывают файл, какой у вас шанс подумать о дизайне кода?
 
-This is why **constant refactoring is so significant in the TDD process**. If we fail to address the minor design issues, we'll find it hard to engineer the overall design of our more extensive system.
+Вот почему **постоянный рефакторинг так важен в процессе TDD**. Если мы не устраним мелкие проблемы дизайна, нам будет трудно спроектировать общую архитектуру нашей более обширной системы.
 
-Sadly, badly-factored code gets exponentially worse as engineers pile on complexity on top of shaky foundations.
+К сожалению, плохо факторизованный код ухудшается экспоненциально, поскольку инженеры нагромождают сложности на шаткие основы.
 
-## Starting mental-checklist
+## Начальный мысленный чек-лист
 
-**Get in the habit of running through a mental checklist every TDD cycle.** The more you force yourself to practice, the easier it gets. **It is a skill that needs practice.** Remember, each of these changes should not require any change in your tests.
+**Возьмите за привычку просматривать мысленный чек-лист каждый цикл TDD.** Чем больше вы заставляете себя практиковаться, тем легче это становится. **Это навык, требующий практики.** Помните, каждое из этих изменений не должно требовать никаких изменений в ваших тестах.
 
-I have included shortcuts for IntelliJ/GoLand, which my colleagues and I use. Whenever I coach a new engineer, I encourage them to try and gain the muscle memory and habit of using these tools to refactor quickly and safely.
+Я включил сочетания клавиш для IntelliJ/GoLand, которые используем я и мои коллеги. Всякий раз, когда я обучаю нового инженера, я призываю его пытаться выработать мышечную память и привычку использовать эти инструменты для быстрого и безопасного рефакторинга.
 
-### Inline variables
+### Инлайнинг переменных
 
-If you create a variable, only for it to be passed on to another method/function:
+Если вы создаете переменную только для того, чтобы передать ее другому методу/функции:
 
 ```go
 url := baseURL + "/user/" + id
 res, err := client.Get(url)
 ```
 
-Consider inlining it (`command+option+n`) *unless* the variable name adds significant meaning.
+Рассмотрите возможность инлайнинга (`command+option+n`), *если только* имя переменной не добавляет значимого смысла.
 
 ```go
 res, err := client.Get(baseURL + "/user/" + id)
 ```
 
-Don't be _too_ clever about inlining; the goal is not to have zero variables and instead have ridiculous one-liners that no one can read. If you can add significant naming to a value, it might be best to leave it be.
+Не будьте *слишком* умными в инлайнинге; цель не в том, чтобы иметь ноль переменных, а в том, чтобы избежать нелепых однострочников, которые никто не может прочитать. Если вы можете добавить осмысленное имя значению, возможно, лучше оставить его как есть.
 
-### DRY up values with extract variables
+### Устранение дублирования значений с помощью извлечения переменных
 
-"Don't repeat yourself" (DRY). Using the same value multiple times in a function? Consider extracting and capturing a variable in a meaningful variable name (`command+option+v`).
+"Не повторяйся" (DRY). Используете одно и то же значение несколько раз в функции? Рассмотрите возможность извлечения и присвоения его переменной с осмысленным именем (`command+option+v`).
 
-This helps with readability and makes changing the value easier in future, as you won't have to remember to update multiple occurrences of the same value.
+Это улучшает читаемость и облегчает изменение значения в будущем, так как вам не придется помнить о необходимости обновлять несколько вхождений одного и того же значения.
 
-### DRY up stuff in general
+### Устранение дублирования в целом
 
-[DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) gets a bad rep these days, with some justification. DRY is one of those concepts that is *too* easy to understand at a superficial level and then gets misapplied.
+Концепция [DRY](https://en.wikipedia.org/wiki/Don%27t_repeat_yourself) в наши дни имеет плохую репутацию, с некоторым на то основанием. DRY — это одна из тех концепций, которую *слишком* легко понять на поверхностном уровне, а затем неправильно применить.
 
-An engineer can easily take DRY too far, creating baffling, entangled abstractions to save some lines of code rather than the *real* idea of DRY, which is capturing an _idea_ in one place. Reducing the number of lines of code is often a side-effect of DRY, **but it is not the actual goal**.
+Инженер может легко зайти слишком далеко с DRY, создавая запутанные, взаимосвязанные абстракции, чтобы сэкономить несколько строк кода, вместо *реальной* идеи DRY, которая заключается в инкапсуляции *идеи* в одном месте. Уменьшение количества строк кода часто является побочным эффектом DRY, **но это не является фактической целью**.
 
-So yes, DRY can be misapplied, but the extreme opposite of refusing to DRY up anything is also evil. Repeated code adds noise and increases maintenance costs. A refusal to gather related concepts or values into one thing due to fear of DRY misuse causes *different* problems.
+Так что да, DRY может быть неправильно применен, но крайняя противоположность — отказ от любого DRY — также плоха. Повторяющийся код добавляет "шума" и увеличивает затраты на поддержку. Отказ от объединения связанных концепций или значений в одну сущность из-за страха неправильного использования DRY вызывает *другие* проблемы.
 
-So rather than being extremist on either side of "must DRY everything" or "DRY is bad", engage your brain and think about the code you see in front of you. What is repeated? Does it need to be? Does the parameter list look sensible if you encapsulate some repeated code into a method? Does it feel self-documenting and encapsulate the "idea" clearly?
+Поэтому, вместо того чтобы быть экстремистом с любой стороны — "нужно всё DRY" или "DRY это плохо" — задействуйте свой мозг и подумайте о коде, который вы видите перед собой. Что повторяется? Нужно ли это? Выглядит ли список параметров разумно, если вы инкапсулируете какой-то повторяющийся код в метод? Кажется ли он самодокументирующим и четко инкапсулирует ли "идею"?
 
-Nine times out of 10, you can look at the argument list of a function, and if it looks messy and confusing, then it is likely to be a poor application of DRY.
+В девяти случаях из десяти вы можете посмотреть на список аргументов функции, и если он выглядит запутанным и непонятным, то это, скорее всего, плохое применение DRY.
 
-If making some code DRY feels hard, you're probably making things more complex; consider stopping.
+Если сделать какой-то код DRY кажется сложным, вы, вероятно, усложняете вещи; рассмотрите возможность остановиться.
 
-DRY with care, **but practising this frequently will improve your judgement**. I encourage my colleagues to "just try it" and use source control to get back to safety if it is wrong.
+Используйте DRY с осторожностью, **но частая практика этого улучшит ваше суждение**. Я призываю своих коллег "просто попробовать" и использовать систему контроля версий, чтобы вернуться к безопасному состоянию, если что-то пойдёт не так.
 
-<u>**Trying these things will teach you more than discussing it**</u>, and source control coupled with good automated tests gives you the perfect setup to experiment and learn.
+<u>**Попытки сделать эти вещи научат вас большему, чем их обсуждение**</u>, а система контроля версий в сочетании с хорошими автоматизированными тестами даёт вам идеальную установку для экспериментов и обучения.
 
-### Extract "Magic" values.
+### Извлечение "магических" значений.
 
-> [Unique values with unexplained meaning or multiple occurrences which could (preferably) be replaced with named constants](https://en.wikipedia.org/wiki/Magic_number_(programming))
+> [Уникальные значения с необъясненным смыслом или множественными вхождениями, которые могли бы (предпочтительно) быть заменены именованными константами](https://en.wikipedia.org/wiki/Magic_number_(programming))
 
-Use extract variable (command+option+v) or constant (command+option+c) to give meaning to magic values. This can be seen as the inverse of the inlining refactor. I often find myself "toggling" the code with inline and extract to help me judge what I think reads better.
+Используйте извлечение переменной (`command+option+v`) или константы (`command+option+c`), чтобы придать смысл "магическим" значениям. Это можно рассматривать как инверсию рефакторинга инлайнинга. Я часто "переключаю" код между инлайнингом и извлечением, чтобы помочь себе судить, что, по моему мнению, читается лучше.
 
-Remember that extracting repeated values also adds a level of _coupling_. Everything that uses that value is now coupled. Consider the following code:
+Помните, что извлечение повторяющихся значений также добавляет уровень *связанности*. Всё, что использует это значение, теперь связано. Рассмотрим следующий код:
 
 ```go
 func main() {
@@ -134,11 +134,11 @@ func main() {
 }
 ```
 
-We are setting up some HTTP clients for our application. There are some _magic values_ here, and we could DRY up the `Timeout` by extracting a variable and giving it a meaningful name.
+Мы настраиваем несколько HTTP-клиентов для нашего приложения. Здесь есть несколько *магических значений*, и мы могли бы устранить дублирование `Timeout`, извлекая переменную и давая ей осмысленное имя.
 
-![A screenshot of me extracting variable](https://i.imgur.com/4sgUG7L.png)
+![Скриншот извлечения переменной](https://i.imgur.com/4sgUG7L.png)
 
-Now the code looks like this
+Теперь код выглядит так:
 
 ```go
 func main() {
@@ -156,17 +156,17 @@ func main() {
 }
 ```
 
-We no longer have a magic value; we have given it a meaningful name, but we have also made it so all three clients **share the same timeout**. That _may_ be what you want; refactors are quite context-specific, but it's something to be wary of.
+У нас больше нет магического значения; мы дали ему осмысленное имя, но также сделали так, что все три клиента **используют один и тот же таймаут**. Возможно, это то, что вам нужно; рефакторинги весьма специфичны для контекста, но об этом стоит помнить.
 
-If you can use your IDE well, you can do the _inline_ refactor to let the clients have separate `Timeout` values again.
+Если вы хорошо владеете своей IDE, вы можете выполнить рефакторинг *инлайнинга*, чтобы клиенты снова имели отдельные значения `Timeout`.
 
-### Make public methods/functions easy to scan
+### Сделайте публичные методы/функции легко читаемыми
 
-Does your code have excessively long public methods or functions?
+Есть ли в вашем коде излишне длинные публичные методы или функции?
 
-Encapsulate the steps in private methods/functions with the extract method (`command+option+m`) refactor.
+Инкапсулируйте шаги в приватные методы/функции с помощью рефакторинга извлечения метода (`command+option+m`).
 
-The code below has some boring, distracting ceremony around creating a JSON string and turning it into an `io.Reader` so that we can `POST` it in an HTTP request.
+Приведённый ниже код содержит некоторую скучную, отвлекающую "церемонию" по созданию JSON-строки и превращению её в `io.Reader`, чтобы мы могли отправить её `POST`-запросом.
 
 ```go
 func (ws *WidgetService) CreateWidget(name string) error {
@@ -182,7 +182,7 @@ func (ws *WidgetService) CreateWidget(name string) error {
 }
 ```
 
-First, use the inline variable refactor (command+option+n) to put the `payload` into the buffer creation.
+Сначала используйте рефакторинг инлайнинга переменной (`command+option+n`), чтобы поместить `payload` в буфер.
 
 ```go
 func (ws *WidgetService) CreateWidget(name string) error {
@@ -196,7 +196,7 @@ func (ws *WidgetService) CreateWidget(name string) error {
 }
 ```
 
-Now, we can extract the creation of the JSON payload into a function using the extract method refactor (`command+option+m`) to remove the noise from the method.
+Теперь мы можем извлечь создание JSON-нагрузки в функцию, используя рефакторинг извлечения метода (`command+option+m`), чтобы убрать "шум" из метода.
 
 ```go
 func (ws *WidgetService) CreateWidget(name string) error {
@@ -210,33 +210,33 @@ func (ws *WidgetService) CreateWidget(name string) error {
 }
 ```
 
-Public methods and functions should describe *what* they do rather than *how* they do it.
+Публичные методы и функции должны описывать *что* они делают, а не *как* они это делают.
 
-> **Whenever I have to think to understand what the code is doing, I ask myself if I can refactor the code to make that understanding more immediately apparent**
+> **Всякий раз, когда мне приходится думать, чтобы понять, что делает код, я спрашиваю себя, могу ли я рефакторить код так, чтобы это понимание стало более очевидным**
 
--- Martin Fowler
+-- Мартин Фаулер
 
-This helps you understand the overall design better, and it then allows you to ask questions about responsibilities:
+Это помогает вам лучше понять общий дизайн, а затем позволяет задавать вопросы об обязанностях:
 
->  Why does this method do X? Shouldn't that live in Y?
+> Почему этот метод делает X? Разве это не должно находиться в Y?
 
-> Why does this method do so many tasks? Can we consolidate this elsewhere?
+> Почему этот метод выполняет так много задач? Можем ли мы объединить это где-то ещё?
 
-Private functions and methods are great; they let you wrap up irrelevant hows into whats.
+Приватные функции и методы великолепны; они позволяют обернуть нерелевантные "как" в "что".
 
-#### But now I don't know how it works!
+#### Но теперь я не знаю, как это работает!
 
-A common objection to this refactoring, favouring smaller functions and methods composed of others, is that it can make understanding how the code works difficult. My blunt reply to this is
+Распространенное возражение против этого рефакторинга, который предпочитает меньшие функции и методы, состоящие из других, заключается в том, что он может затруднить понимание того, как работает код. Мой откровенный ответ на это:
 
-> Have you learned how to navigate codebases using your tooling effectively?
+> Вы научились эффективно навигировать по кодовым базам, используя свои инструменты?
 
-Quite deliberately, as the _writer_ of `CreateWidget`, I do not want the creation of a specific string to be an essential character in the narration of the method. It is distracting, irrelevant noise for the reader 99% of the time.
+Совершенно намеренно, как *автор* `CreateWidget`, я не хочу, чтобы создание конкретной строки было существенным элементом в описании метода. В 99% случаев это отвлекающий, нерелевантный "шум" для читателя.
 
-However, if someone _does_ care, you press `command+b`  (or whatever "navigate to symbol" is for you) on `createWidgetPayload` ... and read it. Press `command+left-arrow` to go back again.
+Однако, если кому-то *действительно* интересно, вы нажимаете `command+b` (или что бы ни было у вас "перейти к символу") на `createWidgetPayload`... и читаете. Нажимаете `command+left-arrow`, чтобы вернуться назад.
 
-### Move value creation to construction time.
+### Перемещение создания значений во время конструирования.
 
-Methods often have to create value and use them, like the `url` in our `CreateWidget` method from before.
+Методам часто приходится создавать значения и использовать их, например, `url` в нашем методе `CreateWidget` из предыдущего примера.
 
 ```go
 type WidgetService struct {
@@ -262,7 +262,7 @@ func (ws *WidgetService) CreateWidget(name string) error {
 }
 ```
 
-A refactoring technique you could apply here is, if a value is being created **that is not dependant on the arguments to the method**, then you can instead create a _field_ in your type and calculate it in your constructor function.
+Методика рефакторинга, которую можно применить здесь, заключается в том, что если создаётся значение **которое не зависит от аргументов метода**, то вместо этого вы можете создать *поле* в вашем типе и вычислить его в вашей функции-конструкторе.
 
 ```go
 type WidgetService struct {
@@ -290,11 +290,11 @@ func (ws *WidgetService) CreateWidget(name string) error {
 }
 ```
 
-By moving them to construction time, you can simplify your methods.
+Перемещая их во время конструирования, вы можете упростить свои методы.
 
-#### Comparing and contrasting `CreateWidget`
+#### Сравнение и сопоставление `CreateWidget`
 
-Starting with
+Начиная с:
 
 ```go
 func (ws *WidgetService) CreateWidget(name string) error {
@@ -310,7 +310,7 @@ func (ws *WidgetService) CreateWidget(name string) error {
 
 ```
 
-With a few basic refactors, driven almost entirely using automated tooling, we resulted in
+С помощью нескольких базовых рефакторингов, выполненных почти полностью с использованием автоматизированных инструментов, мы получили:
 
 ```go
 func (ws *WidgetService) CreateWidget(name string) error {
@@ -323,51 +323,50 @@ func (ws *WidgetService) CreateWidget(name string) error {
 }
 ```
 
-This is a small improvement, but it undoubtedly reads better. If you are well-practised, this kind of improvement will barely take you a minute, and so long as you have applied TDD well, you'll have the safety net of tests to ensure you're not breaking anything. These continuous minor improvements are vital to the long-term health of a codebase.
+Это небольшое улучшение, но оно, несомненно, читается лучше. Если вы хорошо практикуетесь, такое улучшение займет у вас едва ли минуту, и пока вы хорошо применяли TDD, у вас будет страховочная сетка тестов, чтобы убедиться, что вы ничего не ломаете. Эти непрерывные незначительные улучшения жизненно важны для долгосрочного здоровья кодовой базы.
 
-### Try to remove comments.
+### Попытайтесь удалить комментарии.
 
-> A heuristic we follow is that whenever we feel the need to comment something, we write a method instead.
+> Эвристика, которой мы следуем: всякий раз, когда мы чувствуем необходимость что-то прокомментировать, вместо этого мы пишем метод.
 
--- Martin Fowler
+-- Мартин Фаулер
 
-Again, the extract method refactor can be your friend here.
+И снова, рефакторинг извлечения метода может стать вашим другом.
 
-## Exceptions to the rule
+## Исключения из правил
 
-There are improvements you can make to your code that require a change in your tests, which I would still be happy to put into the "refactoring" bucket, even though it breaks the rule.
+Существуют улучшения, которые вы можете внести в свой код, требующие изменения в ваших тестах, которые я всё равно был бы рад отнести к категории "рефакторинга", хотя это и нарушает правило.
 
-A simple example would be renaming a public symbol (e.g., a method, type, or function) with `shift+F6`. This will, of course, change the production and test codes.
+Простым примером может быть переименование публичного символа (например, метода, типа или функции) с помощью `shift+F6`. Это, конечно, изменит производственный и тестовый код.
 
-However, as it is an **automated and safe** change, the risk of going into a spiral of breaking tests and production code that so many fall into with other kinds of *design* changes is minimal.
+Однако, поскольку это **автоматизированное и безопасное** изменение, риск попасть в спираль ломающихся тестов и производственного кода, в которую попадают многие при других видах *дизайнерских* изменений, минимален.
 
-For that reason, any changes you can safely perform with your IDE/editor, I would still happily call refactoring.
+По этой причине любые изменения, которые вы можете безопасно выполнить с помощью вашей IDE/редактора, я всё равно с удовольствием назову рефакторингом.
 
-## Use your tools to help you practice refactoring.
+## Используйте свои инструменты, чтобы практиковаться в рефакторинге.
 
-- You should run your unit tests every time you do one of these small changes. We invest time in making our code unit-testable, and the feedback loop of a few milliseconds is one of the significant benefits; use it!
-- Lean on source control. You shouldn't feel shy about trying out ideas. If you're happy, commit it; if not, revert. This should feel comfortable and easy and not a big deal.
-- The better you leverage your unit tests and source control, the easier to *practice* refactoring. Once you master this discipline, **your design skills increase quickly** because you have a reliable and effective feedback loop and safety net.
-- Too often in my career, I've heard developers complain about not having time to refactor; unfortunately, it is clear that it takes so much time for them because they don't do it with discipline - and they have not practised it enough.
-- Whilst typing is never the bottleneck, you should be able to use whatever editor/IDE you use to refactor safely and quickly. For instance, if your tool doesn't let you extract variables at a keystroke, you'll do it less because it's more labour-intensive and risky.
+- Вы должны запускать свои юнит-тесты каждый раз, когда делаете одно из этих небольших изменений. Мы инвестируем время в то, чтобы наш код был тестируем юнит-тестами, и цикл обратной связи в несколько миллисекунд является одним из значительных преимуществ; используйте его!
+- Опирайтесь на систему контроля версий. Вы не должны стесняться пробовать новые идеи. Если вы довольны, фиксируйте изменения; если нет, откатывайте. Это должно быть удобно и легко, и не быть большой проблемой.
+- Чем лучше вы используете свои юнит-тесты и систему контроля версий, тем легче *практиковаться* в рефакторинге. Как только вы освоите эту дисциплину, **ваши навыки проектирования быстро возрастут**, потому что у вас будет надежный и эффективный цикл обратной связи и страховочная сетка.
+- Слишком часто в моей карьере я слышал, как разработчики жаловались на отсутствие времени на рефакторинг; к сожалению, очевидно, что это занимает у них так много времени, потому что они не делают это дисциплинированно — и они недостаточно практиковались.
+- Хотя ввод текста никогда не является узким местом, вы должны уметь использовать любой редактор/IDE, который вы используете, для безопасного и быстрого рефакторинга. Например, если ваш инструмент не позволяет извлекать переменные одним нажатием клавиши, вы будете делать это реже, потому что это более трудоемко и рискованно.
 
-## Don't ask permission to refactor
+## Не просите разрешения на рефакторинг
 
-Refactoring should be a frequent occurrence in your work, something you're doing all the time. It also, shouldn't be a time-sink, especially if it's done little and often.
+Рефакторинг должен быть частым явлением в вашей работе, тем, что вы делаете постоянно. Это также не должно быть поглотителем времени, особенно если это делается понемногу и часто.
 
-If you don't refactor, your internal quality will suffer, your team's capacity will drop, and pressure will increase.
+Если вы не будете рефакторить, ваше внутреннее качество пострадает, производительность вашей команды снизится, и давление возрастет.
 
-Martin Fowler has one more fantastic quote for us.
+У Мартина Фаулера есть еще одна фантастическая цитата для нас.
 
-> Other than when you are very close to a deadline, however, you should not put off refactoring because you haven’t got time. Experience with several projects has shown that a bout of refactoring results in increased productivity. Not having enough time usually is a sign that you need to do some refactoring.
+> Однако, за исключением случаев, когда вы очень близки к дедлайну, вы не должны откладывать рефакторинг из-за нехватки времени. Опыт нескольких проектов показал, что период рефакторинга приводит к повышению производительности. Нехватка времени обычно является признаком того, что вам нужно провести рефакторинг.
 
-## Wrap up
+## Заключение
 
-This is not an extensive list, just a start. Read Martin Fowler's Refactoring book (2nd ed) to become a pro.
+Это не исчерпывающий список, а только начало. Прочтите книгу Мартина Фаулера "Рефакторинг" (2-е изд.), чтобы стать профессионалом.
 
-Refactoring should be extremely quick and safe when you're well-practised, so there's little excuse not to do it. Too many view refactoring as a decision for others to make rather than a skill to learn to where it's a regular part of your work.
+Рефакторинг должен быть чрезвычайно быстрым и безопасным, если вы хорошо практикуетесь, поэтому нет почти никаких причин не делать его. Слишком многие рассматривают рефакторинг как решение, которое должны принимать другие, а не как навык, который нужно освоить, чтобы он стал регулярной частью вашей работы.
 
-We should always strive to leave code in an *exemplary* state.
+Мы всегда должны стремиться оставлять код в *образцовом* состоянии.
 
-Good refactoring leads to code that is easier to understand. An understanding of the code means better designs are easier to spot. It is much harder to find designs in systems with massive functions, needlessly duplicated code, deep nesting, etc. **Frequent, small refactoring is necessary for better design**.
-
+Хороший рефакторинг приводит к коду, который легче понять. Понимание кода означает, что лучшие дизайны легче заметить. Гораздо труднее найти дизайны в системах с огромными функциями, излишне дублирующимся кодом, глубокой вложенностью и т.д. **Частый, небольшой рефакторинг необходим для лучшего дизайна**.
