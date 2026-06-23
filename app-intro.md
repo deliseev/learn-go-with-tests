@@ -1,18 +1,18 @@
-# Build an application
+# Создание приложения
 
-Now that you have hopefully digested the _Go Fundamentals_ section you have a solid grounding of a majority of Go's language features and how to do TDD.
+Теперь, когда вы, надеюсь, усвоили раздел _Основы Go_, у вас есть прочная основа для большинства языковых особенностей Go и понимание того, как выполнять TDD.
 
-This next section will involve building an application.
+В этом следующем разделе мы займёмся созданием приложения.
 
-Each chapter will iterate on the previous one, expanding the application's functionality as our product owner dictates.
+Каждая глава будет развивать предыдущую, расширяя функциональность приложения по мере указаний нашего владельца продукта.
 
-New concepts will be introduced to help facilitate writing great code but most of the new material will be learning what can be accomplished from Go's standard library.
+Будут введены новые концепции, чтобы помочь писать отличный код, но большая часть нового материала будет заключаться в изучении того, что можно реализовать с помощью стандартной библиотеки Go.
 
-By the end of this, you should have a strong grasp as to how to iteratively write an application in Go, backed by tests.
+К концу этого вы должны хорошо понимать, как итеративно писать приложение на Go, подкрепленное тестами.
 
-- [HTTP server](http-server.md) - We will create an application which listens to HTTP requests and responds to them.
-- [JSON, routing and embedding](json.md) - We will make our endpoints return JSON and explore how to do routing.
-- [IO and sorting](io.md) - We will persist and read our data from disk and we'll cover sorting data.
-- [Command line & project structure](command-line.md) - Support multiple applications from one code base and read input from command line.
-- [Time](time.md) - using the `time` package to schedule activities.
-- [WebSockets](websockets.md) - learn how to write and test a server that uses WebSockets.
+- [HTTP-сервер](http-server.md) - Мы создадим приложение, которое прослушивает HTTP-запросы и отвечает на них.
+- [JSON, маршрутизация и встраивание](json.md) - Мы заставим наши конечные точки возвращать JSON и изучим, как выполнять маршрутизацию.
+- [Ввод-вывод и сортировка](io.md) - Мы будем сохранять и считывать наши данные с диска, а также рассмотрим сортировку данных.
+- [Командная строка и структура проекта](command-line.md) - Поддержка нескольких приложений из одной кодовой базы и чтение ввода из командной строки.
+- [Время](time.md) - Использование пакета `time` для планирования действий.
+- [Веб-сокеты](websockets.md) - Научимся писать и тестировать сервер, использующий Веб-сокеты.

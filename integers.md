@@ -1,12 +1,12 @@
-# Integers
+# Целые числа
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/integers)**
+**[Весь код для этой главы вы можете найти здесь](https://github.com/quii/learn-go-with-tests/tree/main/integers)**
 
-Integers work as you would expect. Let's write an `Add` function to try things out. Create a test file called `adder_test.go` and write this code.
+Целые числа работают так, как вы и ожидаете. Давайте напишем функцию `Add`, чтобы попробовать это на практике. Создайте тестовый файл `adder_test.go` и напишите следующий код.
 
-**Note:** Go source files can only have one `package` per directory. Make sure that your files are organised into their own packages. [Here is a good explanation on this.](https://dave.cheney.net/2014/12/01/five-suggestions-for-setting-up-a-go-project)
+**Примечание:** Файлы исходного кода Go могут иметь только один `package` на директорию. Убедитесь, что ваши файлы организованы в отдельные пакеты. [Здесь приведено хорошее объяснение этому.](https://dave.cheney.net/2014/12/01/five-suggestions-for-setting-up-a-go-project)
 
-Your project directory might look something like this:
+Структура вашего проекта может выглядеть примерно так:
 
 ```
 learnGoWithTests
@@ -22,7 +22,7 @@ learnGoWithTests
     |- README.md
 ```
 
-## Write the test first
+## Сначала напишите тест
 
 ```go
 package integers
@@ -39,21 +39,21 @@ func TestAdder(t *testing.T) {
 }
 ```
 
-You will notice that we're using `%d` as our format strings rather than `%q`. That's because we want it to print an integer rather than a string.
+Вы заметите, что мы используем `%d` в качестве форматной строки, а не `%q`. Это потому, что мы хотим напечатать целое число, а не строку.
 
-Also note that we are no longer using the main package, instead we've defined a package named `integers`, as the name suggests this will group functions for working with integers such as `Add`.
+Также обратите внимание, что мы больше не используем основной пакет (main package), вместо этого мы определили пакет с именем `integers`; как следует из названия, он будет группировать функции для работы с целыми числами, такие как `Add`.
 
-## Try and run the test
+## Попробуйте запустить тест
 
-Run the test `go test`
+Запустите тест `go test`
 
-Inspect the compilation error
+Изучите ошибку компиляции
 
 `./adder_test.go:6:9: undefined: Add`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишите минимальное количество кода, чтобы тест запустился, и проверьте вывод ошибочного теста
 
-Write enough code to satisfy the compiler _and that's all_ - remember we want to check that our tests fail for the correct reason.
+Напишите столько кода, чтобы удовлетворить компилятор _и только это_ — помните, мы хотим убедиться, что наши тесты завершаются с ошибкой по правильной причине.
 
 ```go
 package integers
@@ -63,17 +63,17 @@ func Add(x, y int) int {
 }
 ```
 
-Remember, when you have more than one argument of the same type \(in our case two integers\) rather than having `(x int, y int)` you can shorten it to `(x, y int)`.
+Помните, что когда у вас есть несколько аргументов одного и того же типа (в нашем случае два целых числа), вместо `(x int, y int)` вы можете сократить это до `(x, y int)`.
 
-Now run the tests, and we should be happy that the test is correctly reporting what is wrong.
+Теперь запустите тесты, и мы должны быть довольны тем, что тест правильно сообщает об ошибке.
 
 `adder_test.go:10: expected '4' but got '0'`
 
-If you have noticed we learnt about _named return value_ in the [last](hello-world.md#onelastrefactor) section but aren't using the same here. It should generally be used when the meaning of the result isn't clear from context, in our case it's pretty much clear that `Add` function will add the parameters. You can refer [this](https://go.dev/wiki/CodeReviewComments#named-result-parameters) wiki for more details.
+Если вы заметили, мы узнали о _именованном возвращаемом значении_ в [предыдущем](hello-world.md#onelastrefactor) разделе, но здесь его не используем. Его следует использовать, когда смысл результата не ясен из контекста; в нашем случае достаточно ясно, что функция `Add` будет складывать параметры. Вы можете обратиться к [этой](https://go.dev/wiki/CodeReviewComments#named-result-parameters) вики для получения более подробной информации.
 
-## Write enough code to make it pass
+## Напишите достаточно кода, чтобы тест прошел
 
-In the strictest sense of TDD we should now write the _minimal amount of code to make the test pass_. A pedantic programmer may do this
+В строжайшем смысле TDD мы должны теперь написать _минимальное количество кода, чтобы тест прошел_. Педантичный программист может сделать это:
 
 ```go
 func Add(x, y int) int {
@@ -81,13 +81,13 @@ func Add(x, y int) int {
 }
 ```
 
-Ah hah! Foiled again, TDD is a sham right?
+Ага! Снова провал, TDD — это обман, не так ли?
 
-We could write another test, with some different numbers to force that test to fail but that feels like [a game of cat and mouse](https://en.m.wikipedia.org/wiki/Cat_and_mouse).
+Мы могли бы написать еще один тест с другими числами, чтобы заставить этот тест завершиться ошибкой, но это похоже на [игру в кошки-мышки](https://en.m.wikipedia.org/wiki/Cat_and_mouse).
 
-Once we're more familiar with Go's syntax I will introduce a technique called _"Property Based Testing"_, which would stop annoying developers and help you find bugs.
+Как только мы лучше ознакомимся с синтаксисом Go, я представлю технику, называемую _"Property Based Testing"_ (тестирование на основе свойств), которая избавит разработчиков от проблем и поможет найти ошибки.
 
-For now, let's fix it properly
+А пока давайте исправим это правильно:
 
 ```go
 func Add(x, y int) int {
@@ -95,17 +95,17 @@ func Add(x, y int) int {
 }
 ```
 
-If you re-run the tests they should pass.
+Если вы повторно запустите тесты, они должны пройти.
 
-## Refactor
+## Рефакторинг
 
-There's not a lot in the _actual_ code we can really improve on here.
+В _текущем_ коде не так много, что мы могли бы улучшить.
 
-We explored earlier how by naming the return argument it appears in the documentation but also in most developer's text editors.
+Ранее мы исследовали, как, назвав возвращаемый аргумент, он появляется в документации, а также в большинстве текстовых редакторов разработчиков.
 
-This is great because it aids the usability of code you are writing. It is preferable that a user can understand the usage of your code by just looking at the type signature and documentation.
+Это замечательно, потому что это помогает удобству использования кода, который вы пишете. Предпочтительно, чтобы пользователь мог понять использование вашего кода, просто посмотрев на сигнатуру типа и документацию.
 
-You can add documentation to functions with comments, and these will appear in Go Doc just like when you look at the standard library's documentation.
+Вы можете добавить документацию к функциям с помощью комментариев, и они появятся в Go Doc так же, как вы смотрите документацию стандартной библиотеки.
 
 ```go
 // Add takes two integers and returns the sum of them.
@@ -114,15 +114,15 @@ func Add(x, y int) int {
 }
 ```
 
-### Testable Examples
+### Тестируемые примеры
 
-If you really want to go the extra mile you can make [Testable Examples](https://blog.golang.org/examples). You will find many examples in the standard library documentation.
+Если вы действительно хотите приложить дополнительные усилия, вы можете создать [тестируемые примеры](https://blog.golang.org/examples). Вы найдете множество примеров в документации стандартной библиотеки.
 
-Often code examples that can be found outside the codebase, such as a readme file, become out of date and incorrect compared to the actual code because they don't get checked.
+Часто примеры кода, которые можно найти за пределами кодовой базы, например, в файле readme, устаревают и становятся неверными по сравнению с фактическим кодом, потому что они не проверяются.
 
-Example functions are compiled whenever tests are executed. Because such examples are validated by the Go compiler, you can be confident your documentation's examples always reflect current code behavior.
+Примерные функции компилируются каждый раз, когда выполняются тесты. Поскольку такие примеры проверяются компилятором Go, вы можете быть уверены, что примеры вашей документации всегда отражают текущее поведение кода.
 
-Example functions begin with `Example` (much like test functions begin with `Test`), and reside in a package's `_test.go` files. Add the following `ExampleAdd` function to the `adder_test.go` file.
+Примерные функции начинаются с `Example` (подобно тому, как тестовые функции начинаются с `Test`) и находятся в файлах `_test.go` пакета. Добавьте следующую функцию `ExampleAdd` в файл `adder_test.go`.
 
 ```go
 func ExampleAdd() {
@@ -132,11 +132,11 @@ func ExampleAdd() {
 }
 ```
 
-(If your editor doesn't automatically import packages for you, the compilation step will fail because you will be missing `import "fmt"` in `adder_test.go`. It is strongly recommended you research how to have these kind of errors fixed for you automatically in whatever editor you are using.)
+(Если ваш редактор не импортирует пакеты автоматически, шаг компиляции завершится ошибкой, потому что у вас будет отсутствовать `import "fmt"` в `adder_test.go`. Настоятельно рекомендуется изучить, как исправить такие ошибки автоматически в используемом вами редакторе.)
 
-Adding this code will cause the example to appear in your documentation, making your code even more accessible. If ever your code changes so that the example is no longer valid, your build will fail.
+Добавление этого кода приведет к тому, что пример появится в вашей документации, что сделает ваш код еще более доступным. Если ваш код когда-либо изменится так, что пример перестанет быть действительным, ваша сборка завершится ошибкой.
 
-Running the package's test suite, we can see the example `ExampleAdd` function is executed with no further arrangement from us:
+Запустив набор тестов пакета, мы видим, что функция `ExampleAdd` выполняется без каких-либо дополнительных настроек с нашей стороны:
 
 ```bash
 $ go test -v
@@ -146,19 +146,19 @@ $ go test -v
 --- PASS: ExampleAdd (0.00s)
 ```
 
-Notice the special format of the comment, `// Output: 6`. While the example will always be compiled, adding this comment means the example will also be executed. Go ahead and temporarily remove the comment `// Output: 6`, then run `go test`, and you will see `ExampleAdd` is no longer executed.
+Обратите внимание на специальный формат комментария `// Output: 6`. Хотя пример всегда будет скомпилирован, добавление этого комментария означает, что пример также будет выполнен. Временно удалите комментарий `// Output: 6`, затем запустите `go test`, и вы увидите, что `ExampleAdd` больше не выполняется.
 
-Examples without output comments are useful for demonstrating code that cannot run as unit tests, such as that which accesses the network, while guaranteeing the example at least compiles.
+Примеры без комментариев вывода полезны для демонстрации кода, который не может быть запущен как модульные тесты, например, кода, который обращается к сети, при этом гарантируя, что пример по крайней мере компилируется.
 
-To view example documentation, let's take a quick look at `pkgsite`. Before navigating to your project's directory, make sure you have installed `pkgsite` by running the following command: `go install golang.org/x/pkgsite/cmd/pkgsite@latest`, then run `pkgsite -open .`, which should open a web browser for you, pointing to `http://localhost:8080`. Inside here you'll see a list of all of Go's Standard Library packages, plus Third Party packages you have installed, under which you should see your example documentation for `github.com/quii/learn-go-with-tests`. Follow that link, and then look under `Integers`, then under `func Add`, then expand `Example` and you should see the example you added for `sum := Add(1, 5)`.
+Чтобы просмотреть документацию примеров, давайте быстро взглянем на `pkgsite`. Прежде чем перейти в каталог вашего проекта, убедитесь, что вы установили `pkgsite`, выполнив следующую команду: `go install golang.org/x/pkgsite/cmd/pkgsite@latest`, затем запустите `pkgsite -open .`, которая должна открыть веб-браузер, указывающий на `http://localhost:8080`. Здесь вы увидите список всех пакетов стандартной библиотеки Go, а также сторонних пакетов, которые вы установили, среди которых вы должны увидеть документацию с примерами для `github.com/quii/learn-go-with-tests`. Перейдите по этой ссылке, затем посмотрите в разделе `Integers`, затем в разделе `func Add`, затем разверните `Example`, и вы должны увидеть пример, который вы добавили для `sum := Add(1, 5)`.
 
-If you publish your code with examples to a public URL, you can share the documentation of your code at [pkg.go.dev](https://pkg.go.dev/). For example, [here](https://pkg.go.dev/github.com/quii/learn-go-with-tests/integers/v2) is the finalised API for this chapter. This web interface allows you to search for documentation of standard library packages and third-party packages.
+Если вы публикуете свой код с примерами по общедоступному URL-адресу, вы можете поделиться документацией своего кода на [pkg.go.dev](https://pkg.go.dev/). Например, [здесь](https://pkg.go.dev/github.com/quii/learn-go-with-tests/integers/v2) находится окончательная версия API для этой главы. Этот веб-интерфейс позволяет искать документацию по пакетам стандартной библиотеки и сторонним пакетам.
 
-## Wrapping up
+## Подведение итогов
 
-What we have covered:
+Что мы рассмотрели:
 
-*   More practice of the TDD workflow
-*   Integers, addition
-*   Writing better documentation so users of our code can understand its usage quickly
-*   Examples of how to use our code, which are checked as part of our tests
+*   Больше практики рабочего процесса TDD
+*   Целые числа, сложение
+*   Написание лучшей документации, чтобы пользователи нашего кода могли быстро понять его использование
+*   Примеры использования нашего кода, которые проверяются как часть наших тестов

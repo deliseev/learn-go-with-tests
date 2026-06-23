@@ -1,12 +1,12 @@
-# IO and sorting
+# Ввод-вывод и сортировка
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/io)**
+**[Вы можете найти весь код для этой главы здесь](https://github.com/quii/learn-go-with-tests/tree/main/io)**
 
-[In the previous chapter](json.md) we continued iterating on our application by adding a new endpoint `/league`. Along the way we learned about how to deal with JSON, embedding types and routing.
+[В предыдущей главе](json.md) мы продолжили итерировать наше приложение, добавив новую конечную точку `/league`. Попутно мы узнали, как работать с JSON, встраиванием типов и маршрутизацией.
 
-Our product owner is somewhat perturbed by the software losing the scores when the server was restarted. This is because our implementation of our store is in-memory. She is also not pleased that we didn't interpret the `/league` endpoint should return the players ordered by the number of wins!
+Наш product owner несколько расстроена тем, что программное обеспечение теряет очки при перезапуске сервера. Это происходит потому, что наша реализация хранилища находится в памяти. Ей также не нравится, что мы не интерпретировали конечную точку `/league` как возвращающую игроков, упорядоченных по количеству побед!
 
-## The code so far
+## Текущий код
 
 ```go
 // server.go
@@ -131,23 +131,23 @@ func main() {
 }
 ```
 
-You can find the corresponding tests in the link at the top of the chapter.
+Вы можете найти соответствующие тесты по ссылке в начале главы.
 
-## Store the data
+## Хранение данных
 
-There are dozens of databases we could use for this but we're going to go for a very simple approach. We're going to store the data for this application in a file as JSON.
+Для этого мы могли бы использовать десятки баз данных, но мы выберем очень простой подход. Мы будем хранить данные для этого приложения в файле в формате JSON.
 
-This keeps the data very portable and is relatively simple to implement.
+Это делает данные очень портативными и относительно простыми в реализации.
 
-It won't scale especially well but given this is a prototype it'll be fine for now. If our circumstances change and it's no longer appropriate it'll be simple to swap it out for something different because of the `PlayerStore` abstraction we have used.
+Это не будет особенно хорошо масштабироваться, но, учитывая, что это прототип, пока все будет в порядке. Если наши обстоятельства изменятся и этот подход перестанет быть подходящим, его будет легко заменить на что-то другое благодаря абстракции `PlayerStore`, которую мы использовали.
 
-We will keep the `InMemoryPlayerStore` for now so that the integration tests keep passing as we develop our new store. Once we are confident our new implementation is sufficient to make the integration test pass we will swap it in and then delete `InMemoryPlayerStore`.
+Мы сохраним `InMemoryPlayerStore` на данный момент, чтобы интеграционные тесты продолжали проходить, пока мы разрабатываем наше новое хранилище. Как только мы убедимся, что наша новая реализация достаточна для прохождения интеграционных тестов, мы заменим ее и затем удалим `InMemoryPlayerStore`.
 
-## Write the test first
+## Сначала пишем тест
 
-By now you should be familiar with the interfaces around the standard library for reading data (`io.Reader`), writing data (`io.Writer`) and how we can use the standard library to test these functions without having to use real files.
+К настоящему моменту вы должны быть знакомы с интерфейсами стандартной библиотеки для чтения данных (`io.Reader`), записи данных (`io.Writer`) и тем, как мы можем использовать стандартную библиотеку для тестирования этих функций без использования реальных файлов.
 
-For this work to be complete we'll need to implement `PlayerStore` so we'll write tests for our store calling the methods we need to implement. We'll start with `GetLeague`.
+Чтобы эта работа была завершена, нам нужно будет реализовать `PlayerStore`, поэтому мы напишем тесты для нашего хранилища, вызывая методы, которые нам нужно реализовать. Мы начнем с `GetLeague`.
 
 ```go
 //file_system_store_test.go
@@ -172,25 +172,25 @@ func TestFileSystemStore(t *testing.T) {
 }
 ```
 
-We're using `strings.NewReader` which will return us a `Reader`, which is what our `FileSystemPlayerStore` will use to read data. In `main` we will open a file, which is also a `Reader`.
+Мы используем `strings.NewReader`, который вернет нам `Reader`, который `FileSystemPlayerStore` будет использовать для чтения данных. В `main` мы откроем файл, который также является `Reader`.
 
-## Try to run the test
+## Пробуем запустить тест
 
 ```
 # github.com/quii/learn-go-with-tests/io/v1
 ./file_system_store_test.go:15:12: undefined: FileSystemPlayerStore
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Пишем минимальный объем кода, чтобы тест запустился, и проверяем вывод упавшего теста
 
-Let's define `FileSystemPlayerStore` in a new file
+Давайте определим `FileSystemPlayerStore` в новом файле
 
 ```go
 //file_system_store.go
 type FileSystemPlayerStore struct{}
 ```
 
-Try again
+Попробуем еще раз
 
 ```
 # github.com/quii/learn-go-with-tests/io/v1
@@ -198,7 +198,7 @@ Try again
 ./file_system_store_test.go:17:15: store.GetLeague undefined (type FileSystemPlayerStore has no field or method GetLeague)
 ```
 
-It's complaining because we're passing in a `Reader` but not expecting one and it doesn't have `GetLeague` defined yet.
+Он жалуется, потому что мы передаем `Reader`, но не ожидаем его, и метод `GetLeague` еще не определен.
 
 ```go
 //file_system_store.go
@@ -211,7 +211,7 @@ func (f *FileSystemPlayerStore) GetLeague() []Player {
 }
 ```
 
-One more try...
+Еще одна попытка...
 
 ```
 === RUN   TestFileSystemStore//league_from_a_reader
@@ -219,9 +219,9 @@ One more try...
         file_system_store_test.go:24: got [] want [{Cleo 10} {Chris 33}]
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
-We've read JSON from a reader before
+Мы уже читали JSON из ридера раньше
 
 ```go
 //file_system_store.go
@@ -232,15 +232,15 @@ func (f *FileSystemPlayerStore) GetLeague() []Player {
 }
 ```
 
-The test should pass.
+Тест должен пройти.
 
-## Refactor
+## Рефакторинг
 
-We _have_ done this before! Our test code for the server had to decode the JSON from the response.
+Мы _уже_ делали это раньше! Наш тестовый код для сервера должен был декодировать JSON из ответа.
 
-Let's try DRYing this up into a function.
+Давайте попробуем сделать это более DRY, выделив в функцию.
 
-Create a new file called `league.go` and put this inside.
+Создайте новый файл `league.go` и поместите это внутрь.
 
 ```go
 //league.go
@@ -255,7 +255,7 @@ func NewLeague(rdr io.Reader) ([]Player, error) {
 }
 ```
 
-Call this in our implementation and in our test helper `getLeagueFromResponse` in `server_test.go`
+Вызовем это в нашей реализации и в нашей вспомогательной функции `getLeagueFromResponse` в `server_test.go`
 
 ```go
 //file_system_store.go
@@ -265,11 +265,11 @@ func (f *FileSystemPlayerStore) GetLeague() []Player {
 }
 ```
 
-We haven't got a strategy yet for dealing with parsing errors but let's press on.
+У нас пока нет стратегии обработки ошибок парсинга, но давайте продолжим.
 
-### Seeking problems
+### Проблемы с позиционированием
 
-There is a flaw in our implementation. First of all, let's remind ourselves how `io.Reader` is defined.
+В нашей реализации есть недостаток. Прежде всего, давайте вспомним, как определен `io.Reader`.
 
 ```go
 type Reader interface {
@@ -277,9 +277,9 @@ type Reader interface {
 }
 ```
 
-With our file, you can imagine it reading through byte by byte until the end. What happens if you try to `Read` a second time?
+В случае с файлом, можно представить, как он читается байт за байтом до конца. Что произойдет, если вы попытаетесь `Read` во второй раз?
 
-Add the following to the end of our current test.
+Добавьте следующее в конец нашего текущего теста.
 
 ```go
 //file_system_store_test.go
@@ -289,11 +289,11 @@ got = store.GetLeague()
 assertLeague(t, got, want)
 ```
 
-We want this to pass, but if you run the test it doesn't.
+Мы хотим, чтобы это прошло, но если вы запустите тест, этого не произойдет.
 
-The problem is our `Reader` has reached the end so there is nothing more to read. We need a way to tell it to go back to the start.
+Проблема в том, что наш `Reader` достиг конца, и больше нечего читать. Нам нужен способ сказать ему вернуться к началу.
 
-[ReadSeeker](https://golang.org/pkg/io/#ReadSeeker) is another interface in the standard library that can help.
+[ReadSeeker](https://golang.org/pkg/io/#ReadSeeker) — это еще один интерфейс в стандартной библиотеке, который может помочь.
 
 ```go
 type ReadSeeker interface {
@@ -302,7 +302,7 @@ type ReadSeeker interface {
 }
 ```
 
-Remember embedding? This is an interface comprised of `Reader` and [`Seeker`](https://golang.org/pkg/io/#Seeker)
+Помните встраивание? Это интерфейс, состоящий из `Reader` и [`Seeker`](https://golang.org/pkg/io/#Seeker)
 
 ```go
 type Seeker interface {
@@ -310,7 +310,7 @@ type Seeker interface {
 }
 ```
 
-This sounds good, can we change `FileSystemPlayerStore` to take this interface instead?
+Это звучит хорошо, можем ли мы изменить `FileSystemPlayerStore`, чтобы он принимал этот интерфейс?
 
 ```go
 //file_system_store.go
@@ -325,11 +325,11 @@ func (f *FileSystemPlayerStore) GetLeague() []Player {
 }
 ```
 
-Try running the test, it now passes! Happily for us `strings.NewReader` that we used in our test also implements `ReadSeeker` so we didn't have to make any other changes.
+Попробуйте запустить тест, теперь он проходит! К счастью для нас, `strings.NewReader`, который мы использовали в нашем тесте, также реализует `ReadSeeker`, поэтому нам не пришлось вносить никаких других изменений.
 
-Next we'll implement `GetPlayerScore`.
+Далее мы реализуем `GetPlayerScore`.
 
-## Write the test first
+## Сначала пишем тест
 
 ```go
 //file_system_store_test.go
@@ -350,15 +350,15 @@ t.Run("get player score", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## Пробуем запустить тест
 
 ```
 ./file_system_store_test.go:38:15: store.GetPlayerScore undefined (type FileSystemPlayerStore has no field or method GetPlayerScore)
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Пишем минимальный объем кода, чтобы тест запустился, и проверяем вывод упавшего теста
 
-We need to add the method to our new type to get the test to compile.
+Нам нужно добавить метод к нашему новому типу, чтобы тест скомпилировался.
 
 ```go
 //file_system_store.go
@@ -367,7 +367,7 @@ func (f *FileSystemPlayerStore) GetPlayerScore(name string) int {
 }
 ```
 
-Now it compiles and the test fails
+Теперь он компилируется, и тест падает
 
 ```
 === RUN   TestFileSystemStore/get_player_score
@@ -375,9 +375,9 @@ Now it compiles and the test fails
         file_system_store_test.go:43: got 0 want 33
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
-We can iterate over the league to find the player and return their score
+Мы можем пройтись по лиге, чтобы найти игрока и вернуть его счет
 
 ```go
 //file_system_store.go
@@ -396,9 +396,9 @@ func (f *FileSystemPlayerStore) GetPlayerScore(name string) int {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-You will have seen dozens of test helper refactorings so I'll leave this to you to make it work
+Вы видели десятки рефакторингов вспомогательных функций для тестов, так что я оставлю это вам, чтобы вы заставили его работать.
 
 ```go
 //file_system_store_test.go
@@ -415,15 +415,15 @@ t.Run("get player score", func(t *testing.T) {
 })
 ```
 
-Finally, we need to start recording scores with `RecordWin`.
+Наконец, нам нужно начать записывать очки с помощью `RecordWin`.
 
-## Write the test first
+## Сначала пишем тест
 
-Our approach is fairly short-sighted for writes. We can't (easily) just update one "row" of JSON in a file. We'll need to store the _whole_ new representation of our database on every write.
+Наш подход довольно недальновиден для операций записи. Мы не можем (легко) просто обновить одну "строку" JSON в файле. Нам придется сохранять _всю_ новую репрезентацию нашей базы данных при каждой записи.
 
-How do we write? We'd normally use a `Writer` but we already have our `ReadSeeker`. Potentially we could have two dependencies but the standard library already has an interface for us `ReadWriteSeeker` which lets us do all the things we'll need to do with a file.
+Как мы записываем? Обычно мы используем `Writer`, но у нас уже есть `ReadSeeker`. Потенциально у нас могло бы быть две зависимости, но стандартная библиотека уже предлагает нам интерфейс `ReadWriteSeeker`, который позволяет нам делать все, что нам потребуется с файлом.
 
-Let's update our type
+Давайте обновим наш тип
 
 ```go
 //file_system_store.go
@@ -432,7 +432,7 @@ type FileSystemPlayerStore struct {
 }
 ```
 
-See if it compiles
+Посмотрим, скомпилируется ли
 
 ```
 ./file_system_store_test.go:15:34: cannot use database (type *strings.Reader) as type io.ReadWriteSeeker in field value:
@@ -441,18 +441,18 @@ See if it compiles
     *strings.Reader does not implement io.ReadWriteSeeker (missing Write method)
 ```
 
-It's not too surprising that `strings.Reader` does not implement `ReadWriteSeeker` so what do we do?
+Неудивительно, что `strings.Reader` не реализует `ReadWriteSeeker`, так что же нам делать?
 
-We have two choices
+У нас есть два варианта
 
-- Create a temporary file for each test. `*os.File` implements `ReadWriteSeeker`. The pro of this is it becomes more of an integration test, we're really reading and writing from the file system so it will give us a very high level of confidence. The cons are we prefer unit tests because they are faster and generally simpler. We will also need to do more work around creating temporary files and then making sure they're removed after the test.
-- We could use a third party library. [Mattetti](https://github.com/mattetti) has written a library [filebuffer](https://github.com/mattetti/filebuffer) which implements the interface we need and doesn't touch the file system.
+- Создавать временный файл для каждого теста. `*os.File` реализует `ReadWriteSeeker`. Преимущество этого в том, что это становится больше интеграционным тестом, мы действительно читаем и записываем из файловой системы, что даст нам очень высокий уровень уверенности. Недостатки заключаются в том, что мы предпочитаем модульные тесты, потому что они быстрее и, как правило, проще. Нам также потребуется проделать больше работы по созданию временных файлов, а затем убедиться, что они удалены после теста.
+- Мы могли бы использовать стороннюю библиотеку. [Mattetti](https://github.com/mattetti) написал библиотеку [filebuffer](https://github.com/mattetti/filebuffer), которая реализует необходимый нам интерфейс и не затрагивает файловую систему.
 
-I don't think there's an especially wrong answer here, but by choosing to use a third party library I would have to explain dependency management! So we will use files instead.
+Я не думаю, что здесь есть однозначно неправильный ответ, но, выбрав использование сторонней библиотеки, мне пришлось бы объяснять управление зависимостями! Поэтому мы будем использовать файлы.
 
-Before adding our test we need to make our other tests compile by replacing the `strings.Reader` with an `os.File`.
+Перед добавлением нашего теста нам нужно заставить остальные тесты скомпилироваться, заменив `strings.Reader` на `os.File`.
 
-Let's create some helper functions which will create a temporary file with some data inside it, and abstract our score tests
+Давайте создадим несколько вспомогательных функций, которые создадут временный файл с некоторыми данными внутри него и абстрагируют наши тесты на счет.
 
 ```go
 //file_system_store_test.go
@@ -483,9 +483,9 @@ func assertScoreEquals(t testing.TB, got, want int) {
 }
 ```
 
-[CreateTemp](https://pkg.go.dev/os#CreateTemp) creates a temporary file for us to use. The `"db"` value we've passed in is a prefix put on a random file name it will create. This is to ensure it won't clash with other files by accident.
+[CreateTemp](https://pkg.go.dev/os#CreateTemp) создает временный файл для нашего использования. Значение `"db"`, которое мы передали, — это префикс, добавляемый к случайному имени файла, который он создаст. Это сделано для того, чтобы избежать случайного совпадения с другими файлами.
 
-You'll notice we're not only returning our `ReadWriteSeeker` (the file) but also a function. We need to make sure that the file is removed once the test is finished. We don't want to leak details of the files into the test as it's prone to error and uninteresting for the reader. By returning a `removeFile` function, we can take care of the details in our helper and all the caller has to do is run `defer cleanDatabase()`.
+Вы заметите, что мы возвращаем не только наш `ReadWriteSeeker` (файл), но и функцию. Нам нужно убедиться, что файл удален после завершения теста. Мы не хотим, чтобы детали файлов просачивались в тест, так как это чревато ошибками и неинтересно для читателя. Возвращая функцию `removeFile`, мы можем позаботиться о деталях в нашей вспомогательной функции, а вызывающей стороне нужно только выполнить `defer cleanDatabase()`.
 
 ```go
 //file_system_store_test.go
@@ -528,9 +528,9 @@ func TestFileSystemStore(t *testing.T) {
 }
 ```
 
-Run the tests and they should be passing! There were a fair amount of changes but now it feels like we have our interface definition complete and it should be very easy to add new tests from now.
+Запустите тесты, и они должны пройти! Было довольно много изменений, но теперь кажется, что определение нашего интерфейса завершено, и добавлять новые тесты будет очень легко.
 
-Let's get the first iteration of recording a win for an existing player
+Давайте рассмотрим первую итерацию записи победы для существующего игрока
 
 ```go
 //file_system_store_test.go
@@ -550,13 +550,13 @@ t.Run("store wins for existing players", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## Пробуем запустить тест
 
 `./file_system_store_test.go:67:8: store.RecordWin undefined (type FileSystemPlayerStore has no field or method RecordWin)`
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Пишем минимальный объем кода, чтобы тест запустился, и проверяем вывод упавшего теста
 
-Add the new method
+Добавляем новый метод
 
 ```go
 //file_system_store.go
@@ -571,9 +571,9 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
         file_system_store_test.go:71: got 33 want 34
 ```
 
-Our implementation is empty so the old score is getting returned.
+Наша реализация пуста, поэтому возвращается старый счет.
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
 ```go
 //file_system_store.go
@@ -591,19 +591,19 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-You may be asking yourself why I am doing `league[i].Wins++` rather than `player.Wins++`.
+Вы можете спросить себя, почему я делаю `league[i].Wins++`, а не `player.Wins++`.
 
-When you `range` over a slice you are returned the current index of the loop (in our case `i`) and a _copy_ of the element at that index. Changing the `Wins` value of a copy won't have any effect on the `league` slice that we iterate on. For that reason, we need to get the reference to the actual value by doing `league[i]` and then changing that value instead.
+Когда вы используете `range` по срезу, вам возвращаются текущий индекс цикла (в нашем случае `i`) и _копия_ элемента по этому индексу. Изменение значения `Wins` у копии не окажет никакого влияния на срез `league`, по которому мы итерируемся. По этой причине нам нужно получить ссылку на фактическое значение, сделав `league[i]`, а затем изменить это значение.
 
-If you run the tests, they should now be passing.
+Если вы запустите тесты, они должны пройти.
 
-## Refactor
+## Рефакторинг
 
-In `GetPlayerScore` and `RecordWin`, we are iterating over `[]Player` to find a player by name.
+В `GetPlayerScore` и `RecordWin` мы итерируемся по `[]Player`, чтобы найти игрока по имени.
 
-We could refactor this common code in the internals of `FileSystemStore` but to me, it feels like this is maybe useful code we can lift into a new type. Working with a "League" so far has always been with `[]Player` but we can create a new type called `League`. This will be easier for other developers to understand and then we can attach useful methods onto that type for us to use.
+Мы могли бы провести рефакторинг этого общего кода внутри `FileSystemStore`, но мне кажется, что это может быть полезный код, который мы можем поднять в новый тип. Работа с "Лигой" до сих пор всегда была со `[]Player`, но мы можем создать новый тип с именем `League`. Это будет легче понять другим разработчикам, и тогда мы сможем привязать к этому типу полезные методы для нашего использования.
 
-Inside `league.go` add the following
+Внутри `league.go` добавьте следующее
 
 ```go
 //league.go
@@ -619,11 +619,11 @@ func (l League) Find(name string) *Player {
 }
 ```
 
-Now if anyone has a `League` they can easily find a given player.
+Теперь, если у кого-то есть `League`, он может легко найти нужного игрока.
 
-Change our `PlayerStore` interface to return `League` rather than `[]Player`. Try to re-run the tests, you'll get a compilation problem because we've changed the interface but it's very easy to fix; just change the return type from `[]Player` to `League`.
+Измените наш интерфейс `PlayerStore`, чтобы он возвращал `League` вместо `[]Player`. Попробуйте повторно запустить тесты, вы получите проблему компиляции, потому что мы изменили интерфейс, но ее очень легко исправить; просто измените тип возвращаемого значения с `[]Player` на `League`.
 
-This lets us simplify our methods in `file_system_store`.
+Это позволяет нам упростить наши методы в `file_system_store`.
 
 ```go
 //file_system_store.go
@@ -651,11 +651,11 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-This is looking much better and we can see how we might be able to find other useful functionality around `League` that can be refactored.
+Это выглядит гораздо лучше, и мы видим, как можно найти другую полезную функциональность вокруг `League`, которую можно отрефакторить.
 
-We now need to handle the scenario of recording wins of new players.
+Теперь нам нужно обработать сценарий записи побед новых игроков.
 
-## Write the test first
+## Сначала пишем тест
 
 ```go
 //file_system_store_test.go
@@ -675,7 +675,7 @@ t.Run("store wins for new players", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## Пробуем запустить тест
 
 ```
 === RUN   TestFileSystemStore/store_wins_for_new_players#01
@@ -683,9 +683,9 @@ t.Run("store wins for new players", func(t *testing.T) {
         file_system_store_test.go:86: got 0 want 1
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
-We just need to handle the scenario where `Find` returns `nil` because it couldn't find the player.
+Нам просто нужно обработать сценарий, когда `Find` возвращает `nil`, потому что он не смог найти игрока.
 
 ```go
 //file_system_store.go
@@ -704,9 +704,9 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-The happy path is looking ok so we can now try using our new `Store` in the integration test. This will give us more confidence that the software works and then we can delete the redundant `InMemoryPlayerStore`.
+"Счастливый путь" выглядит нормально, поэтому теперь мы можем попробовать использовать наше новое `Store` в интеграционном тесте. Это даст нам больше уверенности в том, что программное обеспечение работает, а затем мы сможем удалить избыточный `InMemoryPlayerStore`.
 
-In `TestRecordingWinsAndRetrievingThem` replace the old store.
+В `TestRecordingWinsAndRetrievingThem` заменяем старое хранилище.
 
 ```go
 //server_integration_test.go
@@ -715,7 +715,7 @@ defer cleanDatabase()
 store := &FileSystemPlayerStore{database}
 ```
 
-If you run the test it should pass and now we can delete `InMemoryPlayerStore`. `main.go` will now have compilation problems which will motivate us to now use our new store in the "real" code.
+Если вы запустите тест, он должен пройти, и теперь мы можем удалить `InMemoryPlayerStore`. В `main.go` теперь появятся проблемы компиляции, что побудит нас использовать наше новое хранилище в "реальном" коде.
 
 ```go
 // main.go
@@ -745,17 +745,17 @@ func main() {
 }
 ```
 
-- We create a file for our database.
-- The 2nd argument to `os.OpenFile` lets you define the permissions for opening the file, in our case `O_RDWR` means we want to read and write _and_ `os.O_CREATE` means create the file if it doesn't exist.
-- The 3rd argument means sets permissions for the file, in our case, all users can read and write the file. [(See superuser.com for a more detailed explanation)](https://superuser.com/questions/295591/what-is-the-meaning-of-chmod-666).
+- Мы создаем файл для нашей базы данных.
+- Второй аргумент `os.OpenFile` позволяет определить разрешения для открытия файла: в нашем случае `O_RDWR` означает, что мы хотим читать и записывать, _и_ `os.O_CREATE` означает создать файл, если он не существует.
+- Третий аргумент устанавливает права доступа к файлу: в нашем случае все пользователи могут читать и записывать файл. [(См. superuser.com для более подробного объяснения)](https://superuser.com/questions/295591/what-is-the-meaning-of-chmod-666).
 
-Running the program now persists the data in a file in between restarts, hooray!
+Теперь запуск программы сохраняет данные в файле между перезапусками, ура!
 
-## More refactoring and performance concerns
+## Дополнительный рефакторинг и вопросы производительности
 
-Every time someone calls `GetLeague()` or `GetPlayerScore()` we are reading the entire file and parsing it into JSON. We should not have to do that because `FileSystemStore` is entirely responsible for the state of the league; it should only need to read the file when the program starts up and only need to update the file when data changes.
+Каждый раз, когда кто-то вызывает `GetLeague()` или `GetPlayerScore()`, мы читаем весь файл и разбираем его в JSON. Мы не должны этого делать, потому что `FileSystemStore` полностью отвечает за состояние лиги; он должен читать файл только при запуске программы и обновлять файл только при изменении данных.
 
-We can create a constructor which can do some of this initialisation for us and store the league as a value in our `FileSystemStore` to be used on the reads instead.
+Мы можем создать конструктор, который будет выполнять часть этой инициализации за нас и хранить лигу как значение в нашем `FileSystemStore` для использования при чтении вместо того, чтобы каждый раз считывать ее с диска.
 
 ```go
 //file_system_store.go
@@ -774,7 +774,7 @@ func NewFileSystemPlayerStore(database io.ReadWriteSeeker) *FileSystemPlayerStor
 }
 ```
 
-This way we only have to read from disk once. We can now replace all of our previous calls to getting the league from disk and just use `f.league` instead.
+Таким образом, нам нужно читать с диска только один раз. Теперь мы можем заменить все наши предыдущие вызовы для получения лиги с диска и просто использовать `f.league`.
 
 ```go
 //file_system_store.go
@@ -807,19 +807,19 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-If you try to run the tests it will now complain about initialising `FileSystemPlayerStore` so just fix them by calling our new constructor.
+Если вы попробуете запустить тесты, они теперь будут жаловаться на инициализацию `FileSystemPlayerStore`, поэтому просто исправьте их, вызвав наш новый конструктор.
 
-### Another problem
+### Еще одна проблема
 
-There is some more naivety in the way we are dealing with files which _could_ create a very nasty bug down the line.
+Есть еще некоторая наивность в том, как мы работаем с файлами, что _могло бы_ создать очень неприятную ошибку в будущем.
 
-When we `RecordWin`, we `Seek` back to the start of the file and then write the new data—but what if the new data was smaller than what was there before?
+Когда мы `RecordWin`, мы `Seek` обратно к началу файла, а затем записываем новые данные — но что, если новые данные были меньше, чем те, что были там раньше?
 
-In our current case, this is impossible. We never edit or delete scores so the data can only get bigger. However, it would be irresponsible for us to leave the code like this; it's not unthinkable that a delete scenario could come up.
+В нашем текущем случае это невозможно. Мы никогда не редактируем и не удаляем очки, поэтому данные могут только увеличиваться. Однако было бы безответственно оставлять код таким; не исключено, что может возникнуть сценарий удаления.
 
-How will we test for this though? What we need to do is first refactor our code so we separate out the concern of the _kind of data we write, from the writing_. We can then test that separately to check it works how we hope.
+Как же мы это протестируем? Что нам нужно сделать, так это сначала провести рефакторинг нашего кода, чтобы отделить задачу _типа данных, которые мы записываем, от самой записи_. Затем мы сможем протестировать это отдельно, чтобы убедиться, что оно работает так, как мы надеемся.
 
-We'll create a new type to encapsulate our "when we write we go from the beginning" functionality. I'm going to call it `Tape`. Create a new file with the following:
+Мы создадим новый тип, чтобы инкапсулировать нашу функциональность "когда мы записываем, мы начинаем с самого начала". Я назову его `Tape`. Создайте новый файл со следующим содержимым:
 
 ```go
 // tape.go
@@ -837,7 +837,7 @@ func (t *tape) Write(p []byte) (n int, err error) {
 }
 ```
 
-Notice that we're only implementing `Write` now, as it encapsulates the `Seek` part. This means our `FileSystemStore` can just have a reference to a `Writer` instead.
+Обратите внимание, что теперь мы реализуем только `Write`, поскольку он инкапсулирует часть `Seek`. Это означает, что наш `FileSystemStore` может просто иметь ссылку на `Writer` вместо этого.
 
 ```go
 //file_system_store.go
@@ -847,7 +847,7 @@ type FileSystemPlayerStore struct {
 }
 ```
 
-Update the constructor to use `Tape`
+Обновите конструктор для использования `Tape`
 
 ```go
 //file_system_store.go
@@ -862,13 +862,13 @@ func NewFileSystemPlayerStore(database io.ReadWriteSeeker) *FileSystemPlayerStor
 }
 ```
 
-Finally, we can get the amazing payoff we wanted by removing the `Seek` call from `RecordWin`. Yes, it doesn't feel much, but at least it means if we do any other kind of writes we can rely on our `Write` to behave how we need it to. Plus it will now let us test the potentially problematic code separately and fix it.
+Наконец, мы можем получить потрясающий результат, удалив вызов `Seek` из `RecordWin`. Да, это не кажется большим изменением, но, по крайней мере, это означает, что если мы будем выполнять другие виды записи, мы сможем полагаться на то, что наш `Write` будет вести себя так, как нам нужно. Кроме того, это позволит нам теперь протестировать потенциально проблемный код отдельно и исправить его.
 
-Let's write the test where we want to update the entire contents of a file with something that is smaller than the original contents.
+Давайте напишем тест, в котором мы хотим обновить все содержимое файла чем-то, что меньше исходного содержимого.
 
-## Write the test first
+## Сначала пишем тест
 
-Our test will create a file with some content, try to write to it using the `tape`, and read it all again to see what's in the file. In `tape_test.go`:
+Наш тест создаст файл с некоторым содержимым, попробует записать в него с помощью `tape` и снова прочитает все, чтобы увидеть, что находится в файле. В `tape_test.go`:
 
 ```go
 //tape_test.go
@@ -892,7 +892,7 @@ func TestTape_Write(t *testing.T) {
 }
 ```
 
-## Try to run the test
+## Пробуем запустить тест
 
 ```
 === RUN   TestTape_Write
@@ -900,13 +900,13 @@ func TestTape_Write(t *testing.T) {
     tape_test.go:23: got 'abc45' want 'abc'
 ```
 
-As we thought! It writes the data we want, but leaves the rest of the original data remaining.
+Как мы и думали! Он записывает нужные нам данные, но оставляет остальную часть исходных данных.
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
-`os.File` has a truncate function that will let us effectively empty the file. We should be able to just call this to get what we want.
+У `os.File` есть функция truncate, которая позволит нам эффективно очистить файл. Мы должны просто вызвать ее, чтобы получить то, что нам нужно.
 
-Change `tape` to the following:
+Измените `tape` следующим образом:
 
 ```go
 //tape.go
@@ -921,17 +921,17 @@ func (t *tape) Write(p []byte) (n int, err error) {
 }
 ```
 
-The compiler will fail in a number of places where we are expecting an `io.ReadWriteSeeker` but we are sending in `*os.File`. You should be able to fix these problems yourself by now but if you get stuck just check the source code.
+Компилятор выдаст ошибку в нескольких местах, где мы ожидаем `io.ReadWriteSeeker`, но передаем `*os.File`. К этому моменту вы уже должны уметь исправлять эти проблемы самостоятельно, но если вы застрянете, просто проверьте исходный код.
 
-Once you get it refactoring our `TestTape_Write` test should be passing!
+Как только вы это сделаете, наш тест `TestTape_Write` должен пройти!
 
-### One other small refactor
+### Еще один небольшой рефакторинг
 
-In `RecordWin` we have the line `json.NewEncoder(f.database).Encode(f.league)`.
+В `RecordWin` у нас есть строка `json.NewEncoder(f.database).Encode(f.league)`.
 
-We don't need to create a new encoder every time we write, we can initialise one in our constructor and use that instead.
+Нам не нужно создавать новый кодировщик каждый раз, когда мы записываем; мы можем инициализировать его в нашем конструкторе и использовать его вместо этого.
 
-Store a reference to an `Encoder` in our type and initialise it in the constructor:
+Сохраните ссылку на `Encoder` в нашем типе и инициализируйте ее в конструкторе:
 
 ```go
 //file_system_store.go
@@ -951,7 +951,7 @@ func NewFileSystemPlayerStore(file *os.File) *FileSystemPlayerStore {
 }
 ```
 
-Use it in `RecordWin`.
+Используйте это в `RecordWin`.
 
 ```go
 func (f *FileSystemPlayerStore) RecordWin(name string) {
@@ -967,23 +967,23 @@ func (f *FileSystemPlayerStore) RecordWin(name string) {
 }
 ```
 
-## Didn't we just break some rules there? Testing private things? No interfaces?
+## Разве мы только что не нарушили некоторые правила? Тестирование приватных вещей? Без интерфейсов?
 
-### On testing private types
+### О тестировании приватных типов
 
-It's true that _in general_ you should favour not testing private things as that can sometimes lead to your tests being too tightly coupled to the implementation, which can hinder refactoring in future.
+Это правда, что _в целом_ следует отдавать предпочтение не тестированию приватных вещей, так как это иногда может привести к слишком сильной связи ваших тестов с реализацией, что может помешать рефакторингу в будущем.
 
-However, we must not forget that tests should give us _confidence_.
+Однако мы не должны забывать, что тесты должны давать нам _уверенность_.
 
-We were not confident that our implementation would work if we added any kind of edit or delete functionality. We did not want to leave the code like that, especially if this was being worked on by more than one person who may not be aware of the shortcomings of our initial approach.
+Мы не были уверены, что наша реализация будет работать, если мы добавим какую-либо функциональность редактирования или удаления. Мы не хотели оставлять код таким, особенно если над ним работало более одного человека, который мог не знать о недостатках нашего первоначального подхода.
 
-Finally, it's just one test! If we decide to change the way it works it won't be a disaster to just delete the test but we have at the very least captured the requirement for future maintainers.
+Наконец, это всего лишь один тест! Если мы решим изменить его работу, это не будет катастрофой, просто удалить тест, но мы, по крайней мере, зафиксировали требование для будущих сопровождающих.
 
-### Interfaces
+### Интерфейсы
 
-We started off the code by using `io.Reader` as that was the easiest path for us to unit test our new `PlayerStore`. As we developed the code we moved on to `io.ReadWriter` and then `io.ReadWriteSeeker`. We then found out there was nothing in the standard library that actually implemented that apart from `*os.File`. We could've taken the decision to write our own or use an open source one but it felt pragmatic just to make temporary files for the tests.
+Мы начали код с использования `io.Reader`, так как это был самый простой путь для модульного тестирования нашего нового `PlayerStore`. По мере разработки кода мы перешли к `io.ReadWriter`, а затем к `io.ReadWriteSeeker`. Затем мы обнаружили, что в стандартной библиотеке нет ничего, что действительно реализовывало бы это, кроме `*os.File`. Мы могли бы принять решение написать свой собственный или использовать открытый исходный код, но прагматичным казалось просто создавать временные файлы для тестов.
 
-Finally, we needed `Truncate` which is also on `*os.File`. It would've been an option to create our own interface capturing these requirements.
+Наконец, нам понадобился `Truncate`, который также есть в `*os.File`. Можно было бы создать свой собственный интерфейс, учитывающий эти требования.
 
 ```go
 type ReadWriteSeekTruncate interface {
@@ -992,21 +992,21 @@ type ReadWriteSeekTruncate interface {
 }
 ```
 
-But what is this really giving us? Bear in mind we are _not mocking_ and it is unrealistic for a **file system** store to take any type other than an `*os.File` so we don't need the polymorphism that interfaces give us.
+Но что это нам на самом деле дает? Имейте в виду, что мы _не имитируем_, и нереалистично для **файловой системы** хранилища принимать любой другой тип, кроме `*os.File`, поэтому нам не нужен полиморфизм, который дают интерфейсы.
 
-Don't be afraid to chop and change types and experiment like we have here. The great thing about using a statically typed language is the compiler will help you with every change.
+Не бойтесь менять типы и экспериментировать, как мы это делали здесь. Отличная особенность использования статически типизированного языка заключается в том, что компилятор поможет вам при каждом изменении.
 
-## Error handling
+## Обработка ошибок
 
-Before we start working on sorting we should make sure we're happy with our current code and remove any technical debt we may have. It's an important principle to get to working software as quickly as possible (stay out of the red state) but that doesn't mean we should ignore error cases!
+Прежде чем мы начнем работу над сортировкой, мы должны убедиться, что наш текущий код нас устраивает, и удалить любую техническую задолженность, которая у нас может быть. Важный принцип — как можно быстрее перейти к работающему программному обеспечению (избегать "красного" состояния), но это не означает, что мы должны игнорировать случаи ошибок!
 
-If we go back to `FileSystemStore.go` we have `league, _ := NewLeague(f.database)` in our constructor.
+Если мы вернемся к `FileSystemStore.go`, то увидим `league, _ := NewLeague(f.database)` в нашем конструкторе.
 
-`NewLeague` can return an error if it is unable to parse the league from the `io.Reader` that we provide.
+`NewLeague` может вернуть ошибку, если ему не удастся разобрать лигу из предоставленного нами `io.Reader`.
 
-It was pragmatic to ignore that at the time as we already had failing tests. If we had tried to tackle it at the same time, we would have been juggling two things at once.
+В тот момент было прагматично игнорировать это, поскольку у нас уже были падающие тесты. Если бы мы попытались заняться этим одновременно, мы бы жонглировали двумя вещами сразу.
 
-Let's make it so our constructor is capable of returning an error.
+Давайте сделаем так, чтобы наш конструктор мог возвращать ошибку.
 
 ```go
 //file_system_store.go
@@ -1025,7 +1025,7 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 }
 ```
 
-Remember it is very important to give helpful error messages (just like your tests). People on the internet jokingly say that most Go code is:
+Помните, очень важно давать полезные сообщения об ошибках (как и ваши тесты). Люди в интернете в шутку говорят, что большая часть Go-кода это:
 
 ```go
 if err != nil {
@@ -1033,9 +1033,9 @@ if err != nil {
 }
 ```
 
-**That is 100% not idiomatic.** Adding contextual information (i.e what you were doing to cause the error) to your error messages makes operating your software far easier.
+**Это на 100% не идиоматично.** Добавление контекстной информации (т.е. того, что вы делали, чтобы вызвать ошибку) к вашим сообщениям об ошибках значительно облегчает работу с вашим программным обеспечением.
 
-If you try to compile you'll get some errors.
+Если вы попробуете скомпилировать, вы получите несколько ошибок.
 
 ```
 ./main.go:18:35: multiple-value NewFileSystemPlayerStore() in single-value context
@@ -1046,7 +1046,7 @@ If you try to compile you'll get some errors.
 ./server_integration_test.go:12:35: multiple-value NewFileSystemPlayerStore() in single-value context
 ```
 
-In main we'll want to exit the program, printing the error.
+В `main` мы захотим выйти из программы, распечатав ошибку.
 
 ```go
 //main.go
@@ -1057,7 +1057,7 @@ if err != nil {
 }
 ```
 
-In the tests we should assert there is no error. We can make a helper to help with this.
+В тестах мы должны утверждать, что ошибок нет. Мы можем создать вспомогательную функцию для этого.
 
 ```go
 //file_system_store_test.go
@@ -1069,7 +1069,7 @@ func assertNoError(t testing.TB, err error) {
 }
 ```
 
-Work through the other compilation problems using this helper. Finally, you should have a failing test:
+Разберитесь с остальными проблемами компиляции, используя эту вспомогательную функцию. Наконец, у вас должен быть падающий тест:
 
 ```
 === RUN   TestRecordingWinsAndRetrievingThem
@@ -1077,9 +1077,9 @@ Work through the other compilation problems using this helper. Finally, you shou
     server_integration_test.go:14: didn't expect an error but got one, problem loading player store from file /var/folders/nj/r_ccbj5d7flds0sf63yy4vb80000gn/T/db841037437, problem parsing league, EOF
 ```
 
-We cannot parse the league because the file is empty. We weren't getting errors before because we always just ignored them.
+Мы не можем разобрать лигу, потому что файл пуст. Раньше мы не получали ошибок, потому что всегда просто игнорировали их.
 
-Let's fix our big integration test by putting some valid JSON in it:
+Давайте исправим наш большой интеграционный тест, добавив в него валидный JSON:
 
 ```go
 //server_integration_test.go
@@ -1089,9 +1089,9 @@ func TestRecordingWinsAndRetrievingThem(t *testing.T) {
 }
 ```
 
-Now that all the tests are passing, we need to handle the scenario where the file is empty.
+Теперь, когда все тесты проходят, нам нужно обработать сценарий, когда файл пуст.
 
-## Write the test first
+## Сначала пишем тест
 
 ```go
 //file_system_store_test.go
@@ -1105,7 +1105,7 @@ t.Run("works with an empty file", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## Пробуем запустить тест
 
 ```
 === RUN   TestFileSystemStore/works_with_an_empty_file
@@ -1113,9 +1113,9 @@ t.Run("works with an empty file", func(t *testing.T) {
         file_system_store_test.go:108: didn't expect an error but got one, problem loading player store from file /var/folders/nj/r_ccbj5d7flds0sf63yy4vb80000gn/T/db019548018, problem parsing league, EOF
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
-Change our constructor to the following
+Измените наш конструктор следующим образом:
 
 ```go
 //file_system_store.go
@@ -1147,11 +1147,11 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 }
 ```
 
-`file.Stat` returns stats on our file, which lets us check the size of the file. If it's empty, we `Write` an empty JSON array and `Seek` back to the start, ready for the rest of the code.
+`file.Stat` возвращает статистику по нашему файлу, что позволяет нам проверить размер файла. Если он пуст, мы `Write` пустой JSON-массив и `Seek` обратно к началу, готовясь к остальному коду.
 
-## Refactor
+## Рефакторинг
 
-Our constructor is a bit messy now, so let's extract the initialise code into a function:
+Наш конструктор теперь немного запутан, поэтому давайте извлечем код инициализации в функцию:
 
 ```go
 //file_system_store.go
@@ -1196,15 +1196,15 @@ func NewFileSystemPlayerStore(file *os.File) (*FileSystemPlayerStore, error) {
 }
 ```
 
-## Sorting
+## Сортировка
 
-Our product owner wants `/league` to return the players sorted by their scores, from highest to lowest.
+Наш product owner хочет, чтобы `/league` возвращал игроков, отсортированных по их очкам, от наивысшего к наименьшему.
 
-The main decision to make here is where in the software should this happen. If we were using a "real" database we would use things like `ORDER BY` so the sorting is super fast. For that reason, it feels like implementations of `PlayerStore` should be responsible.
+Основное решение, которое нужно принять здесь, — где в программном обеспечении это должно происходить. Если бы мы использовали "настоящую" базу данных, мы бы использовали такие вещи, как `ORDER BY`, чтобы сортировка была сверхбыстрой. По этой причине кажется, что реализации `PlayerStore` должны быть ответственными.
 
-## Write the test first
+## Сначала пишем тест
 
-We can update the assertion on our first test in `TestFileSystemStore`:
+Мы можем обновить утверждение в нашем первом тесте в `TestFileSystemStore`:
 
 ```go
 //file_system_store_test.go
@@ -1233,9 +1233,9 @@ t.Run("league sorted", func(t *testing.T) {
 })
 ```
 
-The order of the JSON coming in is in the wrong order and our `want` will check that it is returned to the caller in the correct order.
+Порядок входящего JSON неверен, и наше `want` проверит, что он возвращен вызывающей стороне в правильном порядке.
 
-## Try to run the test
+## Пробуем запустить тест
 
 ```
 === RUN   TestFileSystemStore/league_from_a_reader,_sorted
@@ -1244,7 +1244,7 @@ The order of the JSON coming in is in the wrong order and our `want` will check 
         file_system_store_test.go:51: got [{Cleo 10} {Chris 33}] want [{Chris 33} {Cleo 10}]
 ```
 
-## Write enough code to make it pass
+## Пишем достаточно кода, чтобы тест прошел
 
 ```go
 func (f *FileSystemPlayerStore) GetLeague() League {
@@ -1257,29 +1257,29 @@ func (f *FileSystemPlayerStore) GetLeague() League {
 
 [`sort.Slice`](https://golang.org/pkg/sort/#Slice)
 
-> Slice sorts the provided slice given the provided less function.
+> Slice сортирует предоставленный срез, используя предоставленную функцию less.
 
-Easy!
+Легко!
 
-## Wrapping up
+## Подводим итоги
 
-### What we've covered
+### Что мы рассмотрели
 
-- The `Seeker` interface and its relation to `Reader` and `Writer`.
-- Working with files.
-- Creating an easy to use helper for testing with files that hides all the messy stuff.
-- `sort.Slice` for sorting slices.
-- Using the compiler to help us safely make structural changes to the application.
+- Интерфейс `Seeker` и его связь с `Reader` и `Writer`.
+- Работа с файлами.
+- Создание простого в использовании помощника для тестирования с файлами, который скрывает все сложности.
+- `sort.Slice` для сортировки срезов.
+- Использование компилятора для безопасного внесения структурных изменений в приложение.
 
-### Breaking rules
+### Нарушение правил
 
-- Most rules in software engineering aren't really rules, just best practices that work 80% of the time.
-- We discovered a scenario where one of our previous "rules" of not testing internal functions was not helpful for us so we broke the rule.
-- It's important when breaking rules to understand the trade-off you are making. In our case, we were ok with it because it was just one test and would've been very difficult to exercise the scenario otherwise.
-- In order to be able to break the rules **you must understand them first**. An analogy is with learning guitar. It doesn't matter how creative you think you are, you must understand and practice the fundamentals.
+- Большинство правил в разработке программного обеспечения на самом деле не правила, а просто лучшие практики, которые работают в 80% случаев.
+- Мы обнаружили сценарий, когда одно из наших предыдущих "правил" — не тестировать внутренние функции — оказалось для нас бесполезным, поэтому мы нарушили это правило.
+- Важно при нарушении правил понимать, на какой компромисс вы идете. В нашем случае, мы согласились на это, потому что это был всего один тест, и в противном случае было бы очень трудно отработать этот сценарий.
+- Чтобы иметь возможность нарушать правила, **вы должны сначала их понять**. Аналогия с обучением игре на гитаре. Неважно, насколько креативным вы себя считаете, вы должны понимать и практиковать основы.
 
-### Where our software is at
+### Где находится наше программное обеспечение
 
-- We have an HTTP API where you can create players and increment their score.
-- We can return a league of everyone's scores as JSON.
-- The data is persisted as a JSON file.
+- У нас есть HTTP API, где вы можете создавать игроков и увеличивать их счет.
+- Мы можем вернуть лигу из результатов всех игроков в формате JSON.
+- Данные сохраняются в файле JSON.

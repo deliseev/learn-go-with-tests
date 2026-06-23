@@ -1,43 +1,43 @@
-# Reflection
+# Рефлексия
 
-**[You can find all the code for this chapter here](https://github.com/quii/learn-go-with-tests/tree/main/reflection)**
+**[Весь код для этой главы вы найдете здесь](https://github.com/quii/learn-go-with-tests/tree/main/reflection)**
 
-[From Twitter](https://twitter.com/peterbourgon/status/1011403901419937792?s=09)
+[Из Твиттера](https://twitter.com/peterbourgon/status/1011403901419937792?s=09)
 
-> golang challenge: write a function `walk(x interface{}, fn func(string))` which takes a struct `x` and calls `fn` for all strings fields found inside. difficulty level: recursively.
+> golang challenge: напишите функцию `walk(x interface{}, fn func(string))`, которая принимает структуру `x` и вызывает `fn` для всех строковых полей, найденных внутри. уровень сложности: рекурсивно.
 
-To do this we will need to use _reflection_.
+Для этого нам понадобится использовать _рефлексию_.
 
-> Reflection in computing is the ability of a program to examine its own structure, particularly through types; it's a form of metaprogramming. It's also a great source of confusion.
+> Рефлексия в программировании — это способность программы исследовать свою собственную структуру, в частности, через типы; это форма метапрограммирования. Это также является большим источником путаницы.
 
-From [The Go Blog: Reflection](https://blog.golang.org/laws-of-reflection)
+Из [The Go Blog: Reflection](https://blog.golang.org/laws-of-reflection)
 
-## What is `interface{}`?
+## Что такое `interface{}`?
 
-We have enjoyed the type-safety that Go has offered us in terms of functions that work with known types, such as `string`, `int` and our own types like `BankAccount`.
+Мы наслаждались типовой безопасностью, которую Go предлагает нам в функциях, работающих с известными типами, такими как `string`, `int` и нашими собственными типами, такими как `BankAccount`.
 
-This means that we get some documentation for free and the compiler will complain if you try and pass the wrong type to a function.
+Это означает, что мы получаем некоторую документацию бесплатно, и компилятор будет жаловаться, если вы попытаетесь передать функции неверный тип.
 
-You may come across scenarios though where you want to write a function where you don't know the type at compile time.
+Однако вы можете столкнуться со сценариями, когда вы хотите написать функцию, в которой тип неизвестен во время компиляции.
 
-Go lets us get around this with the type `interface{}` which you can think of as just _any_ type (in fact, in Go `any` is an [alias](https://cs.opensource.google/go/go/+/master:src/builtin/builtin.go;drc=master;l=95) for `interface{}`).
+Go позволяет нам обойти это с помощью типа `interface{}`, который можно рассматривать как _любой_ тип (на самом деле, в Go `any` является [псевдонимом](https://cs.opensource.google/go/go/+/master:src/builtin/builtin.go;drc=master;l=95) для `interface{}`).
 
-So `walk(x interface{}, fn func(string))` will accept any value for `x`.
+Таким образом, `walk(x interface{}, fn func(string))` будет принимать любое значение для `x`.
 
-### So why not use `interface{}` for everything and have really flexible functions?
+### Так почему бы не использовать `interface{}` для всего и не иметь действительно гибких функций?
 
-- As a user of a function that takes `interface{}` you lose type safety. What if you meant to pass `Herd.species` of type `string` into a function but instead did `Herd.count` which is an `int`? The compiler won't be able to inform you of your mistake. You also have no idea _what_ you're allowed to pass to a function. Knowing that a function takes a `UserService` for instance is very useful.
-- As a writer of such a function, you have to be able to inspect _anything_ that has been passed to you and try and figure out what the type is and what you can do with it. This is done using _reflection_. This can be quite clumsy and difficult to read and is generally less performant (as you have to do checks at runtime).
+- Как пользователь функции, которая принимает `interface{}`, вы теряете типовую безопасность. Что, если вы хотели передать `Herd.species` типа `string` в функцию, но вместо этого передали `Herd.count`, которое является `int`? Компилятор не сможет сообщить вам о вашей ошибке. Вы также понятия не имеете, _что_ вам разрешено передавать функции. Знание того, что функция принимает, например, `UserService`, очень полезно.
+- Как автор такой функции, вы должны иметь возможность проверять _все_, что вам было передано, и пытаться выяснить, что это за тип и что вы можете с ним делать. Это делается с помощью _рефлексии_. Это может быть довольно громоздко и трудночитаемо, и, как правило, менее производительно (поскольку вам приходится выполнять проверки во время выполнения).
 
-In short only use reflection if you really need to.
+Короче говоря, используйте рефлексию только в том случае, если вам это действительно необходимо.
 
-If you want polymorphic functions, consider if you could design it around an interface (not `interface{}`, confusingly) so that users can use your function with multiple types if they implement whatever methods you need for your function to work.
+Если вы хотите использовать полиморфные функции, подумайте, можете ли вы спроектировать их на основе интерфейса (не `interface{}`, что сбивает с толку), чтобы пользователи могли использовать вашу функцию с несколькими типами, если они реализуют любые методы, необходимые для работы вашей функции.
 
-Our function will need to be able to work with lots of different things. As always we'll take an iterative approach, writing tests for each new thing we want to support and refactoring along the way until we're done.
+Наша функция должна будет работать с множеством различных вещей. Как всегда, мы будем использовать итеративный подход, писать тесты для каждой новой вещи, которую мы хотим поддерживать, и рефакторить по ходу дела, пока не закончим.
 
-## Write the test first
+## Сначала напишем тест
 
-We'll want to call our function with a struct that has a string field in it (`x`). Then we can spy on the function (`fn`) passed in to see if it is called.
+Мы захотим вызвать нашу функцию со структурой, содержащей строковое поле (`x`). Затем мы сможем "шпионить" за переданной функцией (`fn`), чтобы проверить, была ли она вызвана.
 
 ```go
 func TestWalk(t *testing.T) {
@@ -59,19 +59,19 @@ func TestWalk(t *testing.T) {
 }
 ```
 
-- We want to store a slice of strings (`got`) which stores which strings were passed into `fn` by `walk`. Often in previous chapters, we have made dedicated types for this to spy on function/method invocations but in this case, we can just pass in an anonymous function for `fn` that closes over `got`.
-- We use an anonymous `struct` with a `Name` field of type string to go for the simplest "happy" path.
-- Finally, call `walk` with `x` and the spy and for now just check the length of `got`, we'll be more specific with our assertions once we've got something very basic working.
+- Мы хотим сохранить срез строк (`got`), который хранит строки, переданные в `fn` функцией `walk`. Часто в предыдущих главах мы создавали для этого выделенные типы, чтобы "шпионить" за вызовами функций/методов, но в данном случае мы можем просто передать анонимную функцию для `fn`, которая захватывает `got`.
+- Мы используем анонимную `структуру` с полем `Name` строкового типа для простейшего "счастливого" пути.
+- Наконец, вызываем `walk` с `x` и "шпионом", и пока просто проверяем длину `got`; мы будем более конкретны в наших утверждениях, как только у нас заработает что-то очень простое.
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 ./reflection_test.go:21:2: undefined: walk
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишем минимальный код для запуска теста и проверим вывод неудачного теста
 
-We need to define `walk`
+Нам нужно определить `walk`
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -79,7 +79,7 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-Try and run the test again
+Попробуем запустить тест снова
 
 ```
 === RUN   TestWalk
@@ -88,9 +88,9 @@ Try and run the test again
 FAIL
 ```
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
 
-We can call the spy with any string to make this pass.
+Мы можем вызвать "шпиона" с любой строкой, чтобы тест прошел.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -98,11 +98,11 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-The test should now be passing. The next thing we'll need to do is make a more specific assertion on what our `fn` is being called with.
+Тест теперь должен проходить. Следующее, что нам нужно будет сделать, это более конкретное утверждение о том, с чем вызывается наша `fn`.
 
-## Write the test first
+## Сначала напишем тест
 
-Add the following to the existing test to check the string passed to `fn` is correct
+Добавьте следующее в существующий тест, чтобы проверить, что строка, переданная `fn`, верна
 
 ```go
 if got[0] != expected {
@@ -110,7 +110,7 @@ if got[0] != expected {
 }
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 === RUN   TestWalk
@@ -119,7 +119,7 @@ if got[0] != expected {
 FAIL
 ```
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -129,24 +129,24 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-This code is _very unsafe and very naive_, but remember: our goal when we are in "red" (the tests failing) is to write the smallest amount of code possible. We then write more tests to address our concerns.
+Этот код _очень небезопасен и очень наивен_, но помните: наша цель, когда мы находимся в "красной" зоне (тесты не проходят), — написать минимально возможное количество кода. Затем мы пишем больше тестов, чтобы решить наши проблемы.
 
-We need to use reflection to have a look at `x` and try and look at its properties.
+Нам нужно использовать рефлексию, чтобы взглянуть на `x` и попытаться изучить его свойства.
 
-The [reflect package](https://pkg.go.dev/reflect) has a function `ValueOf` which returns us a `Value` of a given variable. This has ways for us to inspect a value, including its fields which we use on the next line.
+Пакет [reflect](https://pkg.go.dev/reflect) содержит функцию `ValueOf`, которая возвращает нам `Value` заданной переменной. Это позволяет нам исследовать значение, включая его поля, которые мы используем в следующей строке.
 
-We then make some very optimistic assumptions about the value passed in:
+Затем мы делаем несколько очень оптимистичных предположений о переданном значении:
 
-- We look at the first and only field. However, there may be no fields at all, which would cause a panic.
-- We then call `String()`, which returns the underlying value as a string. However, this would be wrong if the field was something other than a string.
+- Мы смотрим на первое и единственное поле. Однако полей может не быть вовсе, что вызовет панику.
+- Затем мы вызываем `String()`, которая возвращает базовое значение в виде строки. Однако это было бы неверно, если бы поле было чем-то иным, чем строка.
 
-## Refactor
+## Рефакторинг
 
-Our code is passing for the simple case but we know our code has a lot of shortcomings.
+Наш код проходит для простого случая, но мы знаем, что у нашего кода есть много недостатков.
 
-We're going to be writing a number of tests where we pass in different values and checking the array of strings that `fn` was called with.
+Мы собираемся написать ряд тестов, в которых будем передавать различные значения и проверять срез строк, с которым была вызвана `fn`.
 
-We should refactor our test into a table based test to make this easier to continue testing new scenarios.
+Нам следует рефакторить наш тест в табличный тест, чтобы упростить дальнейшее тестирование новых сценариев.
 
 ```go
 func TestWalk(t *testing.T) {
@@ -180,11 +180,11 @@ func TestWalk(t *testing.T) {
 }
 ```
 
-Now we can easily add a scenario to see what happens if we have more than one string field.
+Теперь мы можем легко добавить сценарий, чтобы увидеть, что произойдет, если у нас будет более одного строкового поля.
 
-## Write the test first
+## Сначала напишем тест
 
-Add the following scenario to the `cases`.
+Добавьте следующий сценарий в `cases`.
 
 ```
 {
@@ -197,7 +197,7 @@ Add the following scenario to the `cases`.
 },
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 === RUN   TestWalk/struct_with_two_string_fields
@@ -205,7 +205,7 @@ Add the following scenario to the `cases`.
         reflection_test.go:40: got [Chris], want [Chris London]
 ```
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -218,17 +218,17 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-`val` has a method `NumField` which returns the number of fields in the value. This lets us iterate over the fields and call `fn` which passes our test.
+`val` имеет метод `NumField`, который возвращает количество полей в значении. Это позволяет нам итерировать поля и вызывать `fn`, что приводит к прохождению нашего теста.
 
-## Refactor
+## Рефакторинг
 
-It doesn't look like there's any obvious refactors here that would improve the code so let's press on.
+Похоже, здесь нет очевидных рефакторингов, которые улучшили бы код, так что давайте продолжим.
 
-The next shortcoming in `walk` is that it assumes every field is a `string`. Let's write a test for this scenario.
+Следующий недостаток `walk` заключается в том, что она предполагает, что каждое поле является `string`. Давайте напишем тест для этого сценария.
 
-## Write the test first
+## Сначала напишем тест
 
-Add the following case
+Добавьте следующий случай
 
 ```
 {
@@ -241,7 +241,7 @@ Add the following case
 },
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 === RUN   TestWalk/struct_with_non_string_field
@@ -249,9 +249,9 @@ Add the following case
         reflection_test.go:46: got [Chris <int Value>], want [Chris]
 ```
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
 
-We need to check that the type of the field is a `string`.
+Нам нужно проверить, что тип поля — `string`.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -267,17 +267,17 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-We can do that by checking its [`Kind`](https://pkg.go.dev/reflect#Kind).
+Мы можем это сделать, проверив его [`Kind`](https://pkg.go.dev/reflect#Kind).
 
-## Refactor
+## Рефакторинг
 
-Again it looks like the code is reasonable enough for now.
+И снова, похоже, что код достаточно разумный на данный момент.
 
-The next scenario is what if it isn't a "flat" `struct`? In other words, what happens if we have a `struct` with some nested fields?
+Следующий сценарий: что, если это не "плоская" `структура`? Другими словами, что произойдет, если у нас есть `структура` с некоторыми вложенными полями?
 
-## Write the test first
+## Сначала напишем тест
 
-We have been using the anonymous struct syntax to declare types ad-hocly for our tests so we could continue to do that like so
+Мы использовали синтаксис анонимных структур для ситуативного объявления типов в наших тестах, поэтому могли бы продолжить делать это так:
 
 ```
 {
@@ -296,11 +296,11 @@ We have been using the anonymous struct syntax to declare types ad-hocly for our
 },
 ```
 
-But we can see that when you get inner anonymous structs the syntax gets a little messy. [There is a proposal to make it so the syntax would be nicer](https://github.com/golang/go/issues/12854).
+Но мы видим, что когда появляются вложенные анонимные структуры, синтаксис становится немного громоздким. [Есть предложение сделать синтаксис более приятным](https://github.com/golang/go/issues/12854).
 
-Let's just refactor this by making a known type for this scenario and reference it in the test. There is a little indirection in that some of the code for our test is outside the test but readers should be able to infer the structure of the `struct` by looking at the initialisation.
+Давайте просто рефакторим это, создав известный тип для этого сценария и сославшись на него в тесте. Здесь есть небольшая косвенность в том, что часть кода для нашего теста находится вне теста, но читатели должны быть в состоянии вывести структуру `структуры`, глядя на инициализацию.
 
-Add the following type declarations somewhere in your test file
+Добавьте следующие объявления типов где-нибудь в ваш тестовый файл
 
 ```go
 type Person struct {
@@ -314,7 +314,7 @@ type Profile struct {
 }
 ```
 
-Now we can add this to our cases which reads a lot clearer than before
+Теперь мы можем добавить это в наши тестовые случаи, что читается намного понятнее, чем раньше
 
 ```
 {
@@ -327,7 +327,7 @@ Now we can add this to our cases which reads a lot clearer than before
 },
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 === RUN   TestWalk/Nested_fields
@@ -335,9 +335,11 @@ Now we can add this to our cases which reads a lot clearer than before
         reflection_test.go:54: got [Chris], want [Chris London]
 ```
 
-The problem is we're only iterating on the fields on the first level of the type's hierarchy.
+Проблема в том, что мы итерируем только поля на первом уровне иерархии типа.
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
+
+Решение довольно простое: мы снова проверяем его `Kind`, и если это оказывается `структура`, мы просто снова вызываем `walk` для этой внутренней `структуры`.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -357,9 +359,9 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-The solution is quite simple, we again inspect its `Kind` and if it happens to be a `struct` we just call `walk` again on that inner `struct`.
+## Рефакторинг
 
-## Refactor
+Когда вы сравниваете одно и то же значение более одного раза, _обычно_ рефакторинг с использованием `switch` улучшит читаемость и сделает ваш код более легким для расширения.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -378,13 +380,11 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-When you're doing a comparison on the same value more than once _generally_ refactoring into a `switch` will improve readability and make your code easier to extend.
+Что, если значение переданной структуры является указателем?
 
-What if the value of the struct passed in is a pointer?
+## Сначала напишем тест
 
-## Write the test first
-
-Add this case
+Добавьте этот случай
 
 ```
 {
@@ -397,7 +397,7 @@ Add this case
 },
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 === RUN   TestWalk/pointers_to_things
@@ -405,7 +405,9 @@ panic: reflect: call of reflect.Value.NumField on ptr Value [recovered]
     panic: reflect: call of reflect.Value.NumField on ptr Value
 ```
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
+
+Вы не можете использовать `NumField` на `Value` указателя, нам нужно извлечь базовое значение, прежде чем мы сможем это сделать, используя `Elem()`.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -428,11 +430,9 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-You can't use `NumField` on a pointer `Value`, we need to extract the underlying value before we can do that by using `Elem()`.
+## Рефакторинг
 
-## Refactor
-
-Let's encapsulate the responsibility of extracting the `reflect.Value` from a given `interface{}` into a function.
+Давайте инкапсулируем ответственность за извлечение `reflect.Value` из данного `interface{}` в отдельную функцию.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -461,14 +461,14 @@ func getValue(x interface{}) reflect.Value {
 }
 ```
 
-This actually adds _more_ code but I feel the abstraction level is right.
+Это на самом деле добавляет _больше_ кода, но я чувствую, что уровень абстракции правильный.
 
-- Get the `reflect.Value` of `x` so I can inspect it, I don't care how.
-- Iterate over the fields, doing whatever needs to be done depending on its type.
+- Получить `reflect.Value` от `x`, чтобы я мог его исследовать, мне все равно, как.
+- Итерировать по полям, выполняя то, что необходимо, в зависимости от их типа.
 
-Next, we need to cover slices.
+Далее, нам нужно рассмотреть срезы.
 
-## Write the test first
+## Сначала напишем тест
 
 ```
 {
@@ -481,7 +481,7 @@ Next, we need to cover slices.
 },
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 === RUN   TestWalk/slices
@@ -489,11 +489,11 @@ panic: reflect: call of reflect.Value.NumField on slice Value [recovered]
     panic: reflect: call of reflect.Value.NumField on slice Value
 ```
 
-## Write the minimal amount of code for the test to run and check the failing test output
+## Напишем минимальный код для запуска теста и проверим вывод неудачного теста
 
-This is similar to the pointer scenario before, we are trying to call `NumField` on our `reflect.Value` but it doesn't have one as it's not a struct.
+Это похоже на предыдущий сценарий с указателем: мы пытаемся вызвать `NumField` на нашем `reflect.Value`, но у него его нет, так как это не структура.
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -519,18 +519,18 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-## Refactor
+## Рефакторинг
 
-This works but it's yucky. No worries, we have working code backed by tests so we are free to tinker all we like.
+Это работает, но это неприятно. Не беспокойтесь, у нас есть рабочий код, подкрепленный тестами, так что мы можем изменять его сколько угодно.
 
-If you think a little abstractly, we want to call `walk` on either
+Если подумать немного абстрактно, мы хотим вызвать `walk` либо:
 
-- Each field in a struct
-- Each _thing_ in a slice
+- Для каждого поля в структуре
+- Для каждой _вещи_ в срезе
 
-Our code at the moment does this but doesn't reflect it very well. We just have a check at the start to see if it's a slice (with a `return` to stop the rest of the code executing) and if it's not we just assume it's a struct.
+Наш код на данный момент делает это, но не отражает это очень хорошо. У нас просто есть проверка в начале, чтобы увидеть, является ли это срезом (с `return`, чтобы остановить выполнение остального кода), и если нет, мы просто предполагаем, что это структура.
 
-Let's rework the code so instead we check the type _first_ and then do our work.
+Давайте переработаем код так, чтобы сначала мы проверяли тип, а затем выполняли нашу работу.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -551,9 +551,9 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-Looking much better! If it's a struct or a slice we iterate over its values calling `walk` on each one. Otherwise, if it's a `reflect.String` we can call `fn`.
+Выглядит гораздо лучше! Если это структура или срез, мы итерируем по ее значениям, вызывая `walk` для каждого из них. В противном случае, если это `reflect.String`, мы можем вызвать `fn`.
 
-Still, to me it feels like it could be better. There's repetition of the operation of iterating over fields/values and then calling `walk` but conceptually they're the same.
+Тем не менее, мне кажется, что можно сделать лучше. Повторяется операция итерации по полям/значениям с последующим вызовом `walk`, но концептуально они одинаковы.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -579,20 +579,20 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-If the `value` is a `reflect.String` then we just call `fn` like normal.
+Если `value` является `reflect.String`, то мы просто вызываем `fn` как обычно.
 
-Otherwise, our `switch` will extract out two things depending on the type
+В противном случае наш `switch` извлечет две вещи в зависимости от типа:
 
-- How many fields there are
-- How to extract the `Value` (`Field` or `Index`)
+- Сколько полей существует
+- Как извлечь `Value` (`Field` или `Index`)
 
-Once we've determined those things we can iterate through `numberOfValues` calling `walk` with the result of the `getField` function.
+Как только мы определили эти вещи, мы можем итерировать `numberOfValues`, вызывая `walk` с результатом функции `getField`.
 
-Now we've done this, handling arrays should be trivial.
+Теперь, когда мы это сделали, обработка массивов должна быть тривиальной.
 
-## Write the test first
+## Сначала напишем тест
 
-Add to the cases
+Добавьте в тестовые случаи
 
 ```
 {
@@ -605,7 +605,7 @@ Add to the cases
 },
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 === RUN   TestWalk/arrays
@@ -613,9 +613,9 @@ Add to the cases
         reflection_test.go:78: got [], want [London Reykjavík]
 ```
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
 
-Arrays can be handled the same way as slices, so just add it to the case with a comma
+Массивы можно обрабатывать так же, как и срезы, поэтому просто добавьте их в case через запятую.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -641,9 +641,9 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-The next type we want to handle is `map`.
+Следующий тип, который мы хотим обрабатывать, — `map`.
 
-## Write the test first
+## Сначала напишем тест
 
 ```
 {
@@ -656,7 +656,7 @@ The next type we want to handle is `map`.
 },
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 === RUN   TestWalk/maps
@@ -664,9 +664,9 @@ The next type we want to handle is `map`.
         reflection_test.go:86: got [], want [Moo Baa]
 ```
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
 
-Again if you think a little abstractly you can see that `map` is very similar to `struct`, it's just the keys are unknown at compile time.
+И снова, если подумать немного абстрактно, можно увидеть, что `map` очень похож на `структуру`, просто ключи неизвестны во время компиляции.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -696,15 +696,15 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-However, by design you cannot get values out of a map by index. It's only done by _key_, so that breaks our abstraction, darn.
+Однако по замыслу вы не можете получить значения из карты по индексу. Это делается только по _ключу_, что нарушает нашу абстракцию, черт возьми.
 
-## Refactor
+## Рефакторинг
 
-How do you feel right now? It felt like maybe a nice abstraction at the time but now the code feels a little wonky.
+Как вы себя сейчас чувствуете? Тогда казалось, что это, возможно, хорошая абстракция, но теперь код кажется немного шатким.
 
-_This is OK!_ Refactoring is a journey and sometimes we will make mistakes. A major point of TDD is it gives us the freedom to try these things out.
+_Это нормально!_ Рефакторинг — это путешествие, и иногда мы будем совершать ошибки. Важный момент TDD заключается в том, что он дает нам свободу пробовать эти вещи.
 
-By taking small steps backed by tests this is in no way an irreversible situation. Let's just put it back to how it was before the refactor.
+Делая маленькие шаги, подкрепленные тестами, эта ситуация ни в коем случае не является необратимой. Давайте просто вернем ее к тому, как это было до рефакторинга.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -733,13 +733,13 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-We've introduced `walkValue` which DRYs up the calls to `walk` inside our `switch` so that they only have to extract out the `reflect.Value`s from `val`.
+Мы ввели `walkValue`, которая устраняет дублирование вызовов `walk` внутри нашего `switch`, так что им нужно только извлекать `reflect.Value` из `val`.
 
-### One final problem
+### Одна последняя проблема
 
-Remember that maps in Go do not guarantee order. So your tests will sometimes fail because we assert that the calls to `fn` are done in a particular order.
+Помните, что `map` в Go не гарантируют порядок. Поэтому ваши тесты иногда будут завершаться неудачей, потому что мы утверждаем, что вызовы `fn` выполняются в определенном порядке.
 
-To fix this, we'll need to move our assertion with the maps to a new test where we do not care about the order.
+Чтобы исправить это, нам нужно будет перенести наше утверждение с `map` в новый тест, где порядок нам не важен.
 
 ```go
 t.Run("with maps", func(t *testing.T) {
@@ -758,7 +758,7 @@ t.Run("with maps", func(t *testing.T) {
 })
 ```
 
-Here is how `assertContains` is defined
+Вот как определена `assertContains`
 
 ```go
 func assertContains(t testing.TB, haystack []string, needle string) {
@@ -775,11 +775,11 @@ func assertContains(t testing.TB, haystack []string, needle string) {
 }
 ```
 
-Since we have extracted maps into a new test, we haven't seen the failure message. Intentionally break the `with maps` test here so that you can check the error message, then fix it again so all tests are passing.
+Поскольку мы вынесли `map` в отдельный тест, мы не видели сообщение об ошибке. Намеренно сломайте здесь тест `with maps`, чтобы вы могли проверить сообщение об ошибке, а затем снова исправьте его, чтобы все тесты проходили.
 
-The next type we want to handle is `chan`.
+Следующий тип, который мы хотим обрабатывать, — `chan`.
 
-## Write the test first
+## Сначала напишем тест
 
 ```go
 t.Run("with channels", func(t *testing.T) {
@@ -804,7 +804,7 @@ t.Run("with channels", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 --- FAIL: TestWalk (0.00s)
@@ -812,9 +812,9 @@ t.Run("with channels", func(t *testing.T) {
         reflection_test.go:115: got [], want [Berlin Katowice]
 ```
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
 
-We can iterate through all values sent through channel until it was closed with Recv()
+Мы можем итерировать по всем значениям, отправленным через канал, пока он не будет закрыт с помощью Recv()
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -850,9 +850,10 @@ func walk(x interface{}, fn func(input string)) {
 	}
 }
 ```
-The next type we want to handle is `func`.
 
-## Write the test first
+Следующий тип, который мы хотим обрабатывать, — `func`.
+
+## Сначала напишем тест
 
 ```go
 t.Run("with function", func(t *testing.T) {
@@ -873,7 +874,7 @@ t.Run("with function", func(t *testing.T) {
 })
 ```
 
-## Try to run the test
+## Попробуем запустить тест
 
 ```
 --- FAIL: TestWalk (0.00s)
@@ -881,9 +882,9 @@ t.Run("with function", func(t *testing.T) {
         reflection_test.go:132: got [], want [Berlin Katowice]
 ```
 
-## Write enough code to make it pass
+## Напишем достаточно кода, чтобы тест прошел
 
-Non zero-argument functions do not seem to make a lot of sense in this scenario. But we should allow for arbitrary return values.
+Функции без аргументов не имеют особого смысла в этом сценарии. Но мы должны предусмотреть возможность произвольных возвращаемых значений.
 
 ```go
 func walk(x interface{}, fn func(input string)) {
@@ -921,10 +922,10 @@ func walk(x interface{}, fn func(input string)) {
 }
 ```
 
-## Wrapping up
+## Подведение итогов
 
-- Introduced some concepts from the `reflect` package.
-- Used recursion to traverse arbitrary data structures.
-- Did an in retrospect bad refactor but didn't get too upset about it. By working iteratively with tests it's not such a big deal.
-- This only covered a small aspect of reflection. [The Go blog has an excellent post covering more details](https://blog.golang.org/laws-of-reflection).
-- Now that you know about reflection, do your best to avoid using it.
+- Представили некоторые концепции из пакета `reflect`.
+- Использовали рекурсию для обхода произвольных структур данных.
+- Сделали, оглядываясь назад, не очень удачный рефакторинг, но не слишком расстроились по этому поводу. Работая итеративно с тестами, это не такая уж большая проблема.
+- Это затронуло лишь небольшой аспект рефлексии. [В блоге Go есть отличная статья, охватывающая более подробную информацию](https://blog.golang.org/laws-of-reflection).
+- Теперь, когда вы знаете о рефлексии, постарайтесь избегать ее использования.
