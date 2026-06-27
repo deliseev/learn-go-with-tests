@@ -2,11 +2,12 @@ name: Go
 
 on:
   push:
-    branches: [ main ]
+    branches: [ ru ]
   pull_request:
-    branches: [ main ]
+    branches: [ ru ]
   release:
     types: [ published ]
+  workflow_dispatch:
 
 jobs:
 

@@ -1,0 +1,66 @@
+name: Translate Upstream Updates
+
+on:
+  workflow_run:
+    # Запуск происходит сразу после завершения воркфлоу синхронизации
+    workflows: ["Sync Fork with Upstream"]
+    types:
+      - completed
+
+jobs:
+  translate:
+    runs-on: ubuntu-latest
+    # Запускаем только если предыдущий шаг (синхронизация) завершился успешно
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    permissions:
+      contents: write
+      pull-requests: write # Позволяет GitHub CLI открывать PR
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Скачиваем всю историю коммитов, чтобы git diff работал корректно
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install google-genai
+
+      - name: Run translation script
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python .github/scripts/translate_diff.py
+
+      - name: Check for changes and open PR
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Проверяем, изменились ли файлы в репозитории после работы скрипта
+          if [ -n "$(git status --porcelain)" ]; then
+            BRANCH_NAME="translate/sync-$(date +%Y%m%d-%H%M%S)"
+
+            # Настройка подписи коммита системным ботом GitHub
+            git config --global user.name "github-actions[bot]"
+            git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+            # Создаем временную ветку и отправляем изменения
+            git checkout -b "$BRANCH_NAME"
+            git add .
+            git commit -m "docs: auto-translate upstream updates"
+            git push origin "$BRANCH_NAME"
+
+            # Создаем Pull Request в ветку ru через GitHub CLI
+            gh pr create \
+              --title "🤖 Автоматический перевод обновлений оригинала" \
+              --body "Этот PR создан автоматически системой перевода. В нем содержатся новые или отредактированные оригинальные файлы, пропущенные через ИИ-переводчик. Пожалуйста, просмотрите изменения перед слиянием с веткой **ru**." \
+              --base ru \
+              --head "$BRANCH_NAME"
+          else
+            echo "No changes detected. Everything is up to date."
+          fi
