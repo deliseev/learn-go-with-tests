@@ -1,4 +1,4 @@
-# Изучаем Go с помощью тестов
+# Изучаем Go через тесты
 
 ![](.gitbook/assets/red-green-blue-gophers-smaller.png)
 
@@ -15,7 +15,7 @@
 
 ## Изучаем разработку через тестирование (TDD) с Go
 
-* Изучайте язык Go, **пиша тесты**
+* Изучайте язык Go, **используя тесты**
 * **Получите основы TDD**. Go — хороший язык для изучения TDD, потому что он прост в освоении, а тестирование встроено в него.
 * Будьте уверены, что сможете начать писать надёжные, хорошо протестированные системы на Go.
 
@@ -27,7 +27,10 @@
 * [Français](https://goosegeesejeez.gitbook.io/apprendre-go-par-les-tests)
 * [한국어](https://miryang.gitbook.io/learn-go-with-tests/)
 * [Türkçe](https://halilkocaoz.gitbook.io/go-programlama-dilini-ogren/)
+* [فارسی](https://go-yaad-begir.gitbook.io/go-ba-test/)
 * [Nederlands](https://bobkosse.gitbook.io/leer-go-met-tests)
+* [Tiếng Việt](https://sons-organization-15.gitbook.io/learn-go-with-tests)
+* [Русский](https://eda-1.gitbook.io/lgwt/)
 
 ## Предыстория
 
