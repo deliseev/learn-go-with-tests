@@ -11,7 +11,7 @@
 * [Массивы и срезы](arrays-and-slices.md)
 * [Структуры, методы и интерфейсы](structs-methods-and-interfaces.md)
 * [Указатели и ошибки](pointers-and-errors.md)
-* [Карты](maps.md)
+* [Отображения](maps.md)
 * [Внедрение зависимостей](dependency-injection.md)
 * [Мокирование](mocking.md)
 * [Параллелизм](concurrency.md)
