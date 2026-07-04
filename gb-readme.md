@@ -1,6 +1,6 @@
 # Изучаем Go через тесты
 
-![](.gitbook/assets/red-green-blue-gophers-smaller.png)
+![](<.gitbook/assets/red-green-blue-gophers-smaller (1).png>)
 
 [Иллюстрация Денизы](https://deniseyu.io/)
 
@@ -89,4 +89,4 @@
 
 * Добавляйте issues/отправляйте PR [здесь](https://github.com/quii/learn-go-with-tests) или [напишите мне в Твиттере @quii](https://twitter.com/quii)
 
-[Лицензия MIT](LICENSE.md)
+[Лицензия MIT](https://github.com/deliseev/learn-go-with-tests/blob/ru/LICENSE.md)
