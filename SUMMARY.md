@@ -1,4 +1,4 @@
-# Оглавление
+# Table of contents
 
 * [Изучаем Go через тесты](gb-readme.md)
 
@@ -56,4 +56,3 @@
 * [Антипаттерны](anti-patterns.md)
 * [Участие](contributing.md)
 * [Шаблон главы](template.md)
----
