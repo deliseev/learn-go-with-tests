@@ -264,7 +264,7 @@ runtime.goexit()
 created by github.com/gypsydave5/learn-go-with-tests/concurrency/v3.WebsiteChecker
         /Users/gypsydave5/go/src/github.com/gypsydave5/learn-go-with-tests/concurrency/v3/websiteChecker.go:11 +0xa1
 
-        ... many more scary lines of text ...
+        ... Ещё много пугающих строк текста ...
 ```
 
 Это длинное и страшное сообщение, но всё, что нам нужно сделать, это перевести
