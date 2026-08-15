@@ -485,17 +485,17 @@ func assertScoreEquals(t testing.TB, got, want int) {
 
 [CreateTemp](https://pkg.go.dev/os#CreateTemp) creates a temporary file for us to use. The `"db"` value we've passed in is a prefix put on a random file name it will create. This is to ensure it won't clash with other files by accident.
 
-You'll notice we're not only returning our `ReadWriteSeeker` (the file) but also a function. We need to make sure that the file is removed once the test is finished. We don't want to leak details of the files into the test as it's prone to error and uninteresting for the reader. By returning a `removeFile` function, we can take care of the details in our helper and all the caller has to do is run `defer cleanDatabase()`.
+You'll notice we're not only returning our `ReadWriteSeeker` (the file) but also a function. We need to make sure that the file is removed once the test is finished. We don't want to leak details of the files into the test as it's prone to error and uninteresting for the reader. By returning a `removeFile` function, we can take care of the details in our helper and all the caller has to do is run `defer removeFile()`.
 
 ```go
 //file_system_store_test.go
 func TestFileSystemStore(t *testing.T) {
 
 	t.Run("league from a reader", func(t *testing.T) {
-		database, cleanDatabase := createTempFile(t, `[
+		database, removeFile := createTempFile(t, `[
 			{"Name": "Cleo", "Wins": 10},
 			{"Name": "Chris", "Wins": 33}]`)
-		defer cleanDatabase()
+		defer removeFile()
 
 		store := FileSystemPlayerStore{database}
 
@@ -514,10 +514,10 @@ func TestFileSystemStore(t *testing.T) {
 	})
 
 	t.Run("get player score", func(t *testing.T) {
-		database, cleanDatabase := createTempFile(t, `[
+		database, removeFile := createTempFile(t, `[
 			{"Name": "Cleo", "Wins": 10},
 			{"Name": "Chris", "Wins": 33}]`)
-		defer cleanDatabase()
+		defer removeFile()
 
 		store := FileSystemPlayerStore{database}
 
@@ -535,10 +535,10 @@ Let's get the first iteration of recording a win for an existing player
 ```go
 //file_system_store_test.go
 t.Run("store wins for existing players", func(t *testing.T) {
-	database, cleanDatabase := createTempFile(t, `[
+	database, removeFile := createTempFile(t, `[
 		{"Name": "Cleo", "Wins": 10},
 		{"Name": "Chris", "Wins": 33}]`)
-	defer cleanDatabase()
+	defer removeFile()
 
 	store := FileSystemPlayerStore{database}
 
@@ -660,10 +660,10 @@ We now need to handle the scenario of recording wins of new players.
 ```go
 //file_system_store_test.go
 t.Run("store wins for new players", func(t *testing.T) {
-	database, cleanDatabase := createTempFile(t, `[
+	database, removeFile := createTempFile(t, `[
 		{"Name": "Cleo", "Wins": 10},
 		{"Name": "Chris", "Wins": 33}]`)
-	defer cleanDatabase()
+	defer removeFile()
 
 	store := FileSystemPlayerStore{database}
 
@@ -710,8 +710,8 @@ In `TestRecordingWinsAndRetrievingThem` replace the old store.
 
 ```go
 //server_integration_test.go
-database, cleanDatabase := createTempFile(t, "")
-defer cleanDatabase()
+database, removeFile := createTempFile(t, "")
+defer removeFile()
 store := &FileSystemPlayerStore{database}
 ```
 
@@ -951,6 +951,8 @@ func NewFileSystemPlayerStore(file *os.File) *FileSystemPlayerStore {
 }
 ```
 
+`tape.Write` seeks to the start of the file on _every_ call, so it's worth pausing to check this combination is actually safe: if `Encode` ever called `Write` more than once for a single call, each subsequent write would seek back to the start and overwrite the previous one, corrupting the output. It doesn't, though - `Encoder.Encode` always marshals the whole value into memory first and hands it to the underlying `Writer` in a single `Write` call, so `tape` only ever seeks once per `Encode`, which is exactly the "always overwrite from the start" behaviour we want.
+
 Use it in `RecordWin`.
 
 ```go
@@ -1000,9 +1002,9 @@ Don't be afraid to chop and change types and experiment like we have here. The g
 
 Before we start working on sorting we should make sure we're happy with our current code and remove any technical debt we may have. It's an important principle to get to working software as quickly as possible (stay out of the red state) but that doesn't mean we should ignore error cases!
 
-If we go back to `FileSystemStore.go` we have `league, _ := NewLeague(f.database)` in our constructor.
+If we go back to `file_system_store.go` we have `league, _ := NewLeague(file)` in our constructor.
 
-`NewLeague` can return an error if it is unable to parse the league from the `io.Reader` that we provide.
+`NewLeague` can return an error if it is unable to parse the league from the `*os.File` that we provide.
 
 It was pragmatic to ignore that at the time as we already had failing tests. If we had tried to tackle it at the same time, we would have been juggling two things at once.
 
@@ -1084,7 +1086,7 @@ Let's fix our big integration test by putting some valid JSON in it:
 ```go
 //server_integration_test.go
 func TestRecordingWinsAndRetrievingThem(t *testing.T) {
-	database, cleanDatabase := createTempFile(t, `[]`)
+	database, removeFile := createTempFile(t, `[]`)
 	//etc...
 }
 ```
@@ -1096,8 +1098,8 @@ Now that all the tests are passing, we need to handle the scenario where the fil
 ```go
 //file_system_store_test.go
 t.Run("works with an empty file", func(t *testing.T) {
-	database, cleanDatabase := createTempFile(t, "")
-	defer cleanDatabase()
+	database, removeFile := createTempFile(t, "")
+	defer removeFile()
 
 	_, err := NewFileSystemPlayerStore(database)
 
@@ -1209,10 +1211,10 @@ We can update the assertion on our first test in `TestFileSystemStore`:
 ```go
 //file_system_store_test.go
 t.Run("league sorted", func(t *testing.T) {
-	database, cleanDatabase := createTempFile(t, `[
+	database, removeFile := createTempFile(t, `[
 		{"Name": "Cleo", "Wins": 10},
 		{"Name": "Chris", "Wins": 33}]`)
-	defer cleanDatabase()
+	defer removeFile()
 
 	store, err := NewFileSystemPlayerStore(database)
 

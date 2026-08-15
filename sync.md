@@ -158,6 +158,29 @@ FAIL
 
 The test will _probably_ fail with a different number, but nonetheless it demonstrates it does not work when multiple goroutines are trying to mutate the value of the counter at the same time.
 
+### Why does this happen?
+
+`c.value++` looks like a single, indivisible operation, but it isn't. It's shorthand for something closer to:
+
+```go
+tmp := c.value // 1. read
+tmp = tmp + 1  // 2. increment
+c.value = tmp  // 3. write
+```
+
+Each of those three steps is a separate operation, and the Go runtime is free to switch between goroutines at any point in between them. If two goroutines both call `Inc` around the same time, their steps can interleave, for example:
+
+```
+goroutine A: reads c.value (0)
+goroutine B: reads c.value (0)
+goroutine A: increments its copy to 1
+goroutine B: increments its copy to 1
+goroutine A: writes c.value = 1
+goroutine B: writes c.value = 1
+```
+
+Both goroutines called `Inc` once each, so we'd want `c.value` to end up as `2`, but it ends up as `1`. One of the increments got silently lost because both goroutines read the same starting value before either had written their result back. This is called a _race condition_, and with a thousand goroutines all racing to read, increment and write at once, it's no surprise some of those increments get lost.
+
 ## Write enough code to make it pass
 
 A simple solution is to add a lock to our `Counter`, ensuring only one goroutine can increment the counter at a time. Go's [`Mutex`](https://golang.org/pkg/sync/#Mutex) provides such a lock:
@@ -245,12 +268,39 @@ func NewCounter() *Counter {
 
 Use this function in your tests when initialising `Counter`.
 
+## An alternative: sync/atomic
+
+`Mutex` is a general-purpose tool - it can protect any number of fields and any invariant between them, as long as you remember to `Lock`/`Unlock` around every access. But our `Counter` is about as simple as shared state gets: a single integer, incremented from multiple goroutines. For exactly this kind of case, the [`sync/atomic`](https://pkg.go.dev/sync/atomic) package provides types like [`atomic.Int64`](https://pkg.go.dev/sync/atomic#Int64) that give you safe concurrent access to a single value without a separate lock at all:
+
+```go
+type Counter struct {
+	value atomic.Int64
+}
+
+func NewCounter() *Counter {
+	return &Counter{}
+}
+
+func (c *Counter) Inc() {
+	c.value.Add(1)
+}
+
+func (c *Counter) Value() int64 {
+	return c.value.Load()
+}
+```
+
+No `Mutex`, no `Lock`/`Unlock`, and it's still safe to call `Inc` from as many goroutines as you like at once - the same test we wrote earlier passes unchanged. Under the hood this uses low-level CPU instructions to make the increment itself atomic, which is typically faster than a `Mutex` for simple cases like this. `atomic.Int64` (and its siblings, like `atomic.Int32` and `atomic.Bool`) also can't be used incorrectly the way raw `atomic.AddInt64(&x, 1)`-style function calls could in older Go - you can't forget to pass a pointer, and you can't accidentally read the field without going through `Load`.
+
+Reach for `sync/atomic`'s types when you're protecting a single value; reach for `Mutex` once you need to keep multiple fields, or some invariant between them, consistent together.
+
 ## Wrapping up
 
 We've covered a few things from the [sync package](https://golang.org/pkg/sync/)
 
 - `Mutex` allows us to add locks to our data
 - `WaitGroup` is a means of waiting for goroutines to finish jobs
+- `sync/atomic` offers safe, lock-free access to single values, and is worth reaching for when a full `Mutex` would be overkill
 
 ### When to use locks over channels and goroutines?
 

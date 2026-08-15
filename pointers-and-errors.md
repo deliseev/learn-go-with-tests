@@ -107,7 +107,7 @@ In Go, **when you call a function or a method the arguments are** _**copied**_.
 
 When calling `func (w Wallet) Deposit(amount int)` the `w` is a copy of whatever we called the method from.
 
-Without getting too computer-sciency, when you create a value - like a wallet, it is stored somewhere in memory. You can find out what the _address_ of that bit of memory with `&myVal`.
+Without getting too computer-sciency, when you create a value - like a wallet, it is stored somewhere in memory. You can find out what the _address_ of that bit of memory is with `&myVal`.
 
 Experiment by adding some prints to your code
 
@@ -240,6 +240,20 @@ func (b Bitcoin) String() string {
 ```
 
 As you can see, the syntax for creating a method on a type declaration is the same as it is on a struct.
+
+We lacked discipline here: we've added a method without writing a test for it first. That's OK, we're not always saints, but we shouldn't let it slide either. Running `go test -cover` would show us that `String` isn't covered, which is a good prompt to go back and ask whether it's worth testing retrospectively. We shouldn't chase 100% coverage for its own sake, but in this case `String` has its own logic (`fmt.Sprintf`) worth pinning down, so let's add a test.
+
+```go
+t.Run("Bitcoin String", func(t *testing.T) {
+	btc := Bitcoin(10)
+	got := btc.String()
+	want := "10 BTC"
+
+	if got != want {
+		t.Errorf("got %s want %s", got, want)
+	}
+})
+```
 
 Next we need to update our test format strings so they will use `String()` instead.
 
@@ -648,6 +662,46 @@ func assertError(t testing.TB, got error, want error) {
 	}
 }
 ```
+
+## Adding context with error wrapping
+
+Comparing `err` against `ErrInsufficientFunds` works nicely here because `Withdraw` is the only thing that can produce it. But real programs have layers - a `Wallet` might be used by a `Bank`, which is used by an HTTP handler, and so on. If every layer just returns the error it received unchanged, all a caller several layers up ever sees is `insufficient funds`, with no idea which account, or which operation, actually failed.
+
+Say we have a function that processes a withdrawal for a named account:
+
+```go
+func ProcessWithdrawal(wallet *Wallet, accountID string, amount Bitcoin) error {
+	if err := wallet.Withdraw(amount); err != nil {
+		return fmt.Errorf("processing withdrawal for account %s: %w", accountID, err)
+	}
+	return nil
+}
+```
+
+The `%w` verb (introduced in Go 1.13) is like `%v` in that it substitutes in `err`'s string, but it also does something `%v` doesn't: it _wraps_ `err` inside the new error `fmt.Errorf` returns, rather than just copying its message into a new, unrelated string. Try it:
+
+```go
+wallet := Wallet{Bitcoin(10)}
+err := ProcessWithdrawal(&wallet, "acc-123", Bitcoin(100))
+fmt.Println(err)
+// processing withdrawal for account acc-123: cannot withdraw, insufficient funds
+```
+
+We've kept the useful context ("which account, which operation") without losing the detail of what actually went wrong underneath.
+
+### Checking wrapped errors
+
+Now that `ProcessWithdrawal` returns a _different_ error value to `ErrInsufficientFunds`, comparing with `==` (or our `assertError` helper above) would fail, even though the underlying cause is the same. This is exactly the problem [`errors.Is`](https://pkg.go.dev/errors#Is) solves - it checks a chain of wrapped errors, not just the outermost one:
+
+```go
+if errors.Is(err, ErrInsufficientFunds) {
+	// still true, even though err's message now also mentions the account
+}
+```
+
+`errors.Is` works by repeatedly calling [`errors.Unwrap`](https://pkg.go.dev/errors#Unwrap) on `err` (which knows how to get the wrapped error back out, because `fmt.Errorf` with `%w` produces a value with an `Unwrap() error` method) until it either finds a match or runs out of errors to unwrap. You'll see `errors.Is` used again for exactly this reason in the [Maps](maps.md) chapter's `assertError` helper, instead of `==` - it's a safe default that also works for errors that were never wrapped in the first place.
+
+If you need to extract a _typed_ error (rather than compare against a sentinel value like `ErrInsufficientFunds`) from a chain of wrapped errors, there's an equivalent function for that too: [`errors.As`](https://pkg.go.dev/errors#As). The [error types](error-types.md) chapter covers that in more depth.
 
 ## Wrapping up
 

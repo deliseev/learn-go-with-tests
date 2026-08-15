@@ -225,6 +225,8 @@ Instead you take the next highest symbol and then "subtract" by putting a symbol
 
 For example `5` in Roman Numerals is `V`. To create 4 you do not do `IIII`, instead you do `IV`.
 
+A subtractor can only be placed before one of the next two higher symbols in its "family": `I` can only precede `V` or `X` (4 is `IV`, 9 is `IX`), `X` can only precede `L` or `C` (40 is `XL`, 90 is `XC`), and `C` can only precede `D` or `M` (400 is `CD`, 900 is `CM`). So while `I`, `X` and `C` are all valid subtractors, you can't mix and match freely - 99 is not `IC` (it's `XCIX`, 90 + 9) and 499 is not `ID` (it's `CDXCIX`, 400 + 90 + 9).
+
 ## Write the test first
 
 ```
@@ -774,6 +776,8 @@ Clearly `int` is not a great type. What if we tried something a little more appr
 Go has types for _unsigned integers_, which means they cannot be negative; so that rules out one class of bug in our code immediately. By adding 16, it means it is a 16 bit integer which can store a max of `65535`, which is still too big but gets us closer to what we need.
 
 Try updating the code to use `uint16` rather than `int`. I updated `assertion` in the test to give a bit more visibility.
+
+> Note that you also need to change the variable `arabic` to `uint16` in your code (the test will tell you this). What might require more effort is the error you get for the line `arabic += numeral.Value`. You get this error because we declared `arabic` in `ConvertToArabic` with `var arabic = 0`. This declaration is correct, but assume we should treat `0` as an `int` value. It will fail if you try to add an `int` value and a `uint16` value. Because Go is a typed language, this won't work. Therefore, don't forget to change `var arabic = 0` to `var arabic uint16 = 0` to make the arabic variable `uint16`.
 
 ```go
 assertion := func(arabic uint16) bool {

@@ -225,7 +225,7 @@ t.Run("unknown word", func(t *testing.T) {
 func assertError(t testing.TB, got, want error) {
 	t.Helper()
 
-	if got != want {
+	if !errors.Is(got, want) {
 		t.Errorf("got error %q want %q", got, want)
 	}
 }
@@ -551,7 +551,7 @@ We added our own error type and are returning a `nil` error.
 With these changes, we now get a very clear error:
 
 ```
-dictionary_test.go:66: got error '%!q(<nil>)' want 'cannot update word because it does not exist'
+dictionary_test.go:66: got error '%!q(<nil>)' want 'cannot perform operation on word because it does not exist'
 ```
 
 ## Write enough code to make it pass

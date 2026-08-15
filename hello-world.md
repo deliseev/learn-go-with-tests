@@ -87,6 +87,8 @@ This file tells the `go` tools essential information about your code. If you pla
 
 In future chapters, you will need to run `go mod init SOMENAME` in each new folder before running commands like `go test` or `go build`.
 
+It's worth being clear that `SOMENAME`, the module's name, is unrelated to `package main` (which every `.go` file in this book so far declares at the top). The module name is just an identifier for your project as a whole - it doesn't need to be called `main`, and `go run`, `go test` and `go build` will all work correctly with whatever name you choose, run from inside that same folder.
+
 ## Back to Testing
 
 Run `go test` in your terminal. It should've passed! Just to check, try deliberately breaking the test by changing the `want` string.
@@ -497,6 +499,8 @@ func Hello(name string, language string) string {
 	return prefix + name
 }
 ```
+
+Notice we use `:=` once for `prefix` (declaring a new variable and giving it an initial value) but plain `=` everywhere else it's changed, both for `name` above and `prefix` inside the `switch`. `:=` is Go's [short variable declaration](https://go.dev/ref/spec#Short_variable_declarations) - it creates a new variable. `=` is a plain [assignment](https://go.dev/ref/spec#Assignment_statements) - it changes the value of a variable that already exists (`name` already exists as a parameter, and `prefix` was already declared a couple of lines above with `:=`). Using `:=` on a variable that already exists in the same scope, or `=` on one that doesn't exist yet, is a compile error.
 
 Write a test to now include a greeting in the language of your choice and you should see how simple it is to extend our _amazing_ function.
 
