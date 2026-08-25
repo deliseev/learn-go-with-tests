@@ -243,7 +243,7 @@ class TestIncrementalMerge(unittest.TestCase):
         self.assertEqual(prov.translated_sources, ["B2."])
 
     def test_block_deleted_upstream_disappears_from_translation(self):
-        pipeline, _, fs, prov = build_pipeline(
+        pipeline, git, fs, prov = build_pipeline(
             base_tree={"ch.md": "A.\n\nB.\n\nC.\n"},
             head_tree={"ch.md": "A.\n\nC.\n"},
             working={"ch.md": "ra.\n\nrb.\n\nrc.\n"},
@@ -255,6 +255,11 @@ class TestIncrementalMerge(unittest.TestCase):
         self.assertIn("ra.", out)
         self.assertIn("rc.", out)
         self.assertEqual(prov.calls, 0, "nothing new to translate")
+
+        committed = {path for paths, _ in git.commits for path in paths}
+        self.assertIn(
+            "ch.md", committed, "a file with nothing to translate must still be committed"
+        )
 
     def test_unalignable_file_is_skipped_and_left_untouched(self):
         original_ru = "only.\n\ntwo.\n"
@@ -285,6 +290,27 @@ class TestResilience(unittest.TestCase):
         self.assertEqual(result.translated, ["a.md"])
         self.assertEqual(result.pending, ["b.md"])
         self.assertEqual(fs.files["b.md"], "rb.\n", "untouched on bad response")
+
+    def test_deferred_file_is_translated_after_the_marker_moved_on(self):
+        """Отложенный файл диффится от своей базы, а не от общего маркера.
+
+        Иначе после продвижения маркера его изменения оказываются позади базы,
+        переводить «нечего», и устаревший текст молча остаётся навсегда.
+        """
+        pipeline, _, fs, prov = build_pipeline(
+            base_tree={"ch.md": "A.\n\nB OLD.\n\nC.\n"},
+            head_tree={"ch.md": "A.\n\nB NEW.\n\nC.\n"},
+            working={"ch.md": "ra.\n\nrb.\n\nrc.\n"},
+            changes=[],  # общий маркер уже догнал голову
+        )
+        fs.files[".github/pending.txt"] = "aaaaaaa1111111\tch.md\n"
+
+        result = pipeline.run()
+
+        self.assertEqual(result.translated, ["ch.md"])
+        self.assertEqual(prov.calls, 1)
+        self.assertIn("RU(B NEW.)", fs.files["ch.md"])
+        self.assertIn("ra.", fs.files["ch.md"], "ручной перевод сохранён")
 
     def test_quota_exhausted_falls_over_to_next_provider(self):
         codec = SegmentCodec()

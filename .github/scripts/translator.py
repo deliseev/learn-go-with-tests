@@ -110,6 +110,7 @@ def load_config(path: str) -> Config:
     )
 
 
+_COMMIT_SHA_RE = re.compile(r"^[0-9a-fA-F]{7,40}$")
 _FENCE_RE = re.compile(r"^\s*(```+|~~~+)")
 _HEADING_RE = re.compile(r"^(#{1,6})\s")
 
@@ -612,8 +613,22 @@ class SubprocessGit:
         self._run("checkout", "-b", name)
 
     def commit(self, paths: Sequence[str], message: str) -> None:
-        """Индексирует указанные пути и создаёт коммит."""
+        """Индексирует указанные пути и коммитит, если в индексе что-то есть.
+
+        Пустой коммит git отвергает кодом 1, и это уронило бы весь прогон:
+        так бывает, когда содержимое файла после слияния совпало с прежним,
+        а маркер состояния уже был записан предыдущим коммитом.
+        """
         self._run("add", "--", *paths)
+        staged = subprocess.run(
+            ["git", "diff", "--cached", "--quiet"],
+            timeout=GIT_TIMEOUT_SECONDS,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+        ).returncode
+        if staged == 0:  # 0 — различий нет, коммитить нечего
+            print(f"Нечего коммитить, пропускаю: {message}")
+            return
         self._run("commit", "-m", message)
 
     def push(self, branch: str) -> None:
@@ -777,21 +792,49 @@ class TranslationPipeline:
         self._branch: str | None = None
         self._pr_number: int | None = None
 
-    def _read_pending(self) -> list[str]:
+    def _read_pending(self) -> dict[str, str]:
+        """Отложенные файлы вида «путь -> коммит, которому отвечает их перевод».
+
+        Базу нужно хранить рядом с путём: общий маркер к моменту повтора уже
+        уходит вперёд, и если диффить от него, изменения файла окажутся позади
+        базы — переводить будет «нечего», а старый текст молча останется.
+        Записи старого формата и записи с испорченной базой получают пустое
+        значение: обработать их можно только подставив заведомо неверную базу,
+        поэтому они остаются в очереди и выносятся человеку.
+        """
         path = self.config.state.pending_file
         if not self.fs.exists(path):
-            return []
-        return [
-            line.strip() for line in self.fs.read(path).splitlines() if line.strip()
-        ]
+            return {}
+        entries: dict[str, str] = {}
+        for line in self.fs.read(path).splitlines():
+            line = line.strip()
+            if not line:
+                continue
+            base, _, name = line.partition("\t")
+            if name and _COMMIT_SHA_RE.match(base):
+                entries[name] = base
+            else:
+                entries[name or line] = ""
+        return entries
 
-    def _write_state(self, head: str, pending: Sequence[str]) -> list[str]:
+    def _write_state(self, head: str, pending: dict[str, str]) -> list[str]:
         self.fs.write(self.config.state.sync_file, head)
+        lines = [f"{base}\t{name}" for name, base in sorted(pending.items())]
         self.fs.write(
             self.config.state.pending_file,
-            "\n".join(sorted(pending)) + ("\n" if pending else ""),
+            "\n".join(lines) + ("\n" if lines else ""),
         )
         return [self.config.state.sync_file, self.config.state.pending_file]
+
+    @staticmethod
+    def _defer(
+        pending: dict[str, str],
+        plans: Sequence[FilePlan],
+        bases: dict[str, str],
+    ) -> None:
+        """Откладывает файлы, запоминая базу, от которой их надо диффить дальше."""
+        for plan in plans:
+            pending.setdefault(plan.path, bases[plan.path])
 
     def _show(self, ref: str, path: str) -> str:
         try:
@@ -914,43 +957,75 @@ class TranslationPipeline:
             return result
 
         base_ref = self.fs.read(state_path).strip()
-        if not re.match(r"^[0-9a-fA-F]{7,40}$", base_ref):
+        if not _COMMIT_SHA_RE.match(base_ref):
             raise ValueError(f"{state_path} содержит некорректный коммит: {base_ref!r}")
 
-        pending = set(self._read_pending())
+        pending = self._read_pending()
         changed = self.git.diff_name_status(
             base_ref, self.config.source.ref, self.config.source.include
         )
 
-        candidates: list[str] = []
+        # Каждый кандидат несёт свою базу: для свежих изменений это общий маркер,
+        # а для отложенных — коммит, которому отвечает их текущий перевод.
+        candidates: list[tuple[str, str]] = []
         for status, path in changed:
             if not self.file_filter.accepts(path):
                 continue
             if status == "D":
                 self.fs.remove(path)
-                pending.discard(path)
+                pending.pop(path, None)
                 result.removed.append(path)
             else:
-                candidates.append(path)
-        for path in sorted(pending - set(candidates)):
-            candidates.append(path)
+                candidates.append((path, base_ref))
+        fresh = {path for path, _ in candidates}
+        for path in sorted(set(pending) - fresh):
+            # Правила исключений действуют и на очередь: иначе однажды
+            # застрявший файл переводился бы вопреки изменившемуся конфигу.
+            if not self.file_filter.accepts(path):
+                print(f"{path} исключён конфигом — убираю из очереди.")
+                pending.pop(path, None)
+                continue
+            if not pending[path]:
+                print(
+                    f"У {path} в {self.config.state.pending_file} нет корректного "
+                    "базового коммита — оставляю в очереди, впишите его вручную."
+                )
+                result.skipped.append(path)
+                continue
+            candidates.append((path, pending[path]))
+
+        # Пока файл не обработан, он числится отложенным. Маркер синхронизации
+        # уходит на head уже на первом коммите, поэтому оборванный прогон иначе
+        # оставил бы состояние «всё готово» для файлов, до которых не дошёл, —
+        # и их изменения пропали бы навсегда.
+        for path, file_base in candidates:
+            pending.setdefault(path, file_base)
 
         plans: list[FilePlan] = []
-        for path in candidates:
-            plan = self._build_plan(path, base_ref)
+        plan_bases: dict[str, str] = {}
+        for path, file_base in candidates:
+            plan = self._build_plan(path, file_base)
             if plan is None:
                 print(f"Пропускаю {path}: не удалось надёжно сопоставить перевод.")
                 result.skipped.append(path)
-                pending.discard(path)
+                pending.pop(path, None)
                 continue
             if not plan.translatable:
                 # Изменились только удаления или блоки кода — переводить нечего.
+                # Публикуем сразу: иначе правка осталась бы только в рабочем
+                # дереве, а маркер ушёл бы вперёд — и файл никогда не вернулся
+                # бы в обработку.
                 self.fs.write(
                     path, plan.prefix + "".join(i.text + i.sep for i in plan.items)
                 )
                 result.translated.append(path)
-                pending.discard(path)
+                pending.pop(path, None)
+                self._publish(
+                    [path, *self._write_state(head, pending)],
+                    f"docs: обновление {path} без перевода",
+                )
                 continue
+            plan_bases[path] = file_base
             plans.append(plan)
 
         by_path = {plan.path: plan for plan in plans}
@@ -962,7 +1037,7 @@ class TranslationPipeline:
         for batch in batches:
             batch_plans = [by_path[path] for path, _ in batch]
             if quota_spent:
-                pending.update(plan.path for plan in batch_plans)
+                self._defer(pending, batch_plans, plan_bases)
                 continue
 
             ids: dict[int, PlanItem] = {}
@@ -981,11 +1056,11 @@ class TranslationPipeline:
             except QuotaExhausted as exc:
                 print(f"Квота исчерпана, остальное откладываю: {exc}")
                 quota_spent = True
-                pending.update(plan.path for plan in batch_plans)
+                self._defer(pending, batch_plans, plan_bases)
                 continue
             except ProviderError as exc:
                 print(f"Ошибка провайдера, батч отложен: {exc}")
-                pending.update(plan.path for plan in batch_plans)
+                self._defer(pending, batch_plans, plan_bases)
                 continue
 
             received = self.codec.parse(response)
@@ -995,7 +1070,7 @@ class TranslationPipeline:
                     print(
                         f"Неполный ответ по {plan.path}: файл оставлен без изменений."
                     )
-                    pending.add(plan.path)
+                    self._defer(pending, [plan], plan_bases)
                     continue
                 rendered = plan.prefix
                 for item in plan.items:
@@ -1006,7 +1081,7 @@ class TranslationPipeline:
                         rendered += received[segment_id] + item.sep
                 self.fs.write(plan.path, rendered)
                 result.translated.append(plan.path)
-                pending.discard(plan.path)
+                pending.pop(plan.path, None)
                 self._publish(
                     [plan.path, *self._write_state(head, pending)],
                     f"docs: перевод {plan.path}",
