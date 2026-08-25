@@ -6,12 +6,14 @@ on:
     workflows: ["Sync Fork with Upstream"]
     types:
       - completed
+  workflow_dispatch:
 
 jobs:
   translate:
     runs-on: ubuntu-latest
-    # Запускаем только если предыдущий шаг (синхронизация) завершился успешно
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # Запускаем только если предыдущий шаг (синхронизация) завершился успешно.
+    # Для ручного запуска (workflow_dispatch) проверки нет.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
     permissions:
       contents: write
       pull-requests: write # Позволяет GitHub CLI открывать PR
@@ -23,9 +25,8 @@ jobs:
           fetch-depth: 0 # Скачиваем всю историю коммитов, чтобы git diff работал корректно
 
       # Пока предыдущий translate/sync-* PR не смержен в ru, маркер прогресса
-      # (.github/translate-sync-state.txt) не продвигается — новый прогон
-      # продиффит от той же точки и продублирует уже переведённое. Поэтому
-      # просто ждём, пока предыдущий PR не разберут.
+      # не продвигается — новый прогон продиффит от той же точки и продублирует
+      # уже переведённое. Поэтому просто ждём, пока предыдущий PR не разберут.
       - name: Check for an existing pending translation PR
         id: pending_pr
         env:
@@ -43,49 +44,53 @@ jobs:
         if: steps.pending_pr.outputs.skip != 'true'
         uses: actions/setup-python@v5
         with:
-          python-version: '3.11'
+          python-version: "3.11"
 
       - name: Install dependencies
         if: steps.pending_pr.outputs.skip != 'true'
         run: |
           pip install google-genai
 
-      # Прогресс отслеживается в .github/translate-sync-state.txt (коммитится
-      # вместе с переводами ниже) — по тому же шаблону имени, что и
-      # .github/upstream-sync-state.txt из Sync Fork with Upstream.
-      - name: Run translation script
+      # Тесты быстрые и без сети — ловят регрессию раньше, чем тратится квота API.
+      - name: Run translator tests
         if: steps.pending_pr.outputs.skip != 'true'
+        working-directory: .github/scripts
+        run: |
+          python -m unittest discover -p 'test_*.py' -v
+
+      # Скрипт коммитит каждый переведённый файл сам, поэтому ему нужна подпись.
+      # Пуш работает без доп. токена: actions/checkout оставляет persist-credentials.
+      - name: Configure git identity
+        if: steps.pending_pr.outputs.skip != 'true'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Переводит только изменившиеся куски, коммитит пофайлово и открывает
+      # черновой PR на первом же коммите — работа не теряется, даже если
+      # раннер убьют посередине.
+      - name: Run translation
+        if: steps.pending_pr.outputs.skip != 'true'
+        timeout-minutes: 60
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: |
-          python .github/scripts/translate_diff.py
-
-      - name: Check for changes and open PR
-        if: steps.pending_pr.outputs.skip != 'true'
-        env:
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONUNBUFFERED: "1"
         run: |
-          # Проверяем, изменились ли файлы в репозитории после работы скрипта
-          if [ -n "$(git status --porcelain)" ]; then
-            BRANCH_NAME="translate/sync-$(date +%Y%m%d-%H%M%S)"
+          python .github/scripts/translator.py --config .github/translate-config.toml
 
-            # Настройка подписи коммита системным ботом GitHub
-            git config --global user.name "github-actions[bot]"
-            git config --global user.email "github-actions[bot]@users.noreply.github.com"
-
-            # Создаем временную ветку и отправляем изменения
-            git checkout -b "$BRANCH_NAME"
-            git add .
-            git commit -m "docs: auto-translate upstream updates"
-            git push origin "$BRANCH_NAME"
-
-            # Создаем Pull Request в ветку ru через GitHub CLI
-            gh pr create \
-              --title "🤖 Автоматический перевод обновлений оригинала" \
-              --body "Этот PR создан автоматически системой перевода. В нем содержатся новые или отредактированные оригинальные файлы, пропущенные через ИИ-переводчик. Пожалуйста, просмотрите изменения перед слиянием с веткой **ru**." \
-              --base ru \
-              --head "$BRANCH_NAME" \
-              --label translate
+      # Если переводить было нечего, скрипт всё равно продвигает маркер, но ветку
+      # и PR не создаёт. Такие изменения коммитим прямо в ru — ревьюить нечего.
+      - name: Commit state-only changes
+        if: ${{ !cancelled() && steps.pending_pr.outputs.skip != 'true' }}
+        run: |
+          if [ "$(git rev-parse --abbrev-ref HEAD)" != "ru" ]; then
+            echo "Translator published its own branch; nothing to do here."
+          elif [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "chore: advance translation sync state"
+            git push origin HEAD:ru
           else
-            echo "No changes detected. Everything is up to date."
+            echo "No changes."
           fi
