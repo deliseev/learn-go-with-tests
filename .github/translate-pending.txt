@@ -1,0 +1,16 @@
+generics.md
+hello-world.md
+html-templates.md
+install-go.md
+intro-to-acceptance-tests.md
+io.md
+maps.md
+math.md
+mocking.md
+pointers-and-errors.md
+reflection.md
+revisiting-arrays-and-slices-with-generics.md
+revisiting-time-with-synctest.md
+roman-numerals.md
+structs-methods-and-interfaces.md
+sync.md
