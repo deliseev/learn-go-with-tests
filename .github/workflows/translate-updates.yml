@@ -22,22 +22,46 @@ jobs:
         with:
           fetch-depth: 0 # Скачиваем всю историю коммитов, чтобы git diff работал корректно
 
+      # Пока предыдущий translate/sync-* PR не смержен в ru, маркер прогресса
+      # (.github/translate-sync-state.txt) не продвигается — новый прогон
+      # продиффит от той же точки и продублирует уже переведённое. Поэтому
+      # просто ждём, пока предыдущий PR не разберут.
+      - name: Check for an existing pending translation PR
+        id: pending_pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          OPEN_PR=$(gh pr list --repo ${{ github.repository }} --base ru --state open --search "head:translate/sync-" --json number --jq '.[0].number // empty')
+          if [ -n "$OPEN_PR" ]; then
+            echo "Open translate/sync-* PR #$OPEN_PR is still unmerged — skipping this run to avoid duplicate work."
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Set up Python
+        if: steps.pending_pr.outputs.skip != 'true'
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
       - name: Install dependencies
+        if: steps.pending_pr.outputs.skip != 'true'
         run: |
           pip install google-genai
 
+      # Прогресс отслеживается в .github/translate-sync-state.txt (коммитится
+      # вместе с переводами ниже) — по тому же шаблону имени, что и
+      # .github/upstream-sync-state.txt из Sync Fork with Upstream.
       - name: Run translation script
+        if: steps.pending_pr.outputs.skip != 'true'
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
           python .github/scripts/translate_diff.py
 
       - name: Check for changes and open PR
+        if: steps.pending_pr.outputs.skip != 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -60,7 +84,8 @@ jobs:
               --title "🤖 Автоматический перевод обновлений оригинала" \
               --body "Этот PR создан автоматически системой перевода. В нем содержатся новые или отредактированные оригинальные файлы, пропущенные через ИИ-переводчик. Пожалуйста, просмотрите изменения перед слиянием с веткой **ru**." \
               --base ru \
-              --head "$BRANCH_NAME"
+              --head "$BRANCH_NAME" \
+              --label translate
           else
             echo "No changes detected. Everything is up to date."
           fi

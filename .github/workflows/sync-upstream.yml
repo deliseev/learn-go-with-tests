@@ -2,21 +2,87 @@ name: Sync Fork with Upstream
 
 on:
   schedule:
-    # Запуск каждый день в 00:00 UTC (можно настроить любое другое время)
-    - cron: '0 0 * * *'
+    # Каждые 12 часов дёшево проверяем SHA апстрима (git ls-remote, без
+    # клонирования). Тяжёлый синк запускается только если появился новый
+    # коммит — см. джоб `check`.
+    - cron: '0 */12 * * *'
   # Позволяет запускать синхронизацию вручную в один клик через сайт GitHub
   workflow_dispatch:
 
 jobs:
+  check:
+    name: Check upstream for new commits
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.compare.outputs.changed }}
+    steps:
+      - name: Get latest upstream commit
+        id: upstream
+        run: |
+          SHA=$(git ls-remote https://github.com/quii/learn-go-with-tests main | cut -f1)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Get last synced commit
+        id: last
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          SHA=$(gh api "repos/${{ github.repository }}/contents/.github/upstream-sync-state.txt?ref=main" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]' || true)
+          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Compare
+        id: compare
+        run: |
+          if [ "${{ steps.upstream.outputs.sha }}" != "${{ steps.last.outputs.sha }}" ]; then
+            echo "New upstream commit: ${{ steps.upstream.outputs.sha }} (last synced: ${{ steps.last.outputs.sha }})"
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "No new upstream commits."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
   sync:
     name: Sync main branch with original
+    needs: check
+    if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     permissions:
       contents: write # Дает право обновлять ветку main
 
     steps:
-      - name: Sync branch from upstream
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      # GITHUB_TOKEN никогда не имеет scope `workflow`, поэтому не может
+      # обновлять файлы в .github/workflows/*. `gh repo sync` синкает всё
+      # разом и падает, если апстрим менял воркфлоу. Синкаем всё, кроме
+      # этой директории — свои воркфлоу-файлы просто оставляем как есть.
+      - name: Sync branch from upstream (excluding .github/workflows)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          gh repo sync ${{ github.repository }} --branch main
+          git remote add upstream https://github.com/quii/learn-go-with-tests.git
+          git fetch upstream main
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          git checkout upstream/main -- . ':(exclude).github/workflows'
+
+          # Отмечаем, до какого коммита апстрима синкнулись — по этому
+          # маркеру джоб `check` в следующий раз дёшево поймёт, что новых
+          # изменений нет, и пропустит тяжёлый checkout.
+          git rev-parse upstream/main > .github/upstream-sync-state.txt
+          git add .github/upstream-sync-state.txt
+
+          if git diff --cached --quiet; then
+            echo "Already up to date."
+          else
+            git commit -m "Sync main with upstream ($(git rev-parse --short upstream/main)), excluding .github/workflows"
+            git push origin HEAD:main
+          fi
