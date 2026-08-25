@@ -261,6 +261,44 @@ class TestIncrementalMerge(unittest.TestCase):
             "ch.md", committed, "a file with nothing to translate must still be committed"
         )
 
+    def test_unalignable_file_stays_queued_until_a_human_repairs_it(self):
+        """Файл не выбывает из очереди и сам возвращается в работу после починки.
+
+        Маркер синхронизации уходит вперёд, поэтому выброшенный из очереди файл
+        больше ничем не всплыл бы. Перепроверка бесплатна: выравнивание считается
+        локально, без обращений к API.
+        """
+        base = "one.\n\ntwo.\n\nthree.\n\nfour.\n\nfive.\n"
+        head = "one X.\n\ntwo.\n\nthree.\n\nfour.\n\nfive.\n"
+        broken = "only.\n\ntwo.\n"  # структура разошлась — сопоставить нельзя
+
+        pipeline, _, fs, prov = build_pipeline(
+            base_tree={"ch.md": base},
+            head_tree={"ch.md": head},
+            working={"ch.md": broken},
+            changes=[("M", "ch.md")],
+        )
+        result = pipeline.run()
+
+        self.assertEqual(result.skipped, ["ch.md"])
+        self.assertEqual(prov.calls, 0, "перепроверка не должна стоить запросов")
+        self.assertIn("ch.md", fs.files[".github/pending.txt"], "остался в очереди")
+
+        # Человек починил структуру — следующий прогон подхватывает файл сам.
+        repaired = "r-one.\n\nr-two.\n\nr-three.\n\nr-four.\n\nr-five.\n"
+        pipeline2, _, fs2, prov2 = build_pipeline(
+            base_tree={"ch.md": base},
+            head_tree={"ch.md": head},
+            working={"ch.md": repaired},
+            changes=[],  # свежих изменений нет, файл приходит только из очереди
+        )
+        fs2.files[".github/pending.txt"] = "aaaaaaa1111111\tch.md\n"
+        result2 = pipeline2.run()
+
+        self.assertEqual(result2.translated, ["ch.md"])
+        self.assertIn("RU(one X.)", fs2.files["ch.md"])
+        self.assertIn("r-five.", fs2.files["ch.md"], "ручной перевод сохранён")
+
     def test_unalignable_file_is_skipped_and_left_untouched(self):
         original_ru = "only.\n\ntwo.\n"
         pipeline, _, fs, _ = build_pipeline(

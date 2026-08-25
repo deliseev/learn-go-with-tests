@@ -1006,9 +1006,12 @@ class TranslationPipeline:
         for path, file_base in candidates:
             plan = self._build_plan(path, file_base)
             if plan is None:
+                # Из очереди не убираем: маркер уйдёт вперёд, и файл больше
+                # ничем не всплывёт. Перепроверка стоит ноль обращений к API —
+                # выравнивание считается локально, — поэтому файл сам вернётся
+                # в работу в тот прогон, когда человек его починит.
                 print(f"Пропускаю {path}: не удалось надёжно сопоставить перевод.")
                 result.skipped.append(path)
-                pending.pop(path, None)
                 continue
             if not plan.translatable:
                 # Изменились только удаления или блоки кода — переводить нечего.
@@ -1102,10 +1105,14 @@ class TranslationPipeline:
         def listing(paths: Sequence[str]) -> str:
             return "\n".join(f"- {p}" for p in paths) or "—"
 
+        # Непереводимые файлы остаются в очереди, чтобы не потеряться, но в теле
+        # PR им место только в разделе про ручную работу — иначе один и тот же
+        # файл читался бы как «ждёт квоты» и «ждёт человека» одновременно.
+        skipped = set(result.skipped)
         return self.config.target.pr_body_template.format(
             translated=listing(result.translated),
             skipped=listing(result.skipped),
-            pending=listing(result.pending),
+            pending=listing([p for p in result.pending if p not in skipped]),
         )
 
 
