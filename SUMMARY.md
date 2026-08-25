@@ -28,20 +28,20 @@
 
 ## Testing fundamentals
 
-* [Introduction to acceptance tests](intro-to-acceptance-tests.md)
-* [Scaling acceptance tests](scaling-acceptance-tests.md)
-* [Working without mocks](working-without-mocks.md)
-* [Refactoring Checklist](refactoring-checklist.md)
+* [Введение в приёмочные тесты](intro-to-acceptance-tests.md)
+* [Масштабирование приёмочных тестов](scaling-acceptance-tests.md)
+* [Работа без подделок](working-without-mocks.md)
+* [Чеклист рефакторинга](refactoring-checklist.md)
 
 ## Build an application
 
-* [Intro](app-intro.md)
-* [HTTP server](http-server.md)
-* [JSON, routing and embedding](json.md)
-* [IO and sorting](io.md)
-* [Command line & package structure](command-line.md)
-* [Time](time.md)
-* [Revisiting time, with testing/synctest](revisiting-time-with-synctest.md)
+* [Введение](app-intro.md)
+* [HTTP-сервер](http-server.md)
+* [JSON, маршрутизация и встраивание](json.md)
+* [Ввод-вывод и сортировка](io.md)
+* [Командная строка и структура пакетов](command-line.md)
+* [Время](time.md)
+* [Пересмотр времени с testing/synctest](revisiting-time-with-synctest.md)
 * [WebSockets](websockets.md)
 
 ## Questions and answers

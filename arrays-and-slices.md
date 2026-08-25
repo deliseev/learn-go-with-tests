@@ -384,7 +384,7 @@ func TestSumAllTails(t *testing.T) {
 	got := SumAllTails([]int{1, 2}, []int{0, 9})
 	want := []int{2, 9}
 
-	if !reflect.DeepEqual(got, want) {
+	if !slices.Equal(got, want) {
 		t.Errorf("got %v want %v", got, want)
 	}
 }
@@ -437,7 +437,7 @@ func TestSumAllTails(t *testing.T) {
 		got := SumAllTails([]int{1, 2}, []int{0, 9})
 		want := []int{2, 9}
 
-		if !reflect.DeepEqual(got, want) {
+		if !slices.Equal(got, want) {
 			t.Errorf("got %v want %v", got, want)
 		}
 	})
@@ -446,7 +446,7 @@ func TestSumAllTails(t *testing.T) {
 		got := SumAllTails([]int{}, []int{3, 4, 5})
 		want := []int{0, 9}
 
-		if !reflect.DeepEqual(got, want) {
+		if !slices.Equal(got, want) {
 			t.Errorf("got %v want %v", got, want)
 		}
 	})
@@ -491,9 +491,9 @@ func SumAllTails(numbersToSum ...[]int) []int {
 ```go
 func TestSumAllTails(t *testing.T) {
 
-	checkSums := func(t testing.TB, got, want []int) {
+	checkSums := func(t *testing.T, got, want []int) {
 		t.Helper()
-		if !reflect.DeepEqual(got, want) {
+		if !slices.Equal(got, want) {
 			t.Errorf("got %v want %v", got, want)
 		}
 	}
@@ -532,15 +532,15 @@ $ go test
 
 Мы рассмотрели:
 
-*   Массивы
-*   Срезы
-    *   Различные способы их создания
-    *   Как они имеют _фиксированную_ ёмкость, но вы можете создавать новые срезы из старых
-        с помощью `append`
-    *   Как выполнять срезы срезов!
-*   `len` для получения длины массива или среза
-*   Инструмент покрытия тестов
-*   `reflect.DeepEqual` и почему он полезен, но может снизить типобезопасность вашего кода
+* Массивы
+* Срезы
+  * Различные способы их создания
+  * Как они имеют _фиксированную_ ёмкость, но вы можете создавать новые срезы из старых
+    с помощью `append`
+  * Как выполнять срезы срезов!
+* `len` для получения длины массива или среза
+* Инструмент покрытия тестов
+* `slices.Equal` и почему он нужен вместо обычных операторов равенства
 
 Мы использовали срезы и массивы с целыми числами, но они работают и с любыми другими типами,
 включая сами массивы/срезы. Таким образом, вы можете объявить переменную типа
