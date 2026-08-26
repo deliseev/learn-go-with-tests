@@ -676,6 +676,43 @@ class RealFileSystem:
             os.remove(path)
 
 
+class DryRunGit:
+    """Читает по-настоящему, но любые изменения только печатает.
+
+    Без этого --dry-run не защищал git вовсе: ветка «переводить нечего» доходит
+    до публикации, а значит создавала бы настоящую ветку с коммитом и пушем.
+    """
+
+    def __init__(self, inner: GitClient) -> None:
+        self._inner = inner
+
+    def rev_parse(self, ref: str) -> str:
+        """Разрешает ссылку в хеш коммита."""
+        return self._inner.rev_parse(ref)
+
+    def show(self, ref: str, path: str) -> str:
+        """Читает содержимое файла на указанной ревизии."""
+        return self._inner.show(ref, path)
+
+    def diff_name_status(
+        self, base: str, head: str, patterns: Sequence[str]
+    ) -> list[tuple[str, str]]:
+        """Возвращает пары (статус, путь) для изменившихся файлов."""
+        return self._inner.diff_name_status(base, head, patterns)
+
+    def create_branch(self, name: str) -> None:
+        """Сообщает о создании ветки, не создавая её."""
+        print(f"[dry-run] создал бы ветку {name}")
+
+    def commit(self, paths: Sequence[str], message: str) -> None:
+        """Сообщает о коммите, не создавая его."""
+        print(f"[dry-run] закоммитил бы {len(paths)} файл(ов): {message}")
+
+    def push(self, branch: str) -> None:
+        """Сообщает о пуше, не выполняя его."""
+        print(f"[dry-run] отправил бы ветку {branch}")
+
+
 class DryRunFileSystem:
     """Читает по-настоящему, но записи и удаления только печатает."""
 
@@ -789,11 +826,19 @@ class RunResult:
     skipped: list[str] = field(default_factory=list)
     pending: list[str] = field(default_factory=list)
     removed: list[str] = field(default_factory=list)
+    quota_exhausted: bool = False
 
     @property
     def needs_attention(self) -> bool:
-        """Остались ли файлы, требующие внимания человека или повтора."""
-        return bool(self.pending or self.skipped)
+        """Требуется ли вмешательство человека.
+
+        Исчерпанная квота — штатный режим: очередь разгребётся сама, когда
+        лимит обновится. Красить такой прогон в красное значит сделать
+        настоящую аварию неотличимой от обычного дня.
+        """
+        if self.skipped:
+            return True
+        return bool(self.pending) and not self.quota_exhausted
 
 
 class FileFilter:
@@ -1116,6 +1161,7 @@ class TranslationPipeline:
             except QuotaExhausted as exc:
                 print(f"Квота исчерпана, остальное откладываю: {exc}")
                 quota_spent = True
+                result.quota_exhausted = True
                 self._defer(pending, batch_plans, plan_bases)
                 continue
             except ProviderError as exc:
@@ -1219,6 +1265,20 @@ class DryRunPullRequests:
             print(f"   {c.path}:{c.line} — {c.body.splitlines()[-1][:70]!r}")
 
 
+def build_git(dry_run: bool) -> GitClient:
+    """Клиент git для прогона. Вынесено отдельно, чтобы проводку можно было
+    проверить тестом: сам по себе DryRunGit безопасен, а забыть его подключить —
+    именно та ошибка, из-за которой --dry-run создавал настоящую ветку."""
+    git: GitClient = SubprocessGit()
+    return DryRunGit(git) if dry_run else git
+
+
+def build_file_system(dry_run: bool) -> FileSystem:
+    """Файловая система для прогона; в dry-run записи только печатаются."""
+    fs: FileSystem = RealFileSystem()
+    return DryRunFileSystem(fs) if dry_run else fs
+
+
 def print_request(request: TranslationRequest) -> str:
     """Печатает промпт вместо обращения к модели и возвращает пустой ответ."""
     print("=" * 70)
@@ -1249,12 +1309,15 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     config = load_config(args.config)
-    file_system: FileSystem = RealFileSystem()
+    file_system: FileSystem = build_file_system(args.dry_run)
+    git: GitClient = build_git(args.dry_run)
 
     if args.dry_run:
-        print("Режим dry-run: запросы к ИИ не отправляются, файлы не меняются.\n")
+        print(
+            "Режим dry-run: запросы к ИИ не отправляются, "
+            "ни файлы, ни репозиторий не меняются.\n"
+        )
         translate: Callable[[TranslationRequest], str] = print_request
-        file_system = DryRunFileSystem(file_system)
         pull_requests: PullRequestClient = DryRunPullRequests()
     else:
         translators = build_translators(config)
@@ -1263,7 +1326,7 @@ def main(argv: Sequence[str] | None = None) -> int:
 
     pipeline = TranslationPipeline(
         config=config,
-        git=SubprocessGit(),
+        git=git,
         fs=file_system,
         translate=translate,
         pull_requests=pull_requests,
@@ -1279,6 +1342,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"  нужен ручной перевод (не сопоставилось): {path}")
     for path in result.pending:
         print(f"  отложено до следующего прогона: {path}")
+    if result.quota_exhausted:
+        print(
+            "Квота провайдера исчерпана — это штатный режим: очередь "
+            "разгребётся, когда лимит обновится."
+        )
 
     if args.dry_run:
         return 0

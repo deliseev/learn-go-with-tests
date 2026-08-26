@@ -5,23 +5,32 @@ Hand-written fakes instead of unittest.mock — fakes survive refactoring of
 call signatures, mock assertions do not.
 """
 
+import contextlib
+import io
 import unittest
 
 from translator import (
     BatchPlanner,
     BlockAligner,
     Config,
+    DryRunFileSystem,
+    DryRunGit,
+    DryRunPullRequests,
     MarkdownSplitter,
     ProviderConfig,
     PromptConfig,
     QuotaExhausted,
+    RunResult,
     SegmentCodec,
     SourceConfig,
     StateConfig,
     TargetConfig,
     TranslationPipeline,
     TranslationRequest,
+    build_file_system,
+    build_git,
     chain_translate,
+    print_request,
 )
 
 # --------------------------------------------------------------------------
@@ -425,6 +434,62 @@ class TestResilience(unittest.TestCase):
                 [a.translate, b.translate],
                 TranslationRequest(prompt="p", segments={1: "s"}),
             )
+
+
+class TestExitSignal(unittest.TestCase):
+    """Исчерпанная квота — штатный режим, а не авария.
+
+    Если красить такой прогон в красное, настоящая поломка перестаёт
+    отличаться от обычного дня, когда лимит просто кончился.
+    """
+
+    def test_quota_deferral_alone_is_not_a_failure(self):
+        result = RunResult(translated=["a.md"], pending=["b.md"], quota_exhausted=True)
+        self.assertFalse(result.needs_attention)
+
+    def test_deferral_without_quota_is_a_failure(self):
+        self.assertTrue(RunResult(pending=["b.md"]).needs_attention)
+
+    def test_file_needing_a_human_is_always_a_failure(self):
+        self.assertTrue(RunResult(skipped=["c.md"], quota_exhausted=True).needs_attention)
+
+
+class TestDryRunIsolation(unittest.TestCase):
+    def test_dry_run_git_touches_nothing(self):
+        """Ветка «переводить нечего» доходит до публикации, поэтому без обёртки
+        --dry-run создавал бы настоящую ветку с коммитом и пушем."""
+        git = FakeGit(
+            head="bbbbbbb2222222",
+            trees={
+                "origin/main": {"ch.md": "A.\n\nB.\n"},
+                "aaaaaaa1111111": {"ch.md": "A.\n\nB.\n\nC.\n"},
+            },
+            changes=[("M", "ch.md")],
+        )
+        pipeline = TranslationPipeline(
+            config=make_config(),
+            git=DryRunGit(git),
+            fs=DryRunFileSystem(
+                FakeFS({"ch.md": "ra.\n\nrb.\n\nrc.\n",
+                        ".github/sync.txt": "aaaaaaa1111111"})
+            ),
+            translate=print_request,
+            pull_requests=DryRunPullRequests(),
+            clock=FakeClock(),
+        )
+        with contextlib.redirect_stdout(io.StringIO()):
+            pipeline.run()
+
+        self.assertIsNone(git.branch, "ветка не создаётся")
+        self.assertEqual(git.commits, [], "коммитов нет")
+        self.assertEqual(git.pushed, [], "пушей нет")
+
+    def test_dry_run_actually_wires_the_guard(self):
+        """Сама обёртка безопасна — ошибка была в том, что её забыли подключить."""
+        self.assertIsInstance(build_git(True), DryRunGit)
+        self.assertNotIsInstance(build_git(False), DryRunGit)
+        self.assertIsInstance(build_file_system(True), DryRunFileSystem)
+        self.assertNotIsInstance(build_file_system(False), DryRunFileSystem)
 
 
 class TestBatchPlanner(unittest.TestCase):
