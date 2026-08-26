@@ -34,7 +34,7 @@ class FakeGit:
 
     def __init__(self, head, trees, changes):
         self._head = head
-        self._trees = trees  # {ref: {path: text}}
+        self.trees = trees  # {ref: {path: text}}
         self._changes = changes  # [(status, path)]
         self.commits = []
         self.pushed = []
@@ -45,7 +45,7 @@ class FakeGit:
 
     def show(self, ref, path):
         try:
-            return self._trees[ref][path]
+            return self.trees[ref][path]
         except KeyError:
             raise FileNotFoundError(f"{ref}:{path}")
 
@@ -107,6 +107,7 @@ class FakePRClient:
         self.created = None
         self.ready = False
         self.body = None
+        self.review = []
 
     def create_draft(self, branch, base, title, body, label):
         self.created = branch
@@ -118,6 +119,9 @@ class FakePRClient:
 
     def update_body(self, number, body):
         self.body = body
+
+    def add_review(self, number, commit_id, comments):
+        self.review = list(comments)
 
 
 class FakeClock:
@@ -229,6 +233,30 @@ class TestIncrementalMerge(unittest.TestCase):
         self.assertIn("Перевод C.", out)
         self.assertIn("RU(B para CHANGED.)", out)
         self.assertNotIn("Перевод B.", out)
+
+    def test_review_attaches_the_source_to_the_translated_line(self):
+        """К каждому переведённому блоку прикладывается его оригинал.
+
+        Иначе в диффе виден только результат, и оценить качество перевода
+        нельзя — сравнивать не с чем.
+        """
+        pipeline, _, fs, _ = build_pipeline(
+            base_tree={"ch.md": "A para.\n\nB para.\n"},
+            head_tree={"ch.md": "A para.\n\nB para.\n\nBrand new para.\n"},
+            working={"ch.md": "Перевод A.\n\nПеревод B.\n"},
+            changes=[("M", "ch.md")],
+        )
+        pipeline.run()
+
+        review = pipeline.pull_requests.review
+        self.assertEqual(len(review), 1, "один новый блок — один комментарий")
+        comment = review[0]
+        self.assertEqual(comment.path, "ch.md")
+        self.assertIn("Brand new para.", comment.body, "в комментарии оригинал")
+
+        # Комментарий должен указывать на строку, где лежит перевод этого блока.
+        line = fs.files["ch.md"].split("\n")[comment.line - 1]
+        self.assertIn("RU(Brand new para.)", line)
 
     def test_only_changed_blocks_are_sent_for_translation(self):
         base = "A.\n\nB.\n\nC.\n"
@@ -349,6 +377,33 @@ class TestResilience(unittest.TestCase):
         self.assertEqual(prov.calls, 1)
         self.assertIn("RU(B NEW.)", fs.files["ch.md"])
         self.assertIn("ra.", fs.files["ch.md"], "ручной перевод сохранён")
+
+    def test_queued_file_keeps_its_own_base_when_it_also_changes_upstream(self):
+        """У файла из очереди база старше маркера — она и должна победить.
+
+        Иначе изменения, накопившиеся до маркера (ради которых файл и отложили),
+        оказываются позади базы и теряются молча.
+        """
+        pipeline, git, fs, prov = build_pipeline(
+            base_tree={"ch.md": "A.\n\nB OLD.\n"},  # чему отвечает перевод
+            head_tree={"ch.md": "A.\n\nB NEW.\n\nC ДОБАВЛЕН ПОЗЖЕ.\n"},
+            working={"ch.md": "ra.\n\nrb.\n"},
+            changes=[("M", "ch.md")],  # файл ещё и изменился свежим диффом
+        )
+        # Маркер стоит МЕЖДУ базой очереди и головой: B успел измениться до него.
+        git.trees["ccccccc3333333"] = {"ch.md": "A.\n\nB NEW.\n"}
+        fs.files[".github/sync.txt"] = "ccccccc3333333"
+        fs.files[".github/pending.txt"] = "aaaaaaa1111111\tch.md\n"
+
+        pipeline.run()
+
+        # Оба изменения должны попасть в перевод, а не только то, что позже маркера.
+        self.assertIn("C ДОБАВЛЕН ПОЗЖЕ.", prov.translated_sources)
+        self.assertIn(
+            "B NEW.",
+            prov.translated_sources,
+            "изменение до маркера потеряно — взята не та база",
+        )
 
     def test_quota_exhausted_falls_over_to_next_provider(self):
         codec = SegmentCodec()

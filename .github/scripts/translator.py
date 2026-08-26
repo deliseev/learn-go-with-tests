@@ -43,6 +43,8 @@ class TargetConfig:
     pr_label: str
     pr_title: str
     pr_body_template: str
+    review_comment_template: str = "**Оригинал:**\n\n{source}"
+    max_review_comments: int = 300
 
 
 @dataclass(frozen=True)
@@ -554,6 +556,15 @@ class FileSystem(Protocol):
     def remove(self, path: str) -> None: ...
 
 
+@dataclass(frozen=True)
+class ReviewComment:
+    """Оригинал переведённого куска, привязанный к строке в диффе."""
+
+    path: str
+    line: int
+    body: str
+
+
 class PullRequestClient(Protocol):
     """Работа с pull request'ами."""
 
@@ -562,6 +573,9 @@ class PullRequestClient(Protocol):
     ) -> int: ...
     def mark_ready(self, number: int) -> None: ...
     def update_body(self, number: int, body: str) -> None: ...
+    def add_review(
+        self, number: int, commit_id: str, comments: Sequence[ReviewComment]
+    ) -> None: ...
 
 
 class Clock(Protocol):
@@ -718,6 +732,41 @@ class GhPullRequests:
     def mark_ready(self, number: int) -> None:
         """Переводит черновик в готовый к ревью."""
         self._run("pr", "ready", str(number))
+
+    def add_review(
+        self, number: int, commit_id: str, comments: Sequence[ReviewComment]
+    ) -> None:
+        """Публикует ревью с оригиналами, привязанными к строкам перевода."""
+        if not comments:
+            return
+        payload = json.dumps(
+            {
+                "commit_id": commit_id,
+                "event": "COMMENT",
+                "comments": [
+                    {"path": c.path, "line": c.line, "side": "RIGHT", "body": c.body}
+                    for c in comments
+                ],
+            }
+        )
+        repo = os.environ.get("GITHUB_REPOSITORY", "")
+        endpoint = f"repos/{repo}/pulls/{number}/reviews" if repo else None
+        if endpoint is None:
+            print("GITHUB_REPOSITORY не задана — ревью с оригиналами пропущено.")
+            return
+        try:
+            subprocess.run(
+                ["gh", "api", "--method", "POST", endpoint, "--input", "-"],
+                input=payload,
+                text=True,
+                timeout=GIT_TIMEOUT_SECONDS,
+                check=True,
+                stdout=subprocess.DEVNULL,
+            )
+        except Exception as exc:  # noqa: BLE001
+            # Ревью — вспомогательная штука: перевод уже закоммичен, и терять
+            # прогон из-за отвергнутого комментария нельзя.
+            print(f"Не удалось опубликовать ревью с оригиналами: {exc}")
 
     def update_body(self, number: int, body: str) -> None:
         """Обновляет описание pull request'а."""
@@ -976,7 +1025,14 @@ class TranslationPipeline:
                 pending.pop(path, None)
                 result.removed.append(path)
             else:
-                candidates.append((path, base_ref))
+                # Файл мог одновременно измениться и ждать в очереди. Тогда
+                # верна база из очереди: она старше маркера, и перевод отвечает
+                # именно ей. Взяв маркер, мы пропустили бы всё, что накопилось
+                # до него, — то есть ровно то, ради чего файл и был отложен.
+                queued = pending.get(path)
+                if queued is not None and not queued:
+                    continue  # база не указана — разберём ниже, вместе с человеком
+                candidates.append((path, queued or base_ref))
         fresh = {path for path, _ in candidates}
         for path in sorted(set(pending) - fresh):
             # Правила исключений действуют и на очередь: иначе однажды
@@ -1036,6 +1092,7 @@ class TranslationPipeline:
             [(plan.path, plan.cost()) for plan in plans]
         )
 
+        review: list[ReviewComment] = []
         quota_spent = False
         for batch in batches:
             batch_plans = [by_path[path] for path, _ in batch]
@@ -1081,6 +1138,18 @@ class TranslationPipeline:
                         rendered += item.text + item.sep
                     else:
                         segment_id = next(s for s in wanted if ids[s] is item)
+                        # Номер строки, на которой начнётся перевод: по нему
+                        # оригинал прицепится к диффу, чтобы ревьюер видел, с
+                        # чего переводили, не уходя в апстрим.
+                        review.append(
+                            ReviewComment(
+                                path=plan.path,
+                                line=rendered.count("\n") + 1,
+                                body=self.config.target.review_comment_template.format(
+                                    source=item.text
+                                ),
+                            )
+                        )
                         rendered += received[segment_id] + item.sep
                 self.fs.write(plan.path, rendered)
                 result.translated.append(plan.path)
@@ -1097,6 +1166,13 @@ class TranslationPipeline:
             if self._pr_number:
                 self.pull_requests.update_body(
                     self._pr_number, self._render_body(result)
+                )
+                # Ревью — после последнего коммита: комментарии привязываются к
+                # строкам конечной версии файлов.
+                self.pull_requests.add_review(
+                    self._pr_number,
+                    self.git.rev_parse("HEAD"),
+                    review[: self.config.target.max_review_comments],
                 )
                 self.pull_requests.mark_ready(self._pr_number)
         return result
@@ -1133,6 +1209,14 @@ class DryRunPullRequests:
     def update_body(self, number: int, body: str) -> None:
         """Сообщает об обновлении описания."""
         print(f"[dry-run] обновил бы описание PR #{number}")
+
+    def add_review(
+        self, number: int, commit_id: str, comments: Sequence[ReviewComment]
+    ) -> None:
+        """Сообщает, сколько оригиналов было бы приложено к диффу."""
+        print(f"[dry-run] приложил бы к PR #{number} оригиналов: {len(comments)}")
+        for c in comments[:3]:
+            print(f"   {c.path}:{c.line} — {c.body.splitlines()[-1][:70]!r}")
 
 
 def print_request(request: TranslationRequest) -> str:

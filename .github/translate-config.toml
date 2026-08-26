@@ -34,6 +34,13 @@ pr_body_template = """
 {pending}
 """
 
+# Оригинал каждого переведённого куска прикладывается к диффу комментарием ревью:
+# иначе в PR виден только результат и сравнивать его не с чем.
+review_comment_template = """**Оригинал:**
+
+{source}"""
+max_review_comments = 300
+
 [state]
 sync_file = ".github/translate-sync-state.txt"
 pending_file = ".github/translate-pending.txt"
