@@ -224,7 +224,7 @@ t.Run("unknown word", func(t *testing.T) {
 func assertError(t testing.TB, got, want error) {
 	t.Helper()
 
-	if got != want {
+	if !errors.Is(got, want) {
 		t.Errorf("got error %q want %q", got, want)
 	}
 }
@@ -550,7 +550,7 @@ func (d Dictionary) Update(word, definition string) error {
 С этими изменениями мы теперь получаем очень чёткую ошибку:
 
 ```
-dictionary_test.go:66: got error '%!q(<nil>)' want 'cannot update word because it does not exist'
+dictionary_test.go:66: got error '%!q(<nil>)' want 'cannot perform operation on word because it does not exist'
 ```
 
 ## Напишите достаточно кода, чтобы тест прошёл
