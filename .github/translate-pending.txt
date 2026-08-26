@@ -1,3 +1,2 @@
-37fae6b5305680c418f5c51b6da67026e065493e	roman-numerals.md
 37fae6b5305680c418f5c51b6da67026e065493e	scaling-acceptance-tests.md
 37fae6b5305680c418f5c51b6da67026e065493e	sync.md
