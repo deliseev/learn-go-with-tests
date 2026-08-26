@@ -1,4 +1,3 @@
-37fae6b5305680c418f5c51b6da67026e065493e	reflection.md
 37fae6b5305680c418f5c51b6da67026e065493e	revisiting-arrays-and-slices-with-generics.md
 37fae6b5305680c418f5c51b6da67026e065493e	revisiting-time-with-synctest.md
 37fae6b5305680c418f5c51b6da67026e065493e	roman-numerals.md
