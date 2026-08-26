@@ -50,11 +50,17 @@ func Racer(a, b string) (winner string) {
 ```go
 func Racer(a, b string) (winner string) {
 	startA := time.Now()
-	http.Get(a)
+	resp, err := http.Get(a)
+	if err == nil {
+		resp.Body.Close()
+	}
 	aDuration := time.Since(startA)
 
 	startB := time.Now()
-	http.Get(b)
+	resp, err = http.Get(b)
+	if err == nil {
+		resp.Body.Close()
+	}
 	bDuration := time.Since(startB)
 
 	if aDuration < bDuration {
@@ -68,7 +74,7 @@ func Racer(a, b string) (winner string) {
 Для каждого URL-адреса:
 
 1. Мы используем `time.Now()` для записи времени непосредственно перед попыткой получить `URL`.
-1. Затем мы используем [`http.Get`](https://golang.org/pkg/net/http/#Client.Get), чтобы попытаться выполнить HTTP `GET` запрос к `URL`. Эта функция возвращает [`http.Response`](https://golang.org/pkg/net/http/#Response) и `error`, но пока нам не интересны эти значения.
+1. Затем мы используем [`http.Get`](https://golang.org/pkg/net/http/#Client.Get), чтобы попытаться выполнить HTTP `GET` запрос к `URL`. Эта функция возвращает [`http.Response`](https://golang.org/pkg/net/http/#Response) и `error`. Мы закрываем тело ответа, чтобы избежать утечки дескрипторов файлов — в противном случае каждый запрос оставляет открытое соединение.
 1. `time.Since` принимает начальное время и возвращает `time.Duration` разницы.
 
 После этого мы просто сравниваем продолжительность, чтобы увидеть, какая из них быстрее.
@@ -148,7 +154,10 @@ func Racer(a, b string) (winner string) {
 
 func measureResponseTime(url string) time.Duration {
 	start := time.Now()
-	http.Get(url)
+	resp, err := http.Get(url)
+	if err == nil {
+		resp.Body.Close()
+	}
 	return time.Since(start)
 }
 ```
@@ -215,7 +224,10 @@ func Racer(a, b string) (winner string) {
 func ping(url string) chan struct{} {
 	ch := make(chan struct{})
 	go func() {
-		http.Get(url)
+		resp, err := http.Get(url)
+		if err == nil {
+			resp.Body.Close()
+		}
 		close(ch)
 	}()
 	return ch
@@ -231,7 +243,7 @@ func ping(url string) chan struct{} {
 Почему `struct{}`, а не другой тип, например `bool`? Ну, `chan struct{}` — это наименьший доступный тип данных с точки зрения памяти, поэтому мы
 не получаем выделения памяти в отличие от `bool`. Поскольку мы закрываем канал и ничего в него не отправляем, зачем что-либо выделять?
 
-Внутри той же функции мы запускаем горутину, которая отправит сигнал в этот канал, как только мы завершим `http.Get(url)`.
+Внутри той же функции мы запускаем горутину, которая отправит сигнал в этот канал, как только мы завершим `http.Get(url)`. Мы немедленно закрываем тело ответа — нам важно только то, что запрос завершился, а не содержимое ответа, и оставление его открытым привело бы к утечке дескрипторов файлов.
 
 ##### Всегда используйте `make` для каналов
 
