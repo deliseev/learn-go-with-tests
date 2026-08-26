@@ -13,5 +13,4 @@
 37fae6b5305680c418f5c51b6da67026e065493e	revisiting-time-with-synctest.md
 37fae6b5305680c418f5c51b6da67026e065493e	roman-numerals.md
 37fae6b5305680c418f5c51b6da67026e065493e	scaling-acceptance-tests.md
-37fae6b5305680c418f5c51b6da67026e065493e	structs-methods-and-interfaces.md
 37fae6b5305680c418f5c51b6da67026e065493e	sync.md
