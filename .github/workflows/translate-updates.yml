@@ -46,19 +46,16 @@ jobs:
         with:
           python-version: "3.11"
 
+      # Инструмент живёт в отдельном репозитории и там же тестируется, поэтому
+      # здесь он просто ставится по тегу. Тег, а не ветка: прогон должен быть
+      # воспроизводимым. Откат — вернуть запуск .github/scripts/translator.py,
+      # который остаётся на месте.
       - name: Install dependencies
         if: steps.pending_pr.outputs.skip != 'true'
         run: |
-          pip install google-genai
+          pip install "mdtranslate[gemini] @ git+https://github.com/deliseev/mdtranslate@v0.2.0"
 
-      # Тесты быстрые и без сети — ловят регрессию раньше, чем тратится квота API.
-      - name: Run translator tests
-        if: steps.pending_pr.outputs.skip != 'true'
-        working-directory: .github/scripts
-        run: |
-          python -m unittest discover -p 'test_*.py' -v
-
-      # Скрипт коммитит каждый переведённый файл сам, поэтому ему нужна подпись.
+      # Инструмент коммитит каждый переведённый файл сам, поэтому ему нужна подпись.
       # Пуш работает без доп. токена: actions/checkout оставляет persist-credentials.
       - name: Configure git identity
         if: steps.pending_pr.outputs.skip != 'true'
@@ -78,7 +75,7 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           PYTHONUNBUFFERED: "1"
         run: |
-          python .github/scripts/translator.py --config .github/translate-config.toml
+          mdtranslate --config .github/translate-config.toml
 
       # Если переводить было нечего, скрипт всё равно продвигает маркер, но ветку
       # и PR не создаёт. Такие изменения коммитим прямо в ru — ревьюить нечего.
