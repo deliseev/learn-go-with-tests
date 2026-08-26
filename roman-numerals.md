@@ -781,9 +781,6 @@ Try updating the code to use `uint16` rather than `int`. I updated `assertion` i
 
 ```go
 assertion := func(arabic uint16) bool {
-	if arabic > 3999 {
-		return true
-	}
 	t.Log("testing", arabic)
 	roman := ConvertToRoman(arabic)
 	fromRoman := ConvertToArabic(roman)
@@ -792,17 +789,24 @@ assertion := func(arabic uint16) bool {
 ```
 Notice that now we are logging the input using the `log` method from the testing framework. Make sure you run the `go test` command with the flag `-v` to print the additional output (`go test -v`).
 
-If you run the test they now actually run and you can see what is being tested. You can run multiple times to see our code stands up well to the various values! This gives me a lot of confidence that our code is working how we want.
+If you run the test they now actually run and you can see what is being tested. This gives me a lot of confidence that our code is working how we want.
 
-The default number of runs `quick.Check` performs is 100 but you can change that with a config.
+But there's still a subtle gap: `uint16` goes up to 65535, and values above 3999 aren't valid Roman numerals. You'll still pass values in that range — and when our functions don't handle them, the round-trip silently produces a wrong result that we're not catching. You could guard against it with `if arabic > 3999 { return true }`, but that just papers over the problem: those iterations become no-ops.
+
+A better approach is to tell `quick.Check` to only generate values we actually care about. We can do that with the `Values` field on `quick.Config`:
 
 ```go
 if err := quick.Check(assertion, &quick.Config{
 	MaxCount: 1000,
+	Values: func(args []reflect.Value, r *rand.Rand) {
+		args[0] = reflect.ValueOf(uint16(r.Intn(4000)))
+	},
 }); err != nil {
 	t.Error("failed checks", err)
 }
 ```
+
+`Values` is a function that receives the slice of argument values `quick.Check` will pass to your assertion, and a random source. We fill `args[0]` with a `uint16` drawn from `[0, 3999]`. Now every one of our 1000 runs actually exercises the conversion — no wasted iterations.
 
 ### Further work
 

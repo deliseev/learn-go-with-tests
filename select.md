@@ -50,11 +50,17 @@ func Racer(a, b string) (winner string) {
 ```go
 func Racer(a, b string) (winner string) {
 	startA := time.Now()
-	http.Get(a)
+	resp, err := http.Get(a)
+	if err == nil {
+		resp.Body.Close()
+	}
 	aDuration := time.Since(startA)
 
 	startB := time.Now()
-	http.Get(b)
+	resp, err = http.Get(b)
+	if err == nil {
+		resp.Body.Close()
+	}
 	bDuration := time.Since(startB)
 
 	if aDuration < bDuration {
@@ -68,7 +74,7 @@ func Racer(a, b string) (winner string) {
 For each URL:
 
 1. We use `time.Now()` to record just before we try and get the `URL`.
-1. Then we use [`http.Get`](https://golang.org/pkg/net/http/#Client.Get) to try and perform an HTTP `GET` request against the `URL`. This function returns an [`http.Response`](https://golang.org/pkg/net/http/#Response) and an `error` but so far we are not interested in these values.
+1. Then we use [`http.Get`](https://golang.org/pkg/net/http/#Client.Get) to try and perform an HTTP `GET` request against the `URL`. This function returns an [`http.Response`](https://golang.org/pkg/net/http/#Response) and an `error`. We close the response body to avoid leaking file descriptors — if we don't, each request leaves an open connection.
 1. `time.Since` takes the start time and returns a `time.Duration` of the difference.
 
 Once we have done this we simply compare the durations to see which is the quickest.
@@ -148,7 +154,10 @@ func Racer(a, b string) (winner string) {
 
 func measureResponseTime(url string) time.Duration {
 	start := time.Now()
-	http.Get(url)
+	resp, err := http.Get(url)
+	if err == nil {
+		resp.Body.Close()
+	}
 	return time.Since(start)
 }
 ```
@@ -215,7 +224,10 @@ func Racer(a, b string) (winner string) {
 func ping(url string) chan struct{} {
 	ch := make(chan struct{})
 	go func() {
-		http.Get(url)
+		resp, err := http.Get(url)
+		if err == nil {
+			resp.Body.Close()
+		}
 		close(ch)
 	}()
 	return ch
@@ -231,7 +243,7 @@ In our case, we don't _care_ what type is sent to the channel, _we just want to 
 Why `struct{}` and not another type like a `bool`? Well, a `chan struct{}` is the smallest data type available from a memory perspective so we
 get no allocation versus a `bool`. Since we are closing and not sending anything on the chan, why allocate anything?
 
-Inside the same function, we start a goroutine which will send a signal into that channel once we have completed `http.Get(url)`.
+Inside the same function, we start a goroutine which will send a signal into that channel once we have completed `http.Get(url)`. We close the response body straight away — we only care that the request completed, not the response content, and leaving it open would leak file descriptors.
 
 ##### Always `make` channels
 
