@@ -18,8 +18,8 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 <svg xmlns="http://www.w3.org/2000/svg"
-     width="100%"
-     height="100%"
+     width="300"
+     height="300"
      viewBox="0 0 300 300"
      version="2.0">
 
@@ -106,6 +106,8 @@ func TestSecondHandAtMidnight(t *testing.T) {
 	}
 }
 ```
+
+`projectpath` здесь является заполнителем – замените его путем к вашему модулю плюс `/clockface` (например, если ваш `go.mod` содержит `module example.com/learning-go`, этот импорт будет `"example.com/learning-go/clockface"`). Это работает, потому что мы помещаем `clockface_test.go` в отдельный каталог с именем `clockface`, рядом с `clockface.go` (который мы создадим далее). Именование каталога в соответствии с именем содержащегося в нем пакета означает, что Go может разрешить импорт без необходимости в псевдониме. `package clockface_test` внутри того же каталога — это особый случай, разрешенный Go: внешний тестовый пакет, который может находиться рядом с файлами `package clockface` в той же папке.
 
 Помните, как SVG строит свои координаты из верхнего левого угла? Чтобы разместить секундную стрелку в полночь, мы ожидаем, что она не сдвинулась от центра циферблата по оси X – всё ещё 150 – а ось Y находится на длину стрелки «вверх» от центра; 150 минус 90.
 
@@ -1059,7 +1061,7 @@ func TestSVGWriterAtMidnight(t *testing.T) {
 }
 ```
 
-Наконец, мы можем взять пример из таблиц модульных тестов и написать вспомогательную функцию `containsLine(line Line, lines []Line) bool`, чтобы эти тесты действительно засияли:
+Наконец, мы можем взять пример из таблиц модульных тестов и написать вспомогательную функцию `containsLine(line Line, lines []Line) bool`, чтобы эти тесты действительно засияли. Мы снова обратимся к `simpleTime` и `testName` — но этот файл (`clockface_acceptance_test.go`) находится в `package clockface_test`, отдельном пакете от файла `clockface_test.go`, в котором мы изначально их написали (`package clockface`). Поскольку они неэкспортированные, они не видны за пределами пакета, в котором были объявлены, поэтому нам нужны свои копии здесь.
 
 ```go
 func TestSVGWriterSecondHand(t *testing.T) {
@@ -1099,6 +1101,14 @@ func containsLine(l Line, ls []Line) bool {
 		}
 	}
 	return false
+}
+
+func simpleTime(hours, minutes, seconds int) time.Time {
+	return time.Date(312, time.October, 28, hours, minutes, seconds, 0, time.UTC)
+}
+
+func testName(t time.Time) string {
+	return t.Format("15:04:05")
 }
 ```
 
