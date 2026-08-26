@@ -196,7 +196,7 @@ Tags: <ul><li>go</li><li>tdd</li></ul>`
 
 ```go
 func Render(w io.Writer, p Post) error {
-	_, err := fmt.Fprintf(w, "<h1>%s</h1><p>%s</p>", p.Title, p.Description)
+	_, err := fmt.Fprintf(w, "<h1>%s</h1>\n<p>%s</p>\n", p.Title, p.Description)
 	if err != nil {
 		return err
 	}
@@ -368,7 +368,7 @@ Tags: <ul>{{range .Tags}}<li>{{.}}</li>{{end}}</ul>
 
 Идея похожа на «золотые» файлы или снимок-тестирование. Вместо того чтобы неуклюже поддерживать строки внутри тестового файла, инструмент утверждения может сравнить вывод с созданным вами «утвержденным» файлом. Затем вы просто копируете новую версию, если ее одобряете. Перезапустите тест, и вы снова в зеленой зоне.
 
-Добавьте зависимость `"github.com/approvals/go-approval-tests"` в ваш проект и отредактируйте тест следующим образом:
+Добавьте зависимость `"github.com/approvals/go-approval-tests"` (с помощью команды `go get github.com/approvals/go-approval-tests`) в ваш проект и отредактируйте тест следующим образом:
 
 ```go
 func TestRender(t *testing.T) {
@@ -946,8 +946,7 @@ var (
 )
 
 type PostRenderer struct {
-	templ    *template.Template
-	mdParser *parser.Parser
+	templ *template.Template
 }
 
 func NewPostRenderer() (*PostRenderer, error) {
@@ -956,14 +955,11 @@ func NewPostRenderer() (*PostRenderer, error) {
 		return nil, err
 	}
 
-	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
-	parser := parser.NewWithExtensions(extensions)
-
-	return &PostRenderer{templ: templ, mdParser: parser}, nil
+	return &PostRenderer{templ: templ}, nil
 }
 
 func (r *PostRenderer) Render(w io.Writer, p Post) error {
-	return r.templ.ExecuteTemplate(w, "blog.gohtml", newPostVM(p, r))
+	return r.templ.ExecuteTemplate(w, "blog.gohtml", newPostVM(p))
 }
 
 func (r *PostRenderer) RenderIndex(w io.Writer, posts []Post) error {
@@ -975,14 +971,18 @@ type postViewModel struct {
 	HTMLBody template.HTML
 }
 
-func newPostVM(p Post, r *PostRenderer) postViewModel {
+func newPostVM(p Post) postViewModel {
 	vm := postViewModel{Post: p}
-	vm.HTMLBody = template.HTML(markdown.ToHTML([]byte(p.Body), r.mdParser, nil))
+	extensions := parser.CommonExtensions | parser.AutoHeadingIDs
+	mdParser := parser.NewWithExtensions(extensions)
+	vm.HTMLBody = template.HTML(markdown.ToHTML([]byte(p.Body), mdParser, nil))
 	return vm
 }
 ```
 
 Я использовал отличную библиотеку [gomarkdown](https://github.com/gomarkdown/markdown), которая работала именно так, как я и надеялся.
+
+Обратите внимание, что мы создаем новый `parser.Parser` при каждом вызове `newPostVM`, а не конструируем его один раз и сохраняем в `PostRenderer`. Обычно, если вы можете создать что-то один раз и повторно использовать, это стоит того — это экономит затраты на повторное создание. Но этот общий принцип здесь не работает: парсер gomarkdown сохраняет внутреннее состояние при построении дерева документа и небезопасен для повторного использования в нескольких вызовах `Parse` — вы получите панику (или, в старых версиях, гораздо менее полезную разыменование нулевого указателя) при втором использовании того же самого. Поскольку `PostRenderer` предназначен для рендеринга многих записей в течение своего жизненного цикла, новый парсер для каждого вызова является правильным способом его использования — и это дёшево в любом случае, так как его создание тривиально по сравнению с самой работой по парсингу.
 
 Если вы пытались сделать это сами, возможно, вы обнаружили, что при рендеринге тела HTML экранировался. Это функция безопасности пакета `html/template` в Go, предназначенная для предотвращения вывода вредоносного стороннего HTML.
 
