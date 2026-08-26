@@ -268,11 +268,7 @@ func Render(w io.Writer, p Post) error {
 		return err
 	}
 
-	if err := templ.Execute(w, p); err != nil {
-		return err
-	}
-
-	return nil
+	return templ.Execute(w, p)
 }
 ```
 
@@ -318,11 +314,7 @@ func Render(w io.Writer, p Post) error {
 		return err
 	}
 
-	if err := templ.Execute(w, p); err != nil {
-		return err
-	}
-
-	return nil
+	return templ.Execute(w, p)
 }
 ```
 
@@ -531,11 +523,7 @@ func Render(w io.Writer, p Post) error {
 		return err
 	}
 
-	if err := templ.ExecuteTemplate(w, "blog.gohtml", p); err != nil {
-		return err
-	}
-
-	return nil
+	return templ.ExecuteTemplate(w, "blog.gohtml", p)
 }
 ```
 
@@ -586,12 +574,7 @@ func NewPostRenderer() (*PostRenderer, error) {
 }
 
 func (r *PostRenderer) Render(w io.Writer, p Post) error {
-
-	if err := r.templ.ExecuteTemplate(w, "blog.gohtml", p); err != nil {
-		return err
-	}
-
-	return nil
+	return r.templ.ExecuteTemplate(w, "blog.gohtml", p)
 }
 ```
 
