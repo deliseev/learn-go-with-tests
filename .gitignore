@@ -14,3 +14,7 @@ meta.tex
 
 game.db.json
 .DS_Store
+
+# Python bytecode from .github/scripts
+__pycache__/
+*.pyc
