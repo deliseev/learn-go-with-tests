@@ -2,8 +2,10 @@ name: Translate Upstream Updates
 
 on:
   workflow_run:
-    # Запуск происходит сразу после завершения воркфлоу синхронизации
-    workflows: ["Sync Fork with Upstream"]
+    # Запуск сразу после того, как оригинал доехал по цепочке мержей до ru.
+    # Раньше здесь стоял "Sync Fork with Upstream", но тот доводит апстрим
+    # только до main-upstream — переводить в этот момент ещё нечего.
+    workflows: ["Merge Upstream"]
     types:
       - completed
   workflow_dispatch:

@@ -1,0 +1,60 @@
+name: Merge Upstream
+
+on:
+  workflow_run:
+    # Запускается сразу после того, как зеркало main-upstream обновилось.
+    workflows: ["Sync Fork with Upstream"]
+    types:
+      - completed
+  workflow_dispatch:
+
+jobs:
+  merge:
+    name: Merge upstream down the branch chain
+    # Только если зеркало обновилось успешно. Для ручного запуска проверки нет.
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write # Нужно, чтобы открыть PR при конфликте
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main-ru
+          fetch-depth: 0 # Нужны все ветки: мержим три из них между собой
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Драйвер для атрибута `*.md merge=ours` на ветке ru. Атрибут без
+          # драйвера git не применит, и перевод поехал бы в построчное слияние
+          # с оригиналом. merge-step.sh проверяет это ещё раз перед мержем.
+          git config merge.ours.driver true
+
+      - name: Stage merge helper
+        run: |
+          # Скрипт уезжает во временный каталог: шаги ниже переключают ветки,
+          # и рабочая копия скрипта менялась бы прямо под нами.
+          cp .github/scripts/merge-step.sh "$RUNNER_TEMP/merge-step.sh"
+          chmod +x "$RUNNER_TEMP/merge-step.sh"
+
+      # Первое звено: код и картинки из апстрима встречаются с нашей
+      # локализацией не-md файлов. Конфликт здесь — это столкновение с
+      # meta.tmpl.tex, build.books.sh или .gitignore.
+      - name: Merge main-upstream into main-ru
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          "$RUNNER_TEMP/merge-step.sh" main-ru origin/main-upstream
+
+      # Второе звено: оригинал встречается с переводом. Тексты защищены
+      # атрибутом merge=ours, поэтому доезжает только не-md и новые главы.
+      - name: Merge main-ru into ru
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          "$RUNNER_TEMP/merge-step.sh" ru main-ru

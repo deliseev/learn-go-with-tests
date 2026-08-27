@@ -2,7 +2,7 @@
 # сменив конфиг, тот же скрипт переводит другой проект на другой язык.
 
 [source]
-ref = "origin/main"
+ref = "origin/main-ru"
 include = ["*.md"]
 exclude_paths = [".github", "node_modules"]
 exclude_files = [
@@ -42,8 +42,8 @@ review_comment_template = """**Оригинал:**
 max_review_comments = 300
 
 [state]
-sync_file = ".github/translate-sync-state.txt"
-pending_file = ".github/translate-pending.txt"
+sync_file = ".github/ru/translate-sync-state.txt"
+pending_file = ".github/ru/translate-pending.txt"
 
 [prompt]
 context_mode = "full"
@@ -99,7 +99,7 @@ mock = "подделка"
 # модели как задание на минимальную правку прежнего перевода — так ручная
 # вычитка переживает мелкие изменения оригинала.
 [memory]
-file = ".github/translate-memory.jsonl"
+file = ".github/ru/translate-memory.jsonl"
 fuzzy_threshold = 0.8
 # Границы отношения длин перевода к оригиналу: пара вне них в базу не попадает.
 # Замерено на этой книге: 1-й перцентиль 0.81, 99-й 1.45.

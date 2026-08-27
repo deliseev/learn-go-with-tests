@@ -29,7 +29,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          SHA=$(gh api "repos/${{ github.repository }}/contents/.github/upstream-sync-state.txt?ref=main" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]' || true)
+          SHA=$(gh api "repos/${{ github.repository }}/contents/.github/upstream-sync-state.txt?ref=main-upstream" --jq '.content' 2>/dev/null | base64 -d | tr -d '[:space:]' || true)
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
 
       - name: Compare
@@ -44,25 +44,25 @@ jobs:
           fi
 
   sync:
-    name: Sync main branch with original
+    name: Mirror upstream into main-upstream
     needs: check
     if: needs.check.outputs.changed == 'true'
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Дает право обновлять ветку main
+      contents: write # Дает право обновлять ветку main-upstream
 
     steps:
-      - name: Checkout main
+      - name: Checkout main-upstream
         uses: actions/checkout@v4
         with:
-          ref: main
+          ref: main-upstream
           fetch-depth: 0
 
       # GITHUB_TOKEN никогда не имеет scope `workflow`, поэтому не может
       # обновлять файлы в .github/workflows/*. `gh repo sync` синкает всё
       # разом и падает, если апстрим менял воркфлоу. Синкаем всё, кроме
       # этой директории — свои воркфлоу-файлы просто оставляем как есть.
-      - name: Sync branch from upstream (excluding .github/workflows)
+      - name: Mirror upstream (excluding .github/workflows)
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
@@ -74,6 +74,21 @@ jobs:
 
           git checkout upstream/main -- . ':(exclude).github/workflows'
 
+          # `git checkout <дерево> -- .` умеет только добавлять и обновлять:
+          # файла, удалённого в апстриме, он не касается, и тот остаётся в
+          # зеркале навсегда. Удаляем такие файлы отдельным проходом.
+          #
+          # --diff-filter=A на направлении upstream→HEAD даёт ровно то, что
+          # есть у нас и чего нет у апстрима. Переименование для git — это
+          # удаление плюс добавление, поэтому чинится тем же проходом.
+          #
+          # -z/-0 обязателен: в апстриме есть имена с пробелами, например
+          # «.gitbook/assets/clock (1).svg».
+          git diff -z --name-only --diff-filter=A upstream/main HEAD -- . \
+            ':(exclude).github/workflows' \
+            ':(exclude).github/upstream-sync-state.txt' \
+            | xargs -0r git rm -q --
+
           # Отмечаем, до какого коммита апстрима синкнулись — по этому
           # маркеру джоб `check` в следующий раз дёшево поймёт, что новых
           # изменений нет, и пропустит тяжёлый checkout.
@@ -83,6 +98,6 @@ jobs:
           if git diff --cached --quiet; then
             echo "Already up to date."
           else
-            git commit -m "Sync main with upstream ($(git rev-parse --short upstream/main)), excluding .github/workflows"
-            git push origin HEAD:main
+            git commit -m "Mirror upstream ($(git rev-parse --short upstream/main)) into main-upstream, excluding .github/workflows"
+            git push origin HEAD:main-upstream
           fi
