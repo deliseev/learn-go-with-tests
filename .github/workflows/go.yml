@@ -2,9 +2,11 @@ name: Go
 
 on:
   push:
-    branches: [ ru ]
+    # main-ru — это звено, где код апстрима встречается с нашей локализацией.
+    # Ловить поломку здесь дешевле, чем после того, как она доехала до ru.
+    branches: [ ru, main-ru ]
   pull_request:
-    branches: [ ru ]
+    branches: [ ru, main-ru ]
   release:
     types: [ published ]
   workflow_dispatch:
