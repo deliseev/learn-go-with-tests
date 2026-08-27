@@ -20,6 +20,7 @@ TARGET=${1:?не указана ветка-приёмник}
 SOURCE=${2:?не указана ссылка-источник}
 
 git checkout "$TARGET"
+BEFORE=$(git rev-parse HEAD)
 
 # Перевод никогда не сливается с оригиналом построчно: git взял бы английские
 # куски и вставил их в русский текст. За это отвечает атрибут `*.md merge=ours`
@@ -47,6 +48,17 @@ if [ -f .gitattributes ] && grep -q '^\*\.md merge=ours' .gitattributes; then
 fi
 
 if git merge --no-edit "$SOURCE"; then
+  # Пуш, в котором меняется файл из .github/workflows/, GITHUB_TOKEN отобьёт:
+  # scope `workflow` у него нет и быть не может. Атрибут merge=ours закрывает
+  # изменения таких файлов, но не добавление новых, поэтому результат мержа
+  # проверяем явно — внятная ошибка здесь лучше, чем невнятный отказ на пуше.
+  if ! git diff --quiet "$BEFORE" HEAD -- .github/workflows; then
+    echo "::error::мерж затронул .github/workflows — GITHUB_TOKEN такой пуш не пропустит."
+    echo "Перенеси изменение воркфлоу в $TARGET отдельным PR, руками."
+    git diff --name-status "$BEFORE" HEAD -- .github/workflows
+    git reset --hard "$BEFORE"
+    exit 1
+  fi
   git push origin "HEAD:$TARGET"
   echo "Смержено: $SOURCE → $TARGET"
   exit 0
